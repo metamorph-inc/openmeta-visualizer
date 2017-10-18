@@ -25,3 +25,14 @@ test_script:
 artifacts:
   - path: "*.log"
   - path: "deploy/openmeta-visualizer_x64.msi"
+
+deploy:
+  provider: GitHub
+  description: $(appveyor_build_version)
+  auth_token:
+    secure: 6VBqhqRkH4gpHcpYuxZhQaPLADwm42FvZuthealLpMAZxp994R7hNhHkqW7e8tYI
+  artifact: deploy/openmeta-visualizer_x64.msi
+  draft: false
+  prerelease: false
+  on:
+    appveyor_repo_tag: true        # deploy on tag push only
