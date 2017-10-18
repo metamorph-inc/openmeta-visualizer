@@ -17,9 +17,11 @@ build_script:
   - '"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" DigTest\DigTest.sln /p:Configuration=Release /fl /t:Rebuild /m'
   - python -m pip install requests==2.18.4
   - python Dig\tab-src\surrogate-modeling\build.py
+  - python deploy\build_msi.py
 
 test_script:
   - DigTest\bin\Release\DigTest.exe <nul
 
 artifacts:
   - path: "*.log"
+  - path: "deploy/openmeta-visualizer_x64.msi"

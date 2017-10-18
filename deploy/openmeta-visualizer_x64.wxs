@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='windows-1252'?>
+
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi' RequiredVersion='3.0.4813.0'
+ xmlns:util='http://schemas.microsoft.com/wix/UtilExtension'>
+
+  <?define UpgradeCode='f28b9654-9af8-496f-8887-8789ce10b0f3' ?>
+
+  <Product Name='OpenMETA Visualizer' Id='*' UpgradeCode='$(var.UpgradeCode)'
+      Language='1033' Codepage='1252' Version='$(var.VERSIONSTR)' Manufacturer='Metamorph, Inc'>
+
+    <Package Id='*' Description='OpenMETA Visualizer'
+        Manufacturer='Metamorph, Inc'
+        InstallerVersion='405' Languages='1033' Compressed='yes' SummaryCodepage='1252'
+        InstallPrivileges='elevated' InstallScope='perMachine' Platform='x64'
+		Comments='Created from $(var.VCSVERSION) ($(var.VCSHASH))'/>
+
+    <Upgrade Id="$(var.UpgradeCode)">
+      <UpgradeVersion Minimum="$(var.VERSIONSTR)" OnlyDetect="yes" Property="NEWERFOUND"/>
+      <UpgradeVersion OnlyDetect="no" Minimum="0.0.1" IncludeMinimum="yes" Maximum="$(var.VERSIONSTR)" IncludeMaximum="no" Property="PREVIOUSFOUND"/>
+    </Upgrade>
+    <CustomActionRef Id="WixExitEarlyWithSuccess"/>
+	<CustomAction Id='NoDowngrade' Error='A later version is already installed. To downgrade, please uninstall it first, then restart this installer.' />
+
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallValidate" />
+	  <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>
+    </InstallExecuteSequence>
+
+    <Media Id='1' Cabinet='Visualizer.cab' EmbedCab='yes' />
+
+    <Condition Message="This application may only be installed on Windows 7 SP1, Windows 8.1, or later.">
+      <!-- https://msdn.microsoft.com/en-us/library/windows/desktop/aa370556(v=vs.85).aspx -->
+      <![CDATA[Installed OR ((VersionNT = 601 AND ServicePackLevel >= 1) OR VersionNT >= 603)]]>
+    </Condition>
+
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED"/>
+    <Condition Message="This application requires .NET Framework 4.5 or later. Please install the .NET Framework then run this installer again.">
+      <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_45_OR_LATER_INSTALLED]]>
+    </Condition>
+
+    <Condition Message="The installation environment is not correct. Possible cause: running under cygwin ssh with key authentication. Run `passwd -R` and ensure `/cygdrive/c/Windows/System32/whoami.exe` returns the correct username.">
+      <![CDATA[Installed OR (WIX_DIR_COMMON_DOCUMENTS <> "")]]>
+    </Condition>
+
+    <Property Id='ARPPRODUCTICON' Value='META.ico' />
+    <PropertyRef Id='WIX_DIR_COMMON_DOCUMENTS' />
+
+    <WixVariable Id="WixUILicenseRtf" Value="..\license.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="WixUiBanner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="WixUIDialog.bmp" />
+
+    <!-- =========================================================== -->
+    <!-- DIRECTORY STRUCTURE -->
+    <!-- =========================================================== -->
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='SystemFolder' Name='SystemFolder'/>
+      <Directory Id='System64Folder' Name='System64Folder'/>
+      <Directory Id='ProgramFilesFolder'>
+        <Directory Id='INSTALLDIR' Name='OpenMETA-Visualizer'>
+          <Directory Id='INSTALLDIR_BIN' Name='bin'>
+            <Directory Id='bin'/>
+            <Directory Id='Dig' Name='Dig' />
+            <Directory Id='R' Name='R' />
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <!-- =========================================================== -->
+    <!-- COMPONENTS -->
+    <!-- =========================================================== -->
+
+    <DirectoryRef Id='INSTALLDIR'>
+      <Component Id='reg_PATH' Guid='{c59ab1c9-dd57-45fb-91a2-210007e68a19}' Win64='no'>
+        <RegistryKey Root='HKLM' Key='Software\Metamorph\OpenMETA-Visualizer'>
+          <RegistryValue Name='PATH' Type='string' Value='[INSTALLDIR]'/>
+        </RegistryKey>
+      </Component>
+      <Component Id='reg_VERSIONSTR' Guid='{2091de3f-3d5a-4875-a347-c4f654eb8f48}' Win64='no'>
+        <RegistryKey Root='HKLM' Key='Software\Metamorph\OpenMETA-Visualizer'>
+          <RegistryValue Name='VERSION' Type='string' Value='$(var.VERSIONSTR)'/>
+        </RegistryKey>
+      </Component>
+      <Component Id='reg_VCSHASH' Guid='{9ea65e2e-c8b3-4345-a948-3f9c3fab6789}' Win64='no'>
+        <RegistryKey Root='HKLM' Key='Software\Metamorph\OpenMETA-Visualizer'>
+          <RegistryValue Name='VCSHASH' Type='string' Value='$(var.VCSHASH)'/>
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="dir_Dig_www">
+        <Directory Id="SurrogateModeling" Name="SurrogateModeling" />
+    </DirectoryRef>
+
+    <!-- =========================================================== -->
+    <!-- FEATURES -->
+    <!-- =========================================================== -->
+    <Feature Id='Complete' Title='OpenMETA Visualizer' Description='The complete package' Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
+      <ComponentGroupRef Id='R'/>
+      <ComponentGroupRef Id='Dig'/>
+      <ComponentGroupRef Id='SurrogateModeling'/>
+      <ComponentRef Id='reg_PATH' />
+      <ComponentRef Id='reg_VERSIONSTR' />
+      <ComponentRef Id='reg_VCSHASH' />
+    </Feature>
+
+    <!-- =========================================================== -->
+    <!-- USER INTERFACE -->
+    <!-- =========================================================== -->
+    <UI>
+      <UIRef Id="WixUI_Minimal" />
+      <UIRef Id="WixUI_ErrorProgressText" />
+      <InstallUISequence>
+	    <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>
+        <Show Dialog="UserExit" OnExit="cancel">0</Show>
+      </InstallUISequence>
+    </UI>
+
+  </Product>
+</Wix>

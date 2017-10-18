@@ -1,1 +1,8 @@
 Dig/datasets/WindTurbineForOptimization/visualizer_config_test.log
+DigTest/nuget/
+deploy/Dig.wxi
+deploy/R.wxi
+deploy/SurrogateModeling.wxi
+deploy/WixUIBanner.bmp
+deploy/WixUIDialog.bmp
+license.rtf
