@@ -57,11 +57,8 @@
       <Directory Id='System64Folder' Name='System64Folder'/>
       <Directory Id='ProgramFilesFolder'>
         <Directory Id='INSTALLDIR' Name='OpenMETA-Visualizer'>
-          <Directory Id='INSTALLDIR_BIN' Name='bin'>
-            <Directory Id='bin'/>
-            <Directory Id='Dig' Name='Dig' />
-            <Directory Id='R' Name='R' />
-          </Directory>
+          <Directory Id='Dig' Name='Dig' />
+          <Directory Id='R' Name='R' />
         </Directory>
       </Directory>
     </Directory>
