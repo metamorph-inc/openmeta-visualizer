@@ -3,7 +3,6 @@
 import sys
 import os
 import os.path
-import win32com.client
 import gen_dir_wxi
 from gen_dir_wxi import system
 import glob
