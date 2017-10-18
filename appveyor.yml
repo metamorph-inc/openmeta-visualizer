@@ -21,6 +21,10 @@ build_script:
   - set PATH=%PATH%;%CD%\WiX.3.11.0\tools
   - python deploy\build_msi.py
 
+cache:
+ - 'Dig\tab-src\surrogate-modeling\node_modules -> Dig\tab-src\surrogate-modeling\package.json, Dig\tab-src\surrogate-modeling\build.py'
+ - 'DigTest\nuget -> DigTest\packages.config'
+
 test_script:
   - DigTest\bin\Release\DigTest.exe <nul
 
@@ -30,7 +34,7 @@ artifacts:
 
 deploy:
   provider: GitHub
-  description: $(appveyor_build_version)
+  description: Build $(appveyor_build_version)
   auth_token:
     secure: 6VBqhqRkH4gpHcpYuxZhQaPLADwm42FvZuthealLpMAZxp994R7hNhHkqW7e8tYI
   artifact: deploy/openmeta-visualizer_x64.msi
