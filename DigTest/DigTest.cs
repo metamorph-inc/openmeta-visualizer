@@ -18,6 +18,8 @@ namespace DigTest
 {
     public class DigTest
     {
+        public static readonly string RootPath = "../../../";
+
         static void Main(string[] args)
         {
 
@@ -46,7 +48,7 @@ namespace DigTest
             using (IWebDriver driver = new OpenQA.Selenium.Chrome.ChromeDriver(options))
             using (DigWrapper wrapper = new DigWrapper())
             {
-                wrapper.Start(Path.Combine(META.VersionInfo.MetaPath, "bin/Dig/datasets/GenericCSV/2010_Census_Populations_by_Zip_Code.csv"), true);
+                wrapper.Start(Path.Combine(RootPath, "Dig/datasets/GenericCSV/2010_Census_Populations_by_Zip_Code.csv"), true);
                 driver.Navigate().GoToUrl(wrapper.url);
                 IWait<IWebDriver> wait0 = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(30.0));
                 Assert.True(wait0.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete")));
@@ -55,8 +57,8 @@ namespace DigTest
                 Assert.True(wait1.Until(driver1 => driver.FindElement(By.Id("Explore-pairs_stats")).Text.Contains("Total Points: 319")));
                 Assert.True(wait1.Until(driver1 => driver.FindElement(By.Id("Explore-pairs_stats")).Text.Contains("Current Points: 316")));
             }
-            File.Delete(Path.Combine(META.VersionInfo.MetaPath, "bin/Dig/datasets/GenericCSV/2010_Census_Populations_by_Zip_Code_viz_config.json"));
-            File.Delete(Path.Combine(META.VersionInfo.MetaPath, "bin/Dig/datasets/GenericCSV/2010_Census_Populations_by_Zip_Code_viz_config_data.csv"));
+            File.Delete(Path.Combine(RootPath, "Dig/datasets/GenericCSV/2010_Census_Populations_by_Zip_Code_viz_config.json"));
+            File.Delete(Path.Combine(RootPath, "Dig/datasets/GenericCSV/2010_Census_Populations_by_Zip_Code_viz_config_data.csv"));
         }
 
         [Fact()]
@@ -68,7 +70,7 @@ namespace DigTest
             using (IWebDriver driver = new OpenQA.Selenium.Chrome.ChromeDriver(options))
             using (DigWrapper wrapper = new DigWrapper())
             {
-                wrapper.Start(Path.Combine(META.VersionInfo.MetaPath, "bin/Dig/datasets/OpenmetaCSV/windturbine_merged.csv"), true);
+                wrapper.Start(Path.Combine(RootPath, "Dig/datasets/OpenmetaCSV/windturbine_merged.csv"), true);
                 driver.Navigate().GoToUrl(wrapper.url);
                 IWait<IWebDriver> wait0 = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(30.0));
                 Assert.True(wait0.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete")));
@@ -76,8 +78,8 @@ namespace DigTest
                 IWait<IWebDriver> wait1 = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
                 Assert.True(wait1.Until(driver1 => driver.FindElement(By.Id("Explore-pairs_stats")).Text.Contains("Total Points: 5000")));
             }
-            File.Delete(Path.Combine(META.VersionInfo.MetaPath, "bin/Dig/datasets/OpenmetaCSV/windturbine_merged_viz_config.json"));
-            File.Delete(Path.Combine(META.VersionInfo.MetaPath, "bin/Dig/datasets/OpenmetaCSV/windturbine_merged_viz_config_data.csv"));
+            File.Delete(Path.Combine(RootPath, "Dig/datasets/OpenmetaCSV/windturbine_merged_viz_config.json"));
+            File.Delete(Path.Combine(RootPath, "Dig/datasets/OpenmetaCSV/windturbine_merged_viz_config_data.csv"));
         }
 
         [Fact()]
@@ -85,7 +87,7 @@ namespace DigTest
         void ResultsBrowserJSONLaunch()
         {
             // TODO(tthomas): Add testing of additional UI elements
-            var session = new ShinySession(Path.Combine("bin", "dig", "datasets", "WindTurbineForOptimization", "visualizer_config.json"));
+            var session = new ShinySession(Path.Combine("dig", "datasets", "WindTurbineForOptimization", "visualizer_config.json"));
             File.Copy(session.original_config, session.copied_config, overwrite: true);
             File.Delete(session.log_file);
             
@@ -593,14 +595,15 @@ namespace DigTest
 
             public void Start(string input_filename, bool from_csv = false)
             {
+                input_filename = Path.GetFullPath(input_filename);
                 Process proc = new Process();
                 proc.StartInfo.Arguments = "--no-save --no-restore -e \"shiny::runApp('Dig',display.mode='normal',quiet=FALSE, launch.browser=FALSE)\"";
                 proc.StartInfo.UseShellExecute = false;
-                proc.StartInfo.FileName = Path.Combine(META.VersionInfo.MetaPath, @"bin\R\bin\x64\Rscript.exe");
+                proc.StartInfo.FileName = Path.Combine(RootPath, @"R\bin\x64\Rscript.exe");
                 proc.StartInfo.RedirectStandardInput = true;
                 proc.StartInfo.RedirectStandardOutput = true;
                 proc.StartInfo.RedirectStandardError = true;
-                proc.StartInfo.WorkingDirectory = Path.Combine(META.VersionInfo.MetaPath, @"bin");
+                proc.StartInfo.WorkingDirectory = Path.GetFullPath(RootPath);
                 if (from_csv)
                 {
                     proc.StartInfo.EnvironmentVariables["DIG_INPUT_CSV"] = input_filename;

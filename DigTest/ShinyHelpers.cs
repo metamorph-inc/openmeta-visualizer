@@ -23,7 +23,7 @@ namespace DigTest
         public ShinySession(string config_file)
         {
             all_vars = "";
-            original_config = Path.Combine(META.VersionInfo.MetaPath, config_file);
+            original_config = Path.Combine(DigTest.RootPath, config_file);
             copied_config = original_config.Insert(original_config.LastIndexOf(".json"), "_test");
             log_file = Path.ChangeExtension(copied_config, ".log");
             data_file = Path.ChangeExtension(copied_config.Insert(original_config.LastIndexOf(".json"), "_data"), ".csv");
