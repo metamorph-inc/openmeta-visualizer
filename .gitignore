@@ -3,7 +3,5 @@ DigTest/nuget/
 deploy/Dig.wxi
 deploy/R.wxi
 deploy/SurrogateModeling.wxi
-deploy/WixUIBanner.bmp
-deploy/WixUIDialog.bmp
 license.rtf
 /WiX.3.11.0/
