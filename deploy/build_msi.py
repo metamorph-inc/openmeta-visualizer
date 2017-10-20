@@ -4,12 +4,12 @@ import sys
 import os
 import os.path
 import gen_dir_wxi
-from gen_dir_wxi import system
-import glob
+from gen_dir_wxi import system, CommentedTreeBuilder
 import subprocess
 import re
 
 import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ElementTree
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(this_dir)
@@ -43,6 +43,8 @@ def build_msi():
     gen_dir_wxi.gen_dir_from_vc(r"..\Dig",)
     gen_dir_wxi.main(r"..\Dig\www\SurrogateModeling")
 
+    dig_mods()
+
     def get_vcsversion():
         p = subprocess.Popen("git rev-list HEAD --count".split(), stdout=subprocess.PIPE)
         out, err = p.communicate()
@@ -68,9 +70,9 @@ def build_msi():
     sources = []
     include_wxis = []
 
-    # For each each ComponentGroupRef in "source_wxs" and "analysis_tools.wxi",
+    # For each each ComponentGroupRef in "source_wxs",
     # add its corresponding file to "include_wxis"
-    for wxs in glob.glob(sourcedir + source_wxs) + glob.glob(sourcedir + 'analysis_tools.wxi'):
+    for wxs in glob.glob(sourcedir + source_wxs):
         print 'Processing WXS: ' + wxs
         tree = ET.parse(wxs)
         root = tree.getroot()
@@ -156,10 +158,25 @@ def build_msi():
     print "elapsed time: %d seconds" % (datetime.datetime.now() - starttime).seconds
 
 
+def dig_mods():
+    output_filename = 'Dig.wxi'
+    ElementTree.register_namespace("", "http://schemas.microsoft.com/wix/2006/wi")
+    tree = ElementTree.parse(output_filename, parser=CommentedTreeBuilder()).getroot()
+    dig_dir = tree.findall(".//{http://schemas.microsoft.com/wix/2006/wi}ComponentGroup[@Id='Dig']")[0]
+    dig_dir.insert(0, ElementTree.fromstring("""<Component Id="dir_Dig_perms" Guid="d89d2032-5658-4f31-8d61-cfdd3a6934b5" Directory="Dig">
+  <CreateFolder>
+    <PermissionEx xmlns="http://schemas.microsoft.com/wix/UtilExtension" User="[WIX_ACCOUNT_USERS]" GenericWrite="yes" GenericRead="yes" Read="yes" GenericExecute="yes" ChangePermission="yes"/>
+  </CreateFolder>
+</Component>"""))
+
+    ElementTree.ElementTree(tree).write(output_filename, xml_declaration=True, encoding='utf-8')
+
+
 class MSBuildErrorWriter(object):
     def write(self, d):
         sys.stderr.write("error: ")
         sys.stderr.write(d)
+
 
 if __name__ == '__main__':
     os.chdir(this_dir)

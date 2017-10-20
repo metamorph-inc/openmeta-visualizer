@@ -95,6 +95,7 @@
       <ComponentGroupRef Id='R'/>
       <ComponentGroupRef Id='Dig'/>
       <ComponentGroupRef Id='SurrogateModeling'/>
+      <ComponentGroupRef Id='Dig_run'/>
       <ComponentRef Id='reg_PATH' />
       <ComponentRef Id='reg_VERSIONSTR' />
       <ComponentRef Id='reg_VCSHASH' />

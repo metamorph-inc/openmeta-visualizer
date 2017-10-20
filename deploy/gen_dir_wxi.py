@@ -1,21 +1,18 @@
 import sys
+import subprocess
 import os
 import os.path
 import hashlib
 import re
 import errno
-import itertools
 import tempfile
-import hashlib
 
 import requests
 
 from xml.etree import ElementTree
-import xml.sax
-from xml.sax.handler import ContentHandler
 
 _this_dir = os.path.dirname(os.path.abspath(__file__))
-prefs = { 'verbose': True }
+
 
 def system(args, dirname=None):
     """
@@ -24,12 +21,10 @@ def system(args, dirname=None):
         args : [command, arg1, arg2, ...]
         dirname : if set, execute the command within this directory
     """
-    import subprocess
-    #print args
-    with open(os.devnull, "w") as nulfp:
-        # n.b. stderr=subprocess.STDOUT fails mysteriously
-        import sys
-        subprocess.check_call(args, stdout=(sys.stdout if prefs['verbose'] else nulfp), stderr=subprocess.STDOUT, shell=False, cwd=dirname)
+    # print args
+    # n.b. stderr=subprocess.STDOUT fails mysteriously
+    subprocess.check_call(args, stdout=sys.stdout, stderr=subprocess.STDOUT, shell=False, cwd=dirname)
+
 
 # http://bugs.python.org/issue8277
 class CommentedTreeBuilder(ElementTree.XMLTreeBuilder):
@@ -42,9 +37,11 @@ class CommentedTreeBuilder(ElementTree.XMLTreeBuilder):
         self._target.data(data)
         self._target.end(ElementTree.Comment)
 
+
 def _adjacent_file(file):
     import os.path
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), file)
+
 
 #http://effbot.org/zone/element-lib.htm#prettyprint
 def _indent(elem, level=0):
@@ -62,6 +59,7 @@ def _indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
+
 def gen_dir_from_vc(src, output_filename=None, id=None, diskId=None):
     while src[-1] in ('/', '\\'):
         src = src[:-1]
@@ -78,6 +76,7 @@ def gen_dir_from_vc(src, output_filename=None, id=None, diskId=None):
     component_group = SubElement(fragment, "ComponentGroup")
     component_group.set("Id", id)
     dirs = {}
+
     def get_dir(dirname):
         if dirname == src:
             return root_dir
@@ -158,11 +157,12 @@ def main(src, output_filename=None, id=None, diskId=None):
     output_filename = output_filename or _adjacent_file(id + ".wxi")
 
     import subprocess
+
     def check_call(args):
         print " ".join(args)
         subprocess.check_call(args)
-    #subprocess.check_call('set path'.split(), shell=True)
-    #subprocess.check_call('where heat'.split(), shell=True)
+    # subprocess.check_call('set path'.split(), shell=True)
+    # subprocess.check_call('where heat'.split(), shell=True)
 
     check_call(['heat', 'dir', _adjacent_file(src), '-template', 'fragment', '-sreg', '-scom',
       '-o', output_filename, '-ag', '-cg', id, '-srd', '-var', 'var.' + id, '-dr', id, '-nologo'])
@@ -191,8 +191,8 @@ def main(src, output_filename=None, id=None, diskId=None):
     ElementTree.ElementTree(tree).write(output_filename, xml_declaration=True, encoding='utf-8')
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main(sys.argv[1])
     # download_bundle_deps("META_bundle_x64.wxs")
 
-#heat dir ../runtime/MATLAB/Scenario-matlab-library -template fragment -o Scenario-matlab-library.wxi -gg -cg Scenario_matlab_library -srd -var var.Scenario_matlab_library -dr Scenario_matlab_library
+# heat dir ../runtime/MATLAB/Scenario-matlab-library -template fragment -o Scenario-matlab-library.wxi -gg -cg Scenario_matlab_library -srd -var var.Scenario_matlab_library -dr Scenario_matlab_library
