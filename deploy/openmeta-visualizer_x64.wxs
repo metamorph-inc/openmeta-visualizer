@@ -12,7 +12,7 @@
         Manufacturer='Metamorph, Inc'
         InstallerVersion='405' Languages='1033' Compressed='yes' SummaryCodepage='1252'
         InstallPrivileges='elevated' InstallScope='perMachine' Platform='x64'
-		Comments='Created from $(var.VCSVERSION) ($(var.VCSHASH))'/>
+		Comments='($var.VERSIONSTR), created from $(var.VCSVERSION) ($(var.VCSHASH))'/>
 
     <Upgrade Id="$(var.UpgradeCode)">
       <UpgradeVersion Minimum="$(var.VERSIONSTR)" OnlyDetect="yes" Property="NEWERFOUND"/>
