@@ -116,7 +116,10 @@ def build_msi():
 
     defines = []
 
-    version = '14.13.' + str(int(vcsversion))
+    try:
+        version = subprocess.check_output('git describe --tags --exact-match --dirty').strip().lstrip('v')
+    except subprocess.CalledProcessError:
+        version = '0.1.0'
     print 'Installer version: ' + version
     defines.append(('VERSIONSTR', version))
     defines.append(('VCSVERSION', vcsversion))
