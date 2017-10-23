@@ -259,7 +259,7 @@ namespace DigTest
             // Test Pairs Plot
             Assert.True(wait.Until(driver1 => driver.FindElement(By.XPath("//*[@id='Explore-pairs_plot']/img")).Displayed));
             var display = new ShinySelectMultipleInput(driver, "Explore-display");
-            Assert.Equal("IN_HubMaterial, IN_E11, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection", string.Join(", ", display.GetCurrentSelection().ToArray()));
+            Assert.Equal("IN_HubMaterial, IN_E11, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection", display.GetCurrentSelection());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
             Assert.True(new ShinyCheckboxInput(driver, "Explore-auto_render").GetStartState());
@@ -348,10 +348,10 @@ namespace DigTest
             //Assert.Equal("8a3c95db-2fa6-4fbc-badd-34a119d1c37e", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[5]")).GetAttribute("textContent"));
 
             var weight_metrics = new ShinySelectMultipleInput(driver, "DataTable-weightMetrics");
-            Assert.Equal("OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection", string.Join(", ", weight_metrics.GetCurrentSelection().ToArray()));
+            Assert.Equal("OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection", weight_metrics.GetCurrentSelection());
             wait.Until(ExpectedConditions.ElementIsVisible(By.Id("DataTable-clearMetrics"))).Click();
             Thread.Sleep(500); // FIXME: Apply the correct wait statement here instead of a Thread.Sleep() call.
-            wait.Until(d => string.Join(", ", weight_metrics.GetCurrentSelection().ToArray()) == "");
+            wait.Until(d => weight_metrics.GetCurrentSelection() == "");
         }
 
         /// <summary>
@@ -504,11 +504,33 @@ namespace DigTest
             // Filters
             ShinyUtilities.ScrollToElementID(driver, "footer_collapse");
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Filters");
+
+            var design_selector = new VisualizerDesignTreeSelector(driver);
+            Assert.True(design_selector.SelectedByName("16"));
+            Assert.True(design_selector.SelectedByName("20"));
+            Assert.True(design_selector.SelectedByName("28"));
+            Assert.True(design_selector.SelectedByName("30"));
+            Assert.True(design_selector.SelectedByName("32"));
+            var stats = new VisualizerFilterStats(driver);
+            var points_before_deselect_28 = stats.GetCurrentPoints();
+            design_selector.ClickByName("28");
+            Assert.False(design_selector.SelectedByName("28"));
+            Thread.Sleep(500);
+            Assert.True(stats.GetCurrentPoints() < points_before_deselect_28);
+
+            var filter_hub = new ShinySelectMultipleInput(driver, "filter_IN_HubMaterial", false);
+            Assert.Equal("1. Aluminum, 2. Steel", filter_hub.GetCurrentSelection());
+            filter_hub.ToggleItem("1. Aluminum");
+            Assert.Equal("2. Steel", filter_hub.GetCurrentSelection());
+            filter_hub.ToggleItem("1. Aluminum");
+            filter_hub.ToggleItem("2. Steel");
+            Assert.Equal("1. Aluminum", filter_hub.GetCurrentSelection());
+
             Thread.Sleep(500);
             Assert.Equal("20-50", new VisualizerFilterInput(driver, "IN_ElemCount").EntrySetFromTo(20, 50));
             Assert.Equal(20000, new VisualizerFilterInput(driver, "IN_E22").EntrySetFrom(20000.0));
             Assert.Equal(160000, new VisualizerFilterInput(driver, "OUT_Blade_Cost_Total").EntrySetTo(160000));
-
+            
             // Coloring
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Coloring");
             var coloring_source = new ShinySelectInput(driver, "coloring_source");
@@ -535,10 +557,9 @@ namespace DigTest
             Assert.False(remove_missing.GetStartState());
             var remove_outliers = new ShinyCheckboxInput(driver, "remove_outliers");
             Assert.False(remove_outliers.GetStartState());
-            var stats = new VisualizerFilterStats(driver);
             var prev_points = stats.GetCurrentPoints();
             remove_outliers.ToggleState();
-            new ShinySliderInput(driver, "num_sd").MoveSliderToValue(2);
+            new ShinySliderInput(driver, "num_sd").MoveSliderToValue(1.5);
 
             // Return to Filters
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Filters");
@@ -556,6 +577,15 @@ namespace DigTest
             // Filters
             ShinyUtilities.ScrollToElementID(driver, "footer_collapse");
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Filters");
+            Thread.Sleep(500);
+
+            var design_selector = new VisualizerDesignTreeSelector(driver);
+            Assert.True(design_selector.SelectedByName("16"));
+            Assert.True(design_selector.SelectedByName("20"));
+            Assert.False(design_selector.SelectedByName("28"));
+            Assert.True(design_selector.SelectedByName("30"));
+            Assert.True(design_selector.SelectedByName("32"));
+            Assert.Equal("1. Aluminum", new ShinySelectMultipleInput(driver, "filter_IN_HubMaterial", false).GetCurrentSelection());
             Assert.Equal("20-50", new VisualizerFilterInput(driver, "IN_ElemCount").GetFromTo());
             Assert.Equal(20000, new VisualizerFilterInput(driver, "IN_E22").GetFrom());
             Assert.Equal(160000, new VisualizerFilterInput(driver, "OUT_Blade_Cost_Total").GetTo());
@@ -580,7 +610,7 @@ namespace DigTest
             Assert.False(remove_missing.GetStartState());
             var remove_outliers = new ShinyCheckboxInput(driver, "remove_outliers");
             Assert.True(remove_outliers.GetStartState());
-            Assert.Equal(2, new ShinySliderInput(driver, "num_sd").GetValue());
+            Assert.Equal(1.5, new ShinySliderInput(driver, "num_sd").GetValue());
 
             // Return to Filters
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Filters");
