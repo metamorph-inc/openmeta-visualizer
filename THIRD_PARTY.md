@@ -31,7 +31,7 @@ Bundled R packages
   * `jpeg` - GPLv2 *or* GPLv3
   * `jsonlite` - MIT License
   * `KernSmooth` - Unlimited
-  * `lattice` - GPLv2 *or* GPLv3[expanded from - GPL (≥ 2)]
+  * `lattice` - GPLv2 *or* GPLv3
   * `magrittr` - MIT License
   * `MASS` - GPLv2 *or* GPLv3
   * `Matrix` - GPLv2 *or* GPLv3
