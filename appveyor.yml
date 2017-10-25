@@ -25,8 +25,10 @@ cache:
  - 'Dig\tab-src\surrogate-modeling\node_modules -> Dig\tab-src\surrogate-modeling\package.json, Dig\tab-src\surrogate-modeling\build.py'
  - 'DigTest\nuget -> DigTest\packages.config'
 
-test_script:
-  - DigTest\bin\Release\DigTest.exe <nul
+test:
+  assemblies:
+    only:
+      - DigTest\bin\Release\DigTest.exe
 
 artifacts:
   - path: "*.log"
