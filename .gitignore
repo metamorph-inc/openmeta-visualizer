@@ -1,7 +1,12 @@
-Dig/datasets/WindTurbineForOptimization/visualizer_config_test.log
-DigTest/nuget/
 deploy/Dig.wxi
 deploy/R.wxi
 deploy/SurrogateModeling.wxi
+Dig/.Rhistory
+Dig/datasets/**/*_test.log
+DigTest/.vs/
+DigTest/bin/
+DigTest/nuget/
+DigTest/obj/
 license.rtf
 /WiX.3.11.0/
+.Rproj.user
