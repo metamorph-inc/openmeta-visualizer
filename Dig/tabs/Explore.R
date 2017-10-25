@@ -201,10 +201,55 @@ server <- function(input, output, session, data) {
                       choices = data$pre$var_range_list(),
                       selected = selected)
   })
-
+  
+  PairsData <- reactive({
+    if (input$auto_render == TRUE) {
+      pairs_data <- data$Colored()
+    } else {
+      pairs_data <- SlowData()
+    }
+    pairs_data
+  })
+  
+  SlowData <- eventReactive(c(input$render_plot, input$auto_render), {
+    data$Colored()
+  })
+  
+  PairsVars <- reactive({
+    if (input$auto_render == TRUE) {
+      vars <- VarsList()
+    } else {
+      vars <- SlowVarsList()
+    }
+    vars
+  })
+  
+  VarsList <- reactive({
+    req(input$display, data$raw$df)
+    idx <- NULL
+    for(choice in 1:length(input$display)) {
+      mm <- match(input$display[choice],names(data$raw$df))
+      if(mm > 0) { idx <- c(idx,mm) }
+    }
+    idx
+  })
+  
+  SlowVarsList <- eventReactive(c(input$render_plot, input$auto_render), {
+    req(input$display, data$raw$df)
+    idx <- NULL
+    for(choice in 1:length(input$display)) {
+      mm <- match(input$display[choice],names(data$raw$df))
+      # browser()
+      if(mm > 0) { idx <- c(idx,mm) }
+    }
+    idx
+  })
+  
   output$pairs_plot <- renderPlot({
+    req(PairsVars())
+    req(PairsData())
     
-    if (length(input$display) >= 2 & nrow(data$Filtered()) > 0) {
+    if (length(PairsVars()) >= 2 & nrow(PairsData()) > 0) {
       # Clear the error messages, if any.
       output$pairs_display_error <- renderUI(tagList(""))
       output$pairs_filter_error <- renderUI(tagList(""))
@@ -226,7 +271,7 @@ server <- function(input, output, session, data) {
           params <- list(upper.panel = NULL)
         }
       }
-      pairs_data <- data$Colored()[vars_list()]
+      pairs_data <- PairsData()[PairsVars()]
       if(input$pairs_units) {
         names(pairs_data) <- sapply(names(pairs_data), function(name) {
           data$meta$variables[[name]]$name_with_units
@@ -234,7 +279,7 @@ server <- function(input, output, session, data) {
       }
       params <- c(params,
                   list(x = pairs_data,
-                       col = data$Colored()$color,
+                       col = PairsData()$color,
                        pch = as.numeric(input$pairs_plot_marker),
                        cex = as.numeric(input$pairs_plot_marker_size)))
       do.call(pairs, params)
@@ -251,15 +296,6 @@ server <- function(input, output, session, data) {
         )
       }
     }
-  })
-  
-  vars_list <- reactive({
-    idx <- NULL
-    for(choice in 1:length(input$display)) {
-      mm <- match(input$display[choice],names(data$raw$df))
-      if(mm > 0) { idx <- c(idx,mm) }
-    }
-    idx
   })
   
   output$pairs_stats <- renderText({
