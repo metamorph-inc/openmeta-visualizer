@@ -211,16 +211,28 @@ namespace DigTest
             pairs_plot.WaitUntilImageRefreshes();
             var third_count = pairs_plot.ImageStats();
             Assert.True(third_count[Color.FromArgb(255, 0, 0, 0)] > second_count[Color.FromArgb(255, 0, 0, 0)]);
-            
-            //TODO(tthomas): Replace OpenTabPanel("Single Plot") with double click.
-            //IWebElement pairs_plot = driver.FindElement(By.Id("Explore-pairs_plot"));
-            //IAction dbl_click_pairs_plot = builder.MoveToElement(pairs_plot).MoveByOffset(100, 300).DoubleClick().Build();
-            //dbl_click_pairs_plot.Perform();
 
+            
             //Test Single Plot
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
             var single_plot = new ShinyPlot(driver, "Explore-single_plot");
-            new ShinySelectInput(driver, "Explore-x_input").SetCurrentSelectionClicked("IN_Tip_AvgCapMaterialThickness");
+            var x_input = new ShinySelectInput(driver, "Explore-x_input");
+            Assert.Equal("IN_HubMaterial", x_input.GetCurrentSelection());
+            var y_input = new ShinySelectInput(driver, "Explore-y_input");
+            Assert.Equal("IN_E11", y_input.GetCurrentSelection());
+
+            ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
+            IAction dbl_click_pairs_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-pairs_plot")), 200, 400).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
+            dbl_click_pairs_plot.Perform();
+            wait.Until(d => driver.FindElement(By.Id("Explore-single_plot")).Displayed);
+            single_plot.WaitUntilImageRefreshes();
+            Assert.True(single_plot.ImageHasChanged());
+            Assert.Equal("IN_E11", x_input.GetCurrentSelection());
+            Assert.Equal("OUT_Blade_Tip_Deflection", y_input.GetCurrentSelection());
+            x_input.SetCurrentSelectionClicked("IN_Tip_AvgCapMaterialThickness");
+            single_plot.WaitUntilImageRefreshes();
+            Assert.True(single_plot.ImageHasChanged());
+            y_input.SetCurrentSelectionClicked("IN_E11");
             single_plot.WaitUntilImageRefreshes();
             Assert.True(single_plot.ImageHasChanged());
 
