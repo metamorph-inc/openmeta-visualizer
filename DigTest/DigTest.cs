@@ -350,16 +350,18 @@ namespace DigTest
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(5.0));
 
             ShinyUtilities.OpenTabPanel(driver, "master_tabset", "Data Table");
-            Assert.True(new ShinyCheckboxInput(driver, "DataTable-use_filtered").GetStartState());
+            var use_filtered = new ShinyCheckboxInput(driver, "DataTable-use_filtered");
+            Assert.True(use_filtered.GetStartState());
             Assert.Equal("TOPSIS", new ShinySelectInput(driver, "DataTable-process_method").GetCurrentSelection());
 
-            //TODO(tthomas): Fix failure to restore weight slider value.
-            //Assert.Equal(0.5, new ShinySliderInput(driver, "DataTable-rnk7").GetValue());
-            //wait.Until(d => driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[1]")).GetAttribute("textContent") == "140");
-            //Assert.Equal("1", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[2]")).GetAttribute("textContent"));
-            //Assert.Equal("0.828514676583442", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[3]")).GetAttribute("textContent"));
-            //Assert.Equal("32-16", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[4]")).GetAttribute("textContent"));
-            //Assert.Equal("8a3c95db-2fa6-4fbc-badd-34a119d1c37e", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[5]")).GetAttribute("textContent"));
+            Assert.Equal(0.5, new ShinySliderInput(driver, "DataTable-rnk7").GetValue());
+            wait.Until(d => driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[1]")).GetAttribute("textContent") == "388");
+            Assert.False(use_filtered.ToggleState());
+            wait.Until(d => driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[1]")).GetAttribute("textContent") == "140");
+            Assert.Equal("1", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[2]")).GetAttribute("textContent"));
+            Assert.Equal("0.828514676583442", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[3]")).GetAttribute("textContent"));
+            Assert.Equal("32-16", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[4]")).GetAttribute("textContent"));
+            Assert.Equal("8a3c95db-2fa6-4fbc-badd-34a119d1c37e", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[5]")).GetAttribute("textContent"));
 
             var weight_metrics = new ShinySelectMultipleInput(driver, "DataTable-weightMetrics");
             Assert.Equal("OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection", weight_metrics.GetCurrentSelection());
