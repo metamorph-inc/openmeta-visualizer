@@ -156,6 +156,7 @@ namespace DigTest
             ShinyUtilities.OpenTabPanel(driver, "master_tabset", "Explore");
 
             // Test Pairs Plot
+            ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Variables");
             Assert.True(wait.Until(driver1 => driver.FindElement(By.XPath("//*[@id='Explore-pairs_plot']/img")).Displayed));
             var display = new ShinySelectMultipleInput(driver, "Explore-display");
             var pairs_plot = new ShinyPlot(driver, "Explore-pairs_plot");
@@ -165,11 +166,24 @@ namespace DigTest
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
             var start = pairs_plot.ImageStats();
-            var autorender = new ShinyCheckboxInput(driver, "Explore-auto_render");
-            Assert.True(autorender.GetStartState());
-            //TODO(tthomas): Test Delayed Render
-            //Assert.False(autorender.ToggleState());
-            //ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Variables");
+            var auto_render = new ShinyCheckboxInput(driver, "Explore-auto_render");
+            pairs_plot.ImageHasChanged(); // Clear Flag
+            Assert.True(auto_render.GetStartState());
+            Assert.False(auto_render.ToggleState());
+            Thread.Sleep(400);
+            Assert.False(pairs_plot.ImageHasChanged());
+            ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Variables");
+            display.AppendSelection("IN");
+            Thread.Sleep(300);
+            Assert.False(pairs_plot.ImageHasChanged());
+            ShinyUtilities.ClickIDWithScroll(driver, "Explore-render_plot");
+            wait.Until(d => pairs_plot.ImageHasChanged());
+            display.AppendSelection("IN");
+            Thread.Sleep(300);
+            Assert.False(pairs_plot.ImageHasChanged());
+            ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
+            Assert.True(auto_render.ToggleState());
+            wait.Until(d => pairs_plot.ImageHasChanged());
 
             var upperpanel = new ShinyCheckboxInput(driver, "Explore-pairs_upper_panel");
             Assert.False(upperpanel.GetStartState());
@@ -259,7 +273,7 @@ namespace DigTest
             // Test Pairs Plot
             Assert.True(wait.Until(driver1 => driver.FindElement(By.XPath("//*[@id='Explore-pairs_plot']/img")).Displayed));
             var display = new ShinySelectMultipleInput(driver, "Explore-display");
-            Assert.Equal("IN_HubMaterial, IN_E11, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection", display.GetCurrentSelection());
+            Assert.Equal("IN_HubMaterial, IN_E11, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection, IN_E22, IN_ElemCount", display.GetCurrentSelection());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
             Assert.True(new ShinyCheckboxInput(driver, "Explore-auto_render").GetStartState());
