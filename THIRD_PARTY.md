@@ -1,6 +1,7 @@
 Third-party software used by the OpenMETA Visualizer
+====================================================
 
-  * `R` - [The R Project for Statistical Computing](https -//www.r-project.org/) - GPLv2 *or* GPLv3
+  * `R` - [The R Project for Statistical Computing](https://www.r-project.org/) - GPLv2 *or* GPLv3
 
 Bundled R packages
 ------------------
