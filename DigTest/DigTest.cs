@@ -266,7 +266,15 @@ namespace DigTest
 
             //Test Single Point Details
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Point Details");
-            new ShinySelectInput(driver, "Explore-details_guid").SetCurrentSelectionTyped("0f700");
+            var guid = new ShinySelectInput(driver, "Explore-details_guid");
+            Assert.Equal("d6d307bd-ea1c-4d99-9d92-c82d0f239142", guid.GetCurrentSelection());
+            ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
+            IAction dbl_click_single_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-single_plot")), 137, 266).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
+            dbl_click_single_plot.Perform();
+            Thread.Sleep(200);
+            Assert.Equal("39a915ac-7c32-469f-a5e5-05bb21e83297", guid.GetCurrentSelection());
+            //wait.Until(d => "39a915ac-7c32-469f-a5e5-05bb21e83297" == guid.GetCurrentSelection());
+            guid.SetCurrentSelectionTyped("0f700");
             var expected_details = "                                               \r\nCfgID                                \"32-20\"   \r\nIN_E11                               \"27684.36\"\r\nIN_E22                               \"72611.63\"\r\nIN_ElemCount                         \"44\"      \r\nIN_HubMaterial                       \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"81.6862\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"22.29602\"\r\nOUT_Blade_Cost_Total (USD)           \"148647.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2639.237\"";
             wait.Until(d => expected_details == ShinyUtilities.ReadVerbatimText(driver, "Explore-point_details"));
 
@@ -281,8 +289,9 @@ namespace DigTest
         private void ExploreCheck(IWebDriver driver)
         {
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
-            
+
             // Test Pairs Plot
+            ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
             Assert.True(wait.Until(driver1 => driver.FindElement(By.XPath("//*[@id='Explore-pairs_plot']/img")).Displayed));
             var display = new ShinySelectMultipleInput(driver, "Explore-display");
             Assert.Equal("IN_HubMaterial, IN_E11, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection, IN_E22, IN_ElemCount", display.GetCurrentSelection());
@@ -313,8 +322,8 @@ namespace DigTest
 
             //Test Single Point Details
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Point Details");
-            Assert.True(new ShinySelectInput(driver, "Explore-details_guid").GetCurrentSelection().StartsWith("0f700"));
-            var expected_details = "                                               \r\nCfgID                                \"32-20\"   \r\nIN_E11                               \"27684.36\"\r\nIN_E22                               \"72611.63\"\r\nIN_ElemCount                         \"44\"      \r\nIN_HubMaterial                       \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"81.6862\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"22.29602\"\r\nOUT_Blade_Cost_Total (USD)           \"148647.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2639.237\"";
+            Assert.Equal(new ShinySelectInput(driver, "Explore-details_guid").GetCurrentSelection(), "39a915ac-7c32-469f-a5e5-05bb21e83297");
+            var expected_details = "                                               \r\nCfgID                                \"32-16\"   \r\nIN_E11                               \"29825.53\"\r\nIN_E22                               \"22207.16\"\r\nIN_ElemCount                         \"48\"      \r\nIN_HubMaterial                       \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"80.2254\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"20.98778\"\r\nOUT_Blade_Cost_Total (USD)           \"146684.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2506.835\"";
             Assert.Equal(expected_details, ShinyUtilities.ReadVerbatimText(driver, "Explore-point_details"));
 
             // Return to Pairs Plot
