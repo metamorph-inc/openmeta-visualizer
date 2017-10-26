@@ -135,34 +135,28 @@ server <- function(input, output, session, data) {
   })
   
   #UI class for each metric UI
-  generateMetricUI <- function(current, slider, radio, util, func) {
+  generateMetricUI <- function(current) {
     
-    if(missing(slider) & missing(radio) & missing(util) & missing(func)){
-      slider_val <- input[[paste0('rnk', current)]]
-      if(is.null(slider_val))
-        slider_val <- 1
-      
-      radio_val <- input[[paste0('sel', current)]]
-      if(is.null(radio_val))
-        radio_val <- "Min"
-      
-      util_val <- input[[paste0('util', current)]]
-      if(is.null(util_val))
-        util_val <- FALSE
-      
-      func_val <- input[[paste0('func', current)]]
-    }
-    else{
-      slider_val <- slider
-      radio_val <- radio
-      util_val <- util
-      func_val <- func
-    }
+    slider <- input[[paste0('rnk', current)]]
+    if(is.null(slider))
+      slider <- si(ns(paste0('rnk', current)), 1)
+    
+    radio <- input[[paste0('sel', current)]]
+    if(is.null(radio))
+      radio <- si(ns(paste0('sel', current)), "Min")
+    
+    util <- input[[paste0('util', current)]]
+    if(is.null(util))
+      util <- si(ns(paste0('util', current)), FALSE)
+    
+    func <- input[[paste0('func', current)]]
+    if(is.null(func))
+      func <- si(ns(paste0('func', current)), "")
     
     if(input$process_method == 'TOPSIS')
-      TOPSISMetricUI(current, radio_val, slider_val)
+      TOPSISMetricUI(current, radio, slider)
     else if(input$process_method == 'Simple Metric w/ TxFx')
-      SimpleMetricUI(current, radio_val, slider_val, util_val, func_val)
+      SimpleMetricUI(current, radio, slider, util, func)
   }
   
   TOPSISMetricUI <- function(current, radio_val, slider_val) {

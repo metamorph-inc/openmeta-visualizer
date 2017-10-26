@@ -13,8 +13,8 @@
         </Extension>
 
         <!-- add to right-click menu in explorer -->
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\SystemFileAssociations\.csv\shell\edit.Dig" Value="Open with OpenMETA Visualizer" Type="string" />
-        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\SystemFileAssociations\.csv\shell\edit.Dig\command" Value="&quot;[#Dig_run_csvonly]&quot; &quot;%1&quot; &quot;[INSTALLDIR]&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\SystemFileAssociations\.csv\shell\edit.DigVisualizer" Value="Open with OpenMETA Visualizer" Type="string" />
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Classes\SystemFileAssociations\.csv\shell\edit.DigVisualizer\command" Value="&quot;[#Dig_run_csvonly]&quot; &quot;%1&quot; &quot;[INSTALLDIR]&quot;" Type="string" />
 
     </Component>
     </ComponentGroup>
