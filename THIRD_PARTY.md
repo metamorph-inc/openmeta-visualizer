@@ -66,52 +66,56 @@ Bundled R packages
   * `xtable` - GPLv2 *or* GPLv3
   * `yaml` - BSD License
 
-Top-level `npm` packages
-------------------------
+Top-level `npm` run-time dependencies
+-------------------------------------
 
-* `autoprefixer` - MIT (used at build-time only)
-* `babel-core` - MIT (used at build-time only)
-* `babel-eslint` - MIT (used at build-time only)
-* `babel-jest` - MIT (used at build-time only)
-* `babel-loader` - MIT (used at build-time only)
-* `babel-preset-react-app` - MIT (used at build-time only)
 * `babel-runtime` - MIT
 * `bootstrap` - MIT
-* `case-sensitive-paths-webpack-plugin` - MIT (used at build-time only)
-* `chalk` - MIT (used at build-time only)
 * `core-js` - MIT
-* `css-loader` - MIT (used at build-time only)
-* `dotenv` - BSD-2-Clause (used at build-time only)
-* `enzyme-adapter-react-16` - MIT (used at build-time only)
-* `eslint` - MIT (used at build-time only)
-* `eslint-config-react-app` - MIT (used at build-time only)
-* `eslint-loader` - MIT (used at build-time only)
-* `eslint-plugin-flowtype` - BSD-3-Clause (used at build-time only)
-* `eslint-plugin-import` - MIT (used at build-time only)
-* `eslint-plugin-jsx-a11y` - MIT (used at build-time only)
-* `eslint-plugin-react` - MIT (used at build-time only)
-* `extract-text-webpack-plugin` - MIT (used at build-time only)
-* `file-loader` - MIT (used at build-time only)
-* `fs-extra` - MIT (used at build-time only)
-* `html-webpack-plugin` - MIT (used at build-time only)
-* `jest` - MIT (used at build-time only)
 * `lodash` - MIT
 * `object-assign` - MIT
 * `plotly.js` - MIT
-* `postcss-flexbugs-fixes` - MIT (used at build-time only)
-* `postcss-loader` - MIT (used at build-time only)
 * `promise` - MIT
 * `react` - MIT
 * `react-bootstrap` - MIT
-* `react-dev-utils` - MIT (used at build-time only)
 * `react-dom` - MIT
 * `react-overlays` - MIT
-* `style-loader` - MIT (used at build-time only)
-* `sw-precache-webpack-plugin` - ISC (used at build-time only)
-* `url-loader` - MIT (used at build-time only)
-* `webpack` - MIT (used at build-time only)
-* `webpack-dev-server` - MIT (used at build-time only)
-* `webpack-manifest-plugin` - MIT (used at build-time only)
 * `whatwg-fetch` - MIT
-* `enzyme` - MIT (used at build-time only)
-* `react-test-renderer` - MIT (used at build-time only)
+
+Top-level `npm` build-time dependencies
+---------------------------------------
+
+* `autoprefixer` - MIT license
+* `babel-core` - MIT license
+* `babel-eslint` - MIT license
+* `babel-jest` - MIT license
+* `babel-loader` - MIT license
+* `babel-preset-react-app` - MIT license
+* `case-sensitive-paths-webpack-plugin` - MIT license
+* `chalk` - MIT license
+* `css-loader` - MIT license
+* `dotenv` - 2-clause BSD license
+* `enzyme-adapter-react-16` - MIT license
+* `eslint` - MIT license
+* `eslint-config-react-app` - MIT license
+* `eslint-loader` - MIT license
+* `eslint-plugin-flowtype` - BSD license
+* `eslint-plugin-import` - MIT license
+* `eslint-plugin-jsx-a11y` - MIT license
+* `eslint-plugin-react` - MIT license
+* `extract-text-webpack-plugin` - MIT license
+* `file-loader` - MIT license
+* `fs-extra` - MIT license
+* `html-webpack-plugin` - MIT license
+* `jest` - MIT license
+* `postcss-flexbugs-fixes` - MIT license
+* `postcss-loader` - MIT license
+* `react-dev-utils` - MIT license
+* `style-loader` - MIT license
+* `sw-precache-webpack-plugin` - ISC license
+* `url-loader` - MIT license
+* `webpack` - MIT license
+* `webpack-dev-server` - MIT license
+* `webpack-manifest-plugin` - MIT license
+* `enzyme` - MIT license
+* `react-test-renderer` - MIT license
