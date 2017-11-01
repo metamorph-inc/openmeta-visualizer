@@ -51,12 +51,6 @@ ui <- function(id) {
                   condition = paste0('input["', ns('auto_render'), '"] == false'),
                   actionButton(ns("render_plot"), "Render Plot"))
               ),
-              # TODO(tthomas): Add this functionality back in.
-              # h4("Download"),
-              # downloadButton(ns('exportData'), 'Dataset'), 
-              # paste("          "),
-              # downloadButton(ns('exportPlot'), 'Plot'), hr(),
-              # actionButton(ns("resetOptions"), "Reset to Default Options")
               bsCollapsePanel("Plot Options",
                 checkboxInput(ns("auto_render"), "Render Automatically",
                               value = si(ns("auto_render"), TRUE)),
@@ -76,6 +70,10 @@ ui <- function(id) {
                             min=0.5, max=2.5,
                             value=si(ns("pairs_plot_marker_size"),1),
                             step=0.025)
+              ),
+              bsCollapsePanel("Export",
+                downloadButton(ns("export_data"), "Dataset"),
+                downloadButton(ns("export_plot"), "Plot")
               )
             ),
             hr(),
@@ -253,36 +251,7 @@ server <- function(input, output, session, data) {
       # Clear the error messages, if any.
       output$pairs_display_error <- renderUI(tagList(""))
       output$pairs_filter_error <- renderUI(tagList(""))
-      
-      # pairs_setup()
-      if(input$pairs_upper_panel) {
-        if(input$pairs_trendlines) {
-          params <- list(upper.panel=panel.smooth, lower.panel=panel.smooth)
-        }
-        else {
-          params <- list()
-        }
-      }
-      else {
-        if(input$pairs_trendlines) {
-          params <- list(lower.panel = panel.smooth, upper.panel = NULL)
-        }
-        else {
-          params <- list(upper.panel = NULL)
-        }
-      }
-      pairs_data <- PairsData()[PairsVars()]
-      if(input$pairs_units) {
-        names(pairs_data) <- sapply(names(pairs_data), function(name) {
-          data$meta$variables[[name]]$name_with_units
-        })
-      }
-      params <- c(params,
-                  list(x = pairs_data,
-                       col = PairsData()$color,
-                       pch = as.numeric(input$pairs_plot_marker),
-                       cex = as.numeric(input$pairs_plot_marker_size)))
-      do.call(pairs, params)
+      do.call(pairs, PairsParams())
     }
     else {
       if (length(input$display) < 2) {
@@ -296,6 +265,36 @@ server <- function(input, output, session, data) {
         )
       }
     }
+  })
+  
+  PairsParams <- reactive({
+    if(input$pairs_upper_panel) {
+      if(input$pairs_trendlines) {
+        params <- list(upper.panel=panel.smooth, lower.panel=panel.smooth)
+      }
+      else {
+        params <- list()
+      }
+    }
+    else {
+      if(input$pairs_trendlines) {
+        params <- list(lower.panel = panel.smooth, upper.panel = NULL)
+      }
+      else {
+        params <- list(upper.panel = NULL)
+      }
+    }
+    pairs_data <- PairsData()[PairsVars()]
+    if(input$pairs_units) {
+      names(pairs_data) <- sapply(names(pairs_data), function(name) {
+        data$meta$variables[[name]]$name_with_units
+      })
+    }
+    params <- c(params,
+                list(x = pairs_data,
+                     col = PairsData()$color,
+                     pch = as.numeric(input$pairs_plot_marker),
+                     cex = as.numeric(input$pairs_plot_marker_size)))
   })
   
   output$pairs_stats <- renderText({
@@ -373,6 +372,25 @@ server <- function(input, output, session, data) {
       }
     }
   })
+  
+  output$export_data <- downloadHandler(
+    filename = function() { paste('data-', Sys.Date(), '.csv', sep='') },
+    content = function(file) { 
+      write.csv(data$Filtered(), file, row.names = FALSE, quote = FALSE)
+    }
+  )
+  
+  output$export_plot <- downloadHandler(
+    filename = function() { paste('plot-', Sys.Date(), '.pdf', sep='') },
+    content = function(file) {
+      req(isolate(PairsVars()))
+      req(isolate(PairsData()))
+      pdf(paste('plot-', Sys.Date(), '.pdf', sep=''), width = 10, height = 10)
+      do.call(pairs, isolate(PairsParams()))
+      dev.off()
+      file.copy(paste('plot-', Sys.Date(), '.pdf', sep=''), file)
+    }
+  )
   
   # Single Plot Tab ----------------------------------------------------------
 

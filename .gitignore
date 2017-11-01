@@ -3,6 +3,7 @@ deploy/R.wxi
 deploy/SurrogateModeling.wxi
 Dig/.Rhistory
 Dig/datasets/**/*_test.log
+Dig/plot-*.pdf
 DigTest/.vs/
 DigTest/bin/
 DigTest/nuget/
