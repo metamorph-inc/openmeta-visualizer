@@ -789,92 +789,95 @@ Server <- function(input, output, session) {
   ColoredData <- reactive({
     data_colored <- FilteredData()
     data_colored$color <- character(nrow(data_colored))
-    data_colored$color <- "black"  #input$normColor
-    if (input$coloring_source != "None") {
-      if (input$coloring_source == "Live") {
-        type <- input$live_coloring_type
-      }
-      else {
-        type <- data$meta$colorings[[input$coloring_source]]$type
-      }
-      isolate({
-        data$colorings$current <- list()
-        data$colorings$current$name <- input$coloring_source
-        data$colorings$current$type <- type
-      })
-      switch(type,
-        "Max/Min" = 
-        {
-          if (input$coloring_source == "Live") {
-            var <- input$live_coloring_variable_numeric
-            goal <- input$live_coloring_max_min
-          }
-          else {
-            scheme <- data$meta$colorings[[input$coloring_source]]
-            var <- scheme$var
-            goal <- scheme$goal
-          }
-          bins <- 30
-          req(var)
-          divisor <- (data$pre$abs_max()[[var]] - data$pre$abs_min()[[var]]) / bins
-          minimum <- data$pre$abs_min()[[var]]
-          maximum <- data$pre$abs_max()[[var]]
-          cols <- rainbow(bins, 1, 0.875, start = 0, end = 0.325)
-          if (goal == "Maximize") {
-            Bin <- function(value) {max(1, ceiling((value - minimum) / divisor))}
-          } else {
-            Bin <- function(value) {max(1, ceiling((maximum - value) / divisor))}
-          }
-          data_colored$color <- unlist(sapply(data_colored[[var]], function(value) {
-            if(is.na(value)) {
-              "grey"
-            } else {
-              cols[Bin(value)]
-            }
-          }))
-          isolate({
-            data$colorings$current$var <- var
-            data$colorings$current$goal <- goal
-          })
-        },
-        "Discrete" = 
-        {
-          if (input$coloring_source == "Live") {
-            var <- input$live_color_variable_factor
-            palette_selection <- input$live_color_palette
-            if (palette_selection == "Rainbow") {
-              s_value <- input$live_color_rainbow_s
-              v_value <- input$live_color_rainbow_v
-            }
-          }
-          else {
-            scheme <- data$meta$colorings[[input$coloring_source]]
-            var <- scheme$var
-            palette_selection <- scheme$palette
-            if (palette_selection == "Rainbow") {
-              s_value <- scheme$rainbow_s
-              v_value <- scheme$rainbow_v
-            }
-          }
-          variables_list = names(table(data_colored[[var]]))
-          switch(palette_selection,
-                 "Rainbow"={cols <- rainbow(length(variables_list),
-                                            s_value,
-                                            v_value)},
-                 "Heat"={cols <- heat.colors(length(variables_list))},
-                 "Terrain"={cols <- terrain.colors(length(variables_list))},
-                 "Topo"={cols <- topo.colors(length(variables_list))},
-                 "Cm"={cols <- cm.colors(length(variables_list))})
-          for(i in 1:length(variables_list)){
-            data_colored$color[(data_colored[[var]] == variables_list[i])] <- cols[i]
-          }
-          isolate({
-            data$colorings$current$var <- var
-            data$colorings$current$colors <- cols
-          })
+    if(nrow(data_colored) > 0) {
+      data_colored$color <- "black"  #input$normColor
+      if (input$coloring_source != "None") {
+        if (input$coloring_source == "Live") {
+          type <- input$live_coloring_type
         }
-      )
+        else {
+          type <- data$meta$colorings[[input$coloring_source]]$type
+        }
+        isolate({
+          data$colorings$current <- list()
+          data$colorings$current$name <- input$coloring_source
+          data$colorings$current$type <- type
+        })
+        switch(type,
+          "Max/Min" = 
+          {
+            if (input$coloring_source == "Live") {
+              var <- input$live_coloring_variable_numeric
+              goal <- input$live_coloring_max_min
+            }
+            else {
+              scheme <- data$meta$colorings[[input$coloring_source]]
+              var <- scheme$var
+              goal <- scheme$goal
+            }
+            bins <- 30
+            req(var)
+            divisor <- (data$pre$abs_max()[[var]] - data$pre$abs_min()[[var]]) / bins
+            minimum <- data$pre$abs_min()[[var]]
+            maximum <- data$pre$abs_max()[[var]]
+            cols <- rainbow(bins, 1, 0.875, start = 0, end = 0.325)
+            if (goal == "Maximize") {
+              Bin <- function(value) {max(1, ceiling((value - minimum) / divisor))}
+            } else {
+              Bin <- function(value) {max(1, ceiling((maximum - value) / divisor))}
+            }
+            data_colored$color <- unlist(sapply(data_colored[[var]], function(value) {
+              if(is.na(value)) {
+                "grey"
+              } else {
+                cols[Bin(value)]
+              }
+            }))
+            isolate({
+              data$colorings$current$var <- var
+              data$colorings$current$goal <- goal
+            })
+          },
+          "Discrete" = 
+          {
+            if (input$coloring_source == "Live") {
+              var <- input$live_color_variable_factor
+              palette_selection <- input$live_color_palette
+              if (palette_selection == "Rainbow") {
+                s_value <- input$live_color_rainbow_s
+                v_value <- input$live_color_rainbow_v
+              }
+            }
+            else {
+              scheme <- data$meta$colorings[[input$coloring_source]]
+              var <- scheme$var
+              palette_selection <- scheme$palette
+              if (palette_selection == "Rainbow") {
+                s_value <- scheme$rainbow_s
+                v_value <- scheme$rainbow_v
+              }
+            }
+            variables_list = names(table(data_colored[[var]]))
+            switch(palette_selection,
+                   "Rainbow"={cols <- rainbow(length(variables_list),
+                                              s_value,
+                                              v_value)},
+                   "Heat"={cols <- heat.colors(length(variables_list))},
+                   "Terrain"={cols <- terrain.colors(length(variables_list))},
+                   "Topo"={cols <- topo.colors(length(variables_list))},
+                   "Cm"={cols <- cm.colors(length(variables_list))})
+            for(i in 1:length(variables_list)){
+              data_colored$color[(data_colored[[var]] == variables_list[i])] <- cols[i]
+            }
+            isolate({
+              data$colorings$current$var <- var
+              data$colorings$current$colors <- cols
+            })
+          }
+        )
+      }
     }
+    
     # cat("Data Colored.\n")
     # TODO(tthomas): Move adding units code out into the Explore.R tab.
     # names(data_colored) <- lapply(names(data_colored), AddUnits)
