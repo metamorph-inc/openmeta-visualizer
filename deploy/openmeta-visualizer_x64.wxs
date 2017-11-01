@@ -83,6 +83,16 @@
           <RegistryValue Name='VCSHASH' Type='string' Value='$(var.VCSHASH)'/>
         </RegistryKey>
       </Component>
+      <Component Id='reg_PETBROWSER' Guid='{094b0ccf-de16-4167-932d-42293fa20d6e}' Win64='no'>
+        <RegistryKey Root='HKLM' Key='Software\META\PETBrowser\PETTools\OpenMetaVisualizer'>
+          <RegistryValue Type='string' Value='OpenMETA Visualizer'/>
+          <RegistryValue Name='ActionName' Type='string' Value='Launch in OpenMETA Visualizer'/>
+          <RegistryValue Name='ExecutableFilePath' Type='string' Value='[INSTALLDIR]\Dig\run.cmd'/>
+          <RegistryValue Name='ProcessArguments' Type='string' Value='"%1" "[INSTALLDIR]"'/>
+          <RegistryValue Name='WorkingDirectory' Type='string' Value='%2'/>
+          <RegistryValue Name='ShowConsoleWindow' Type='integer' Value='0'/>
+        </RegistryKey>
+      </Component>
     </DirectoryRef>
     <DirectoryRef Id="dir_Dig_www">
         <Directory Id="SurrogateModeling" Name="SurrogateModeling" />
@@ -99,6 +109,7 @@
       <ComponentRef Id='reg_PATH' />
       <ComponentRef Id='reg_VERSIONSTR' />
       <ComponentRef Id='reg_VCSHASH' />
+      <ComponentRef Id='reg_PETBROWSER' />
     </Feature>
 
     <!-- =========================================================== -->
