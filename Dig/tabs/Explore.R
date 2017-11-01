@@ -383,10 +383,24 @@ server <- function(input, output, session, data) {
   output$export_plot <- downloadHandler(
     filename = function() { paste('plot-', Sys.Date(), '.pdf', sep='') },
     content = function(file) {
+      removeNotification(id=ns("pairs_plot_export_notif"))
       req(isolate(PairsVars()))
       req(isolate(PairsData()))
       pdf(paste('plot-', Sys.Date(), '.pdf', sep=''), width = 10, height = 10)
-      do.call(pairs, isolate(PairsParams()))
+      if(nrow(isolate(PairsData()))) {
+        do.call(pairs, isolate(PairsParams()))
+        showNotification(id=ns("pairs_plot_export_notif"),
+                         ui="Plot successfully exported!",
+                         duration=NULL)
+      } else {
+        browser()
+        par(mar = c(0,0,0,0))
+        plot(c(0, 1), c(0, 1), ann = F, bty = 'n', type = 'n', xaxt = 'n', yaxt = 'n')
+        text(0.5, 0.5, "No data points fit the current filtering scheme.")
+        showNotification(id=ns("pairs_plot_export_notif"),
+                         ui="Plot export failed due to lack of data!",
+                         duration=NULL)
+      }
       dev.off()
       file.copy(paste('plot-', Sys.Date(), '.pdf', sep=''), file)
     }
