@@ -94,6 +94,8 @@ namespace DigTest
             var options = new OpenQA.Selenium.Chrome.ChromeOptions { };
             options.AddUserProfilePreference("auto-open-devtools-for-tabs", "true");
             options.AddArgument("--start-maximized");
+            options.AddUserProfilePreference("download.default_directory", Path.GetFullPath(session.download_directory));
+            options.AddUserProfilePreference("disable-popup-blocking", "true");
 
             // Launch first session
             File.AppendAllText(session.log_file, "First Launch Log ------------------------\n");
@@ -130,7 +132,7 @@ namespace DigTest
                 driver.Navigate().GoToUrl(wrapper.url);
                 Assert.True(ShinyUtilities.WaitUntilDocumentReady(driver));
 
-                ExploreCheck(driver);
+                ExploreCheck(driver, session);
                 DataTableCheck(driver);
                 HistogramCheck(driver);
                 PETRefinementCheck(driver);
@@ -140,8 +142,7 @@ namespace DigTest
                 wrapper.AppendLog(session.log_file);
             }
 
-            File.Delete(session.copied_config);
-            File.Delete(session.data_file);
+            session.Cleanup();
         }
 
         /// <summary>
@@ -163,7 +164,7 @@ namespace DigTest
             display.AppendSelection("OUT");
             display.AppendSelection("OUT");
             pairs_plot.WaitUntilImageRefreshes();
-
+            
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
             var start = pairs_plot.ImageStats();
             var auto_render = new ShinyCheckboxInput(driver, "Explore-auto_render");
@@ -212,7 +213,7 @@ namespace DigTest
             var third_count = pairs_plot.ImageStats();
             Assert.True(third_count[Color.FromArgb(255, 0, 0, 0)] > second_count[Color.FromArgb(255, 0, 0, 0)]);
 
-            
+
             //Test Single Plot
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
             var single_plot = new ShinyPlot(driver, "Explore-single_plot");
@@ -286,7 +287,7 @@ namespace DigTest
         /// Check Explore tab after session restore.
         /// </summary>
         /// <param name="driver"></param>
-        private void ExploreCheck(IWebDriver driver)
+        private void ExploreCheck(IWebDriver driver, ShinySession session)
         {
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
 
@@ -305,7 +306,19 @@ namespace DigTest
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Markers");
             Assert.Equal("3", new ShinySelectInput(driver, "Explore-pairs_plot_marker").GetCurrentSelection());
             Assert.Equal(1.5, new ShinySliderInput(driver, "Explore-pairs_plot_marker_size").GetValue());
-            
+
+            ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Export");
+            var downloads = new DirectoryInfo(session.download_directory);
+            Assert.Equal(0, downloads.EnumerateFiles().Count());
+            driver.FindElement(By.Id("Explore-export_data")).Click();
+            Thread.Sleep(300);
+            var csv_file = downloads.GetFiles("*.csv").First();
+            Assert.NotNull(csv_file);
+            Assert.Equal(24, File.ReadLines(csv_file.FullName).Count()); // Check contents
+            driver.FindElement(By.Id("Explore-export_plot")).Click();
+            Thread.Sleep(500);
+            Assert.Equal(1, downloads.GetFiles("*.pdf").Count());
+
             //Test Single Plot
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
             Assert.Equal("IN_Tip_AvgCapMaterialThickness", new ShinySelectInput(driver, "Explore-x_input").GetCurrentSelection());

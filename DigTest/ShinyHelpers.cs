@@ -19,6 +19,7 @@ namespace DigTest
         public string copied_config { get; }
         public string log_file { get; }
         public string data_file { get; }
+        public string download_directory;
 
         public ShinySession(string config_file)
         {
@@ -27,6 +28,24 @@ namespace DigTest
             copied_config = original_config.Insert(original_config.LastIndexOf(".json"), "_test");
             log_file = Path.ChangeExtension(copied_config, ".log");
             data_file = Path.ChangeExtension(copied_config.Insert(original_config.LastIndexOf(".json"), "_data"), ".csv");
+            download_directory = Path.Combine(DigTest.RootPath, "Downloads");
+            EmptyDownloadsDirectory();
+        }
+
+        private void EmptyDownloadsDirectory()
+        {
+            var di = Directory.CreateDirectory(download_directory);
+            foreach (var file in di.GetFiles())
+            {
+                file.Delete();
+            }
+        }
+
+        public void Cleanup()
+        {
+            new DirectoryInfo(download_directory).Delete(true);
+            File.Delete(copied_config);
+            File.Delete(data_file);
         }
     }
 
