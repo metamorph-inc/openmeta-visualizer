@@ -167,8 +167,10 @@ server <- function(input, output, session, data) {
 
         write.csv(ivarDf, file = surrogateCsvPath, row.names=FALSE, quote=FALSE)
 
-        result = system2("..\\Python27\\Scripts\\python.exe",
-                args = c("..\\RunMergedPetAtPoints.py",
+        meta_path = Sys.getenv("DIG_META_PATH")
+
+        result = system2(file.path(meta_path, "bin\\Python27\\Scripts\\python.exe"),
+                args = c(shQuote(file.path(meta_path, "bin\\RunMergedPetAtPoints.py")),
                          shQuote(results_directory),
                          shQuote(config_id),
                          shQuote(surrogateCsvPath)),
@@ -289,7 +291,7 @@ server <- function(input, output, session, data) {
       } else if(surrogateModel == "Kriging Surrogate (Estimate Nugget)") {
         model = km(design=trainingDataIndep, response=trainingDataDep[, colIndex], nugget.estim=TRUE)
         predictResults = predict(model, ivarDf, type='SK')
-        
+
         resultArray[, colIndex, 1] = rep(2, nrow(ivarDf)) # COMPUTED from DependentVarState enum
         resultArray[, colIndex, 2] = predictResults$mean
         resultArray[, colIndex, 3] = predictResults$sd
