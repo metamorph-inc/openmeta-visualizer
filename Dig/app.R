@@ -85,7 +85,7 @@ if (dig_dataset_config == "") {
 }
 
 if(file.exists(config_filename)) {
-  visualizer_config <- fromJSON(config_filename, simplifyDataFrame=FALSE)
+  visualizer_config <- fromJSON(file(config_filename, encoding="UTF-8"), simplifyDataFrame=FALSE)
 } else {
   visualizer_config <- list()
   visualizer_config$raw_data <- basename(dig_input_csv)
@@ -188,11 +188,11 @@ tab_environments <- mapply(function(file_name, id) {
 
 # Read input dataset file
 cat("Reading raw data:\n")
-raw <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T)
+raw <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
 if(!is.null(visualizer_config$augmented_data)) {
   augmented_filename <- file.path(launch_dir,
                                   visualizer_config$augmented_data)
-  augmented <- read.csv(augmented_filename, fill=T)
+  augmented <- read.csv(augmented_filename, fill=T, encoding="UTF-8")
   extra <- raw[!(raw$GUID %in% augmented$GUID),]
   if(nrow(extra) > 0) {
     cat(paste0("  Added ", nrow(extra), " points.\n"))
@@ -288,7 +288,7 @@ Server <- function(input, output, session) {
     },
     # This function returns the content of log_file
     valueFunc = function () {
-      read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T)
+      read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
     }
   )
   
@@ -1082,7 +1082,8 @@ Server <- function(input, output, session) {
     write.csv(isolate(data$raw$df),
               file=file.path(launch_dir, visualizer_config$augmented_data),
               row.names = FALSE,
-              quote = FALSE)
+              quote = FALSE,
+              fileEncoding = "UTF-8")
     
     # Prepare metadata for saving to visualizer config file
     meta <- isolate(reactiveValuesToList(data$meta))
@@ -1119,8 +1120,10 @@ Server <- function(input, output, session) {
     
     # Save visualizer config file
     if(SAVE_DIG_INPUT_CSV || dig_input_csv == "") {
+      config_file_connection <- file(config_filename, encoding="UTF-8")
       write(toJSON(visualizer_config, pretty = TRUE, auto_unbox = TRUE),
-            file=config_filename)
+            file=config_file_connection)
+      close(config_file_connection)
       cat("Session saved.\n")
     }
     
