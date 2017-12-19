@@ -218,7 +218,7 @@ namespace DigTest
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
             var single_plot = new ShinyPlot(driver, "Explore-single_plot");
             var x_input = new ShinySelectInput(driver, "Explore-x_input");
-            Assert.Equal("IN_HubMaterial", x_input.GetCurrentSelection());
+            Assert.Equal("IN_MatériauDeMoyeu", x_input.GetCurrentSelection());
             var y_input = new ShinySelectInput(driver, "Explore-y_input");
             Assert.Equal("IN_E11", y_input.GetCurrentSelection());
 
@@ -276,7 +276,7 @@ namespace DigTest
             Assert.Equal("39a915ac-7c32-469f-a5e5-05bb21e83297", guid.GetCurrentSelection());
             //wait.Until(d => "39a915ac-7c32-469f-a5e5-05bb21e83297" == guid.GetCurrentSelection());
             guid.SetCurrentSelectionTyped("0f700");
-            var expected_details = "                                               \r\nCfgID                                \"32-20\"   \r\nIN_E11                               \"27684.36\"\r\nIN_E22                               \"72611.63\"\r\nIN_ElemCount                         \"44\"      \r\nIN_HubMaterial                       \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"81.6862\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"22.29602\"\r\nOUT_Blade_Cost_Total (USD)           \"148647.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2639.237\"";
+            var expected_details = "                                               \r\nCfgID                                \"32-20\"   \r\nIN_E11                               \"27684.36\"\r\nIN_E22                               \"72611.63\"\r\nIN_ElemCount                         \"44\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"81.6862\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"22.29602\"\r\nOUT_Blade_Cost_Total (USD)           \"148647.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2639.237\"";
             wait.Until(d => expected_details == ShinyUtilities.ReadVerbatimText(driver, "Explore-point_details"));
 
             // Return to Pairs Plot
@@ -295,7 +295,7 @@ namespace DigTest
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
             Assert.True(wait.Until(driver1 => driver.FindElement(By.XPath("//*[@id='Explore-pairs_plot']/img")).Displayed));
             var display = new ShinySelectMultipleInput(driver, "Explore-display");
-            Assert.Equal("IN_HubMaterial, IN_E11, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection, IN_E22, IN_ElemCount", display.GetCurrentSelection());
+            Assert.Equal("IN_MatériauDeMoyeu, IN_E11, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection, IN_E22, IN_ElemCount", display.GetCurrentSelection());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
             Assert.True(new ShinyCheckboxInput(driver, "Explore-auto_render").GetStartState());
@@ -336,7 +336,7 @@ namespace DigTest
             //Test Single Point Details
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Point Details");
             Assert.Equal(new ShinySelectInput(driver, "Explore-details_guid").GetCurrentSelection(), "39a915ac-7c32-469f-a5e5-05bb21e83297");
-            var expected_details = "                                               \r\nCfgID                                \"32-16\"   \r\nIN_E11                               \"29825.53\"\r\nIN_E22                               \"22207.16\"\r\nIN_ElemCount                         \"48\"      \r\nIN_HubMaterial                       \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"80.2254\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"20.98778\"\r\nOUT_Blade_Cost_Total (USD)           \"146684.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2506.835\"";
+            var expected_details = "                                               \r\nCfgID                                \"32-16\"   \r\nIN_E11                               \"29825.53\"\r\nIN_E22                               \"22207.16\"\r\nIN_ElemCount                         \"48\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"80.2254\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"20.98778\"\r\nOUT_Blade_Cost_Total (USD)           \"146684.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2506.835\"";
             Assert.Equal(expected_details, ShinyUtilities.ReadVerbatimText(driver, "Explore-point_details"));
 
             // Return to Pairs Plot
@@ -455,7 +455,7 @@ namespace DigTest
             Assert.Equal("9180", driver.FindElement(By.Id("PETRefinement-new_min_IN_E22")).GetAttribute("value"));
             Assert.Equal("77.01253438", driver.FindElement(By.Id("PETRefinement-new_min_IN_Root_AvgCapMaterialThickness")).GetAttribute("value"));
             Assert.Equal("30", driver.FindElement(By.Id("PETRefinement-new_max_IN_Tip_AvgCapMaterialThickness")).GetAttribute("value"));
-            Assert.Equal("Steel, Aluminum", driver.FindElement(By.Id("PETRefinement-new_selection_IN_HubMaterial")).GetAttribute("value"));
+            Assert.Equal("Acier, Aluminum", driver.FindElement(By.Id("PETRefinement-new_selection_IN_MatériauDeMoyeu")).GetAttribute("value"));
             Assert.Equal("/Testing/Parametric Studies/WindTurbinePET_Refined", driver.FindElement(By.Id("PETRefinement-newPetName")).GetAttribute("value"));
             ShinyUtilities.ScrollToTop(driver);
         }
@@ -478,7 +478,7 @@ namespace DigTest
             Assert.Equal("9180", driver.FindElement(By.Id("PETRefinement-new_min_IN_E22")).GetAttribute("value"));
             Assert.Equal("77.01253438", driver.FindElement(By.Id("PETRefinement-new_min_IN_Root_AvgCapMaterialThickness")).GetAttribute("value"));
             Assert.Equal("30", driver.FindElement(By.Id("PETRefinement-new_max_IN_Tip_AvgCapMaterialThickness")).GetAttribute("value"));
-            Assert.Equal("Steel, Aluminum", driver.FindElement(By.Id("PETRefinement-new_selection_IN_HubMaterial")).GetAttribute("value"));
+            Assert.Equal("Acier, Aluminum", driver.FindElement(By.Id("PETRefinement-new_selection_IN_MatériauDeMoyeu")).GetAttribute("value"));
             Assert.Equal("/Testing/Parametric Studies/WindTurbinePET_Refined", driver.FindElement(By.Id("PETRefinement-newPetName")).GetAttribute("value"));
         }
 
@@ -568,13 +568,13 @@ namespace DigTest
             Thread.Sleep(500);
             Assert.True(stats.GetCurrentPoints() < points_before_deselect_28);
 
-            var filter_hub = new ShinySelectMultipleInput(driver, "filter_IN_HubMaterial", false);
-            Assert.Equal("1. Aluminum, 2. Steel", filter_hub.GetCurrentSelection());
-            filter_hub.ToggleItem("1. Aluminum");
-            Assert.Equal("2. Steel", filter_hub.GetCurrentSelection());
-            filter_hub.ToggleItem("1. Aluminum");
-            filter_hub.ToggleItem("2. Steel");
-            Assert.Equal("1. Aluminum", filter_hub.GetCurrentSelection());
+            var filter_hub = new ShinySelectMultipleInput(driver, "filter_IN_MatériauDeMoyeu", false);
+            Assert.Equal("1. Acier, 2. Aluminum", filter_hub.GetCurrentSelection());
+            filter_hub.ToggleItem("2. Aluminum");
+            Assert.Equal("1. Acier", filter_hub.GetCurrentSelection());
+            filter_hub.ToggleItem("2. Aluminum");
+            filter_hub.ToggleItem("1. Acier");
+            Assert.Equal("2. Aluminum", filter_hub.GetCurrentSelection());
 
             Thread.Sleep(500);
             Assert.Equal("20-50", new VisualizerFilterInput(driver, "IN_ElemCount").EntrySetFromTo(20, 50));
@@ -635,7 +635,7 @@ namespace DigTest
             Assert.False(design_selector.SelectedByName("28"));
             Assert.True(design_selector.SelectedByName("30"));
             Assert.True(design_selector.SelectedByName("32"));
-            Assert.Equal("1. Aluminum", new ShinySelectMultipleInput(driver, "filter_IN_HubMaterial", false).GetCurrentSelection());
+            Assert.Equal("2. Aluminum", new ShinySelectMultipleInput(driver, "filter_IN_MatériauDeMoyeu", false).GetCurrentSelection());
             Assert.Equal("20-50", new VisualizerFilterInput(driver, "IN_ElemCount").GetFromTo());
             Assert.Equal(20000, new VisualizerFilterInput(driver, "IN_E22").GetFrom());
             Assert.Equal(160000, new VisualizerFilterInput(driver, "OUT_Blade_Cost_Total").GetTo());

@@ -12,7 +12,7 @@
           "source": ["ParameterStudy", "IN_E22"]
         },
         "HubMaterial": {
-          "source": ["ParameterStudy", "IN_HubMaterial"]
+          "source": ["ParameterStudy", "IN_MatériauDeMoyeu"]
         },
         "Root_AvgCapMaterialThickness": {
           "source": ["ParameterStudy", "IN_Root_AvgCapMaterialThickness"]
@@ -49,9 +49,9 @@
           "RangeMax": 11220,
           "units": ""
         },
-        "IN_HubMaterial": {
+        "IN_MatériauDeMoyeu": {
           "type": "enum",
-          "items": ["Steel", "Aluminum"]
+          "items": ["Acier", "Aluminum"]
         },
         "IN_Root_AvgCapMaterialThickness": {
           "RangeMin": 77,
