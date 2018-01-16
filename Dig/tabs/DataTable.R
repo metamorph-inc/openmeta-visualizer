@@ -476,6 +476,7 @@ server <- function(input, output, session, data) {
         name
       }
     })
+    table_data[] <- lapply(table_data, as.character)
     table_data
   })
   
