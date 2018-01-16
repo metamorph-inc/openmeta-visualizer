@@ -54,11 +54,12 @@ FILTER_WIDTH_IN_COLUMNS <- 2
 pet_config_present <- FALSE
 design_tree_present <- FALSE
 saved_inputs <- NULL
+filters_divs <- list()
 visualizer_config <- NULL
 design_tree <- NULL
 first_raw_poll <- TRUE
 
-dig_input_csv <- Sys.getenv('DIG_INPUT_CSV')
+dig_input_csv <- "C:\\Users\\Tim\\Documents\\tickets\\OPENMETA-367\\results\\r2018-01-15--16-13-27_2y54qtzv\\output.csv"
 dig_dataset_config <- Sys.getenv('DIG_DATASET_CONFIG')
 if (dig_dataset_config == "") {
   if(dig_input_csv == "") {
@@ -288,7 +289,9 @@ Server <- function(input, output, session) {
     },
     # This function returns the content of log_file
     valueFunc = function () {
-      read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
+      data <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
+      print(nrow(data))
+      data
     }
   )
   
@@ -488,23 +491,23 @@ Server <- function(input, output, session) {
   })
   
   # Generates the sliders and select boxes.
-  output$filters <- renderUI({
-    var_selects <- pre$var_range_facs()
-    var_sliders <- pre$var_range_nums_and_ints()
-    
-    div(
-      fluidRow(
-        lapply(var_selects, function(var_select) {
-          GenerateEnumUI(var_select)
-        })
-      ),
-      fluidRow(
-        lapply(var_sliders, function(var_slider) {
-          GenerateSliderUI(var_slider)
-        })
-      )
-    )
-  })
+  # output$filters <- renderUI({
+  #   var_selects <- pre$var_range_facs()
+  #   var_sliders <- pre$var_range_nums_and_ints()
+  #   
+  #   div(
+  #     fluidRow(
+  #       lapply(var_selects, function(var_select) {
+  #         GenerateEnumUI(var_select)
+  #       })
+  #     ),
+  #     fluidRow(
+  #       lapply(var_sliders, function(var_slider) {
+  #         GenerateSliderUI(var_slider)
+  #       })
+  #     )
+  #   )
+  # })
   
   # Slider abbreviation function based off slider_width
   abbreviation_length <- ABBREVIATION_LENGTH
@@ -571,24 +574,17 @@ Server <- function(input, output, session) {
       # slider_value <- c(slider_min, slider_max)
     }
     
-    
-      column(FILTER_WIDTH_IN_COLUMNS,
-             # Hidden well panel for slider tooltip
-             wellPanel(id = paste0("slider_tooltip_", current),
-                       style = "position: absolute; z-index: 65; box-shadow: 10px 10px 15px grey; width: 20vw; left: 1vw; top: -275%; display: none;",
-                       h4(data$meta$variables[[current]]$name_with_units),
-                       textInput(paste0("tooltip_min_", current), "Min:"),
-                       textInput(paste0("tooltip_max_", current), "Max:"),
-                       actionButton(paste0("submit_", current), "Apply","success")
-             ),
-             # The slider itself
-             sliderInput(paste0('filter_', current),
-                         AbbreviateLabel(current),
-                         step = step,
-                         min = slider_min,
-                         max = slider_max,
-                         value = slider_value)
-      )
+    column(FILTER_WIDTH_IN_COLUMNS,
+           # Hidden well panel for slider tooltip
+           wellPanel(id = paste0("slider_tooltip_", current),
+                     style = "position: absolute; z-index: 65; box-shadow: 10px 10px 15px grey; width: 20vw; left: 1vw; top: -275%; display: none;",
+                     h4(data$meta$variables[[current]]$name_with_units),
+                     textInput(paste0("tooltip_min_", current), "Min:"),
+                     textInput(paste0("tooltip_max_", current), "Max:"),
+                     actionButton(paste0("submit_", current), "Apply","success")
+           ),
+           # The slider itself
+    )
   }
   
   # Custom action button for exact entry. This makes a green button
@@ -738,7 +734,7 @@ Server <- function(input, output, session) {
       }
       # print(nrow(data_filtered))
     }
-    # cat("Data Filtered.\n")
+    cat("Data Filtered.\n")
     data_filtered
   })
   
@@ -771,19 +767,99 @@ Server <- function(input, output, session) {
     for(index in 1:length(pre$var_names())) {
       name <- pre$var_names()[index]
       input_name <- paste("filter_", name, sep="")
-      selection <- input[[input_name]]
+      selection <- NULL
       filters[[name]] <- list()
       filters[[name]]$type <- pre$var_class()[[name]]
-      if(pre$var_class()[[name]] == "factor") {
-        filters[[name]]$selection <- unname(sapply(selection,
-                                                   RemoveItemNumber))
-      }
-      else {
-        filters[[name]]$min <- selection[1]
-        filters[[name]]$max <- selection[2]
-      }
+      # if(pre$var_class()[[name]] == "factor") {
+      #   filters[[name]]$selection <- unname(sapply(selection,
+      #                                              RemoveItemNumber))
+      # }
+      # else {
+      min <- as.numeric(pre$abs_min()[name])
+      max <- as.numeric(pre$abs_max()[name])
+      step <- signif(max((max-min)*0.01, abs(min)*0.001, abs(max)*0.001),
+                     digits = 4)
+      slider_min <- signif((min - step*10), digits = 4)
+      slider_max <- signif((max + step*10), digits = 4)
+      
+      filters[[name]]$min <- slider_min
+      filters[[name]]$max <- slider_max
+      # }
     }
     filters
+  })
+  
+  observeEvent(input$test_filter_set, {
+    data$meta$variables$x$selection <- c(2,3)
+  })
+  
+  observe({
+    cat("Updating UI based on reactives\n")
+    update_filter <- function(name) {
+      id <- paste0("filter_div_",name)
+      filter_name <- paste0('filter_', name)
+      
+      min <- as.numeric(pre$abs_min()[name])
+      max <- as.numeric(pre$abs_max()[name])
+      step <- signif(max((max-min)*0.01, abs(min)*0.001, abs(max)*0.001),
+                     digits = 4)
+      slider_min <- signif((min - step*10), digits = 4)
+      slider_max <- signif((max + step*10), digits = 4)
+      
+      if(id %in% filters_divs)
+      {
+        cat(paste0("Updating Filter: ", name, "\n"))
+        selection <- data$meta$variables[[name]]$selection
+        cat(paste0("Selection: ",paste0(selection, collapse = ", "), "\n"))
+        if(!is.null(selection) && !is.null(input[[filter_name]]))
+        {
+          if(selection[1] != input[[filter_name]][1] ||
+             selection[2] != input[[filter_name]][2]) {
+            cat(paste0("Selection: ",paste0(selection, collapse = ", "), "\n"))
+            updateSliderInput(session = session,
+                              inputId = filter_name,
+                              value = selection)
+          }
+        }
+      }
+      else
+      {
+        cat(paste0("Creating Filter: ", name, "\n"))
+        
+        selection <- si(filter_name, c(slider_min, slider_max))
+        data$meta$variables[[name]]$selection <- selection
+        
+        insertUI(selector = "#filters_div",
+                 ui = tags$div(
+                   sliderInput(inputId = filter_name,
+                               label = AbbreviateLabel(name),
+                               min = slider_min,
+                               max = slider_max,
+                               value = selection),
+                   id = id
+                 ))
+        filters_divs <<- c(filters_divs, id)
+      }
+    }
+    lapply(data$pre$var_nums_and_ints(), update_filter)
+  })
+  
+  observe({
+    cat("Updating reactiveValues based on UI values.\n")
+    lapply(data$pre$var_nums_and_ints(), function(name) {
+      filter_name <- paste0('filter_', name)
+      if( !is.null(data$meta$variables[[name]]$selection) && !is.null(input[[filter_name]]))
+      {
+        if(data$meta$variables[[name]]$selection[1] != input[[filter_name]][1] ||
+           data$meta$variables[[name]]$selection[2] != input[[filter_name]][2])
+        {
+          cat(paste0("Selection '",name,"': ",
+                     paste0(data$meta$variables[[name]]$selection, collapse = ", "),
+                     " <- ",paste0(input[[filter_name]], collapse = ", "), "\n"))
+          data$meta$variables[[name]]$selection <- input[[filter_name]]
+        }
+      }
+    })
   })
   
   ColoredData <- reactive({
@@ -878,7 +954,7 @@ Server <- function(input, output, session) {
       }
     }
     
-    # cat("Data Colored.\n")
+    cat("Data Colored.\n")
     # TODO(tthomas): Move adding units code out into the Explore.R tab.
     # names(data_colored) <- lapply(names(data_colored), AddUnits)
     data_colored
@@ -1073,7 +1149,7 @@ Server <- function(input, output, session) {
   
   # Dispose of this server when the UI is closed
   session$onSessionEnded(function() {
-    
+
     # Save the updated raw data
     if(is.null(visualizer_config$augmented_data)) {
       visualizer_config$augmented_data <- sub(".json", "_data.csv",
@@ -1084,7 +1160,7 @@ Server <- function(input, output, session) {
               row.names = FALSE,
               quote = FALSE,
               fileEncoding = "UTF-8")
-    
+
     # Prepare metadata for saving to visualizer config file
     meta <- isolate(reactiveValuesToList(data$meta))
     visualizer_config$variables <- meta$variables
@@ -1094,7 +1170,7 @@ Server <- function(input, output, session) {
     visualizer_config$sets <- meta$sets
     # visualizer_config$comments <- meta$comments
     visualizer_config$config_tree <- isolate(input$filter_design_config_tree)
-    
+
     # Prepare inputs for saving to visualizer config file
     current_inputs <- isolate(reactiveValuesToList(input))
     current_inputs[["window_width"]] <- NULL
@@ -1109,6 +1185,8 @@ Server <- function(input, output, session) {
     combined_inputs <- combined_inputs[order(names(combined_inputs))]
     visualizer_config$inputs <- combined_inputs
     
+    visualizer_config$filters <- isolate(data$Filters())
+
     # Retrive tab data to save
     tab_data <- lapply(tab_environments, function(tab_env) {
       if(!is.null(tab_env$TabData)) {
@@ -1117,7 +1195,7 @@ Server <- function(input, output, session) {
     })
     names(tab_data) <- tab_ids
     visualizer_config$tab_data <- tab_data
-    
+
     # Save visualizer config file
     if(SAVE_DIG_INPUT_CSV || dig_input_csv == "") {
       config_file_connection <- file(config_filename, encoding="UTF-8")
@@ -1126,7 +1204,7 @@ Server <- function(input, output, session) {
       close(config_file_connection)
       cat("Session saved.\n")
     }
-    
+
     # Clear environment variables (necessary only for development)
     Sys.setenv(DIG_INPUT_CSV="")
     Sys.setenv(DIG_DATASET_CONFIG="")
@@ -1184,11 +1262,12 @@ ui <- fluidPage(
         if(design_tree_present) {
           fluidRow(
             column(3, tags$label("Design Configuration Tree"), tags$div(id="design_configurations")),
-            column(9, uiOutput("filters"))
+            column(9, tags$div(id="filters_div"))
           )
         } else {
           fluidRow(
-            column(12, uiOutput("filters"))
+            column(12, actionButton("test_filter_set", "Test Filter Set")),
+            column(12, tags$div(id="filters_div"))
           )
         },
         conditionalPanel("output.constants_present",
