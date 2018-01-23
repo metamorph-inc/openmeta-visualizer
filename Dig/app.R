@@ -796,12 +796,6 @@ Server <- function(input, output, session) {
     filters
   })
   
-  observeEvent(input$test_filter_set, {
-    cat("x: ",getFilter("x"), "\n")
-    cat("Filters()$x$max: ", data$Filters()$x$max, "\n")
-    setFilter("x",c(2,3))
-  })
-  
   getFilter <- function(name) {
     # This funciton can be used by the tabs to get the selection value for a
     # given variable filter. This method offers the same functionality as using
@@ -1256,7 +1250,6 @@ ui <- fluidPage(
           )
         } else {
           fluidRow(
-            column(12, actionButton("test_filter_set", "Test Filter Set")),
             column(12, tags$div(id="filters_div"))
           )
         },
