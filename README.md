@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/5h8dk76u5qhyqfl6?svg=true)](https://ci.appveyor.com/project/ksmyth/openmeta-visualizer)
+[![Build status](https://ci.appveyor.com/api/projects/status/spief0ppp2yh5y3g?svg=true)](https://ci.appveyor.com/project/Metamorph/openmeta-visualizer)
 
 # OpenMETA Visualizer
 
