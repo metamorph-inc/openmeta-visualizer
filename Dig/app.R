@@ -54,12 +54,12 @@ FILTER_WIDTH_IN_COLUMNS <- 2
 pet_config_present <- FALSE
 design_tree_present <- FALSE
 saved_inputs <- NULL
-filters_divs <- list()
+filter_divs <- list()
 visualizer_config <- NULL
 design_tree <- NULL
 first_raw_poll <- TRUE
 
-dig_input_csv <- "C:\\Users\\Tim\\Documents\\tickets\\OPENMETA-367\\results\\r2018-01-15--16-13-27_2y54qtzv\\output.csv"
+dig_input_csv <- Sys.getenv('DIG_INPUT_CSV')
 dig_dataset_config <- Sys.getenv('DIG_DATASET_CONFIG')
 if (dig_dataset_config == "") {
   if(dig_input_csv == "") {
@@ -289,9 +289,7 @@ Server <- function(input, output, session) {
     },
     # This function returns the content of log_file
     valueFunc = function () {
-      data <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
-      print(nrow(data))
-      data
+      read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
     }
   )
   
@@ -490,24 +488,102 @@ Server <- function(input, output, session) {
     }
   })
   
-  # Generates the sliders and select boxes.
-  # output$filters <- renderUI({
-  #   var_selects <- pre$var_range_facs()
-  #   var_sliders <- pre$var_range_nums_and_ints()
-  #   
-  #   div(
-  #     fluidRow(
-  #       lapply(var_selects, function(var_select) {
-  #         GenerateEnumUI(var_select)
-  #       })
-  #     ),
-  #     fluidRow(
-  #       lapply(var_sliders, function(var_slider) {
-  #         GenerateSliderUI(var_slider)
-  #       })
-  #     )
-  #   )
-  # })
+  observe({
+    cat("Updating Filter UI:\n")
+    
+    update_select_filter <- function(name) {
+      id <- paste0("filter_div_",name)
+      filter_name <- paste0('filter_', name)
+      
+      items <- names(table(data$raw$df[[name]]))
+      for(i in 1:length(items)){
+        items[i] <- paste0(i, '. ', items[i])
+      }
+      
+      if (id %in% filter_divs)
+      {
+        updateSelectInput(session = session,
+                          inputId = filter_name,
+                          choices = items)
+        cat(paste0("Updated Select Filter: ", name, "\n"))
+      }
+      else
+      {
+        selection <- si(paste0('filter_', name), items)
+        
+        filter_divs <<- c(filter_divs, id)
+        insertUI(selector = "#filters_div", ui = 
+                   tags$div(
+                     column(FILTER_WIDTH_IN_COLUMNS,
+                            selectInput(inputId = paste0('filter_', name),
+                                        label = name,
+                                        multiple = TRUE,
+                                        selectize = FALSE,
+                                        choices = items,
+                                        selected = selection)
+                     ),
+                     id = id))
+        cat(paste0("Created Select Filter '", name, "'\n"))
+      }
+    }
+    lapply(data$pre$var_range_facs(), update_select_filter)
+    
+    update_slider_filter <- function(name) {
+      id <- paste0("filter_div_",name)
+      filter_name <- paste0('filter_', name)
+      
+      # Determine the valid range
+      if(name %in% pre$var_nums()){
+        min <- as.numeric(pre$abs_min()[name])
+        max <- as.numeric(pre$abs_max()[name])
+        step <- signif(max((max-min)*0.01, abs(min)*0.001, abs(max)*0.001),
+                       digits = 4)
+        slider_min <- signif((min - step*10), digits = 4)
+        slider_max <- signif((max + step*10), digits = 4)
+      }
+      else{
+        slider_min <- as.numeric(pre$abs_min()[name])
+        slider_max <- as.numeric(pre$abs_max()[name])
+      }
+      
+      # Does the slider exist already?
+      if (id %in% filter_divs)
+      {
+        # Slider exists; just update the range.
+        updateSliderInput(session = session,
+                          inputId = filter_name,
+                          min = slider_min,
+                          max = slider_max)
+        cat(paste0("Updated Slider Filter: ", name, "\n"))
+      }
+      else
+      {
+        # Slider doesn't exist; let's create it.
+        selection <- si(filter_name, c(slider_min, slider_max))
+        filter_divs <<- c(filter_divs, id)
+        insertUI(selector = "#filters_div", ui = 
+                   tags$div(
+                     column(FILTER_WIDTH_IN_COLUMNS,
+                            # Hidden well panel for slider tooltip
+                            wellPanel(id = paste0("slider_tooltip_", name),
+                                      style = "position: absolute; z-index: 65; box-shadow: 10px 10px 15px grey; width: 20vw; left: 1vw; top: -275%; display: none;",
+                                      h4(data$meta$variables[[name]]$name_with_units),
+                                      textInput(paste0("tooltip_min_", name), "Min:"),
+                                      textInput(paste0("tooltip_max_", name), "Max:"),
+                                      actionButton(paste0("submit_", name), "Apply","success")
+                            ),
+                            # The slider itself
+                            sliderInput(inputId = filter_name,
+                                        label = AbbreviateLabel(name),
+                                        min = slider_min,
+                                        max = slider_max,
+                                        value = selection)),
+                     id = id))
+        cat(paste0("Created Slider Filter '", name, "'\n"))
+      }
+    }
+    lapply(data$pre$var_nums_and_ints(), update_slider_filter)
+  })
   
   # Slider abbreviation function based off slider_width
   abbreviation_length <- ABBREVIATION_LENGTH
@@ -524,68 +600,6 @@ Server <- function(input, output, session) {
       session$sendCustomMessage("update_widths", message = 1);
     })
   })
-  
-  GenerateEnumUI <- function(current) {
-    items <- names(table(data$raw$df[[current]]))
-    
-    for(i in 1:length(items)){
-      items[i] <- paste0(i, '. ', items[i])
-    }
-    
-    selected_value <- input[[paste0('filter_', current)]]
-    if(is.null(selected_value))
-      # selected_value <- items
-      selected_value <- si(paste0('filter_', current), items)
-    
-    column(FILTER_WIDTH_IN_COLUMNS,
-           selectInput(inputId = paste0('filter_', current),
-                       label = current,
-                       multiple = TRUE,
-                       selectize = FALSE,
-                       choices = items,
-                       selected = selected_value)
-    )
-  }
-  
-  GenerateSliderUI <- function(current) {
-    
-    if(current %in% pre$var_nums()){
-      min <- as.numeric(pre$abs_min()[current])
-      max <- as.numeric(pre$abs_max()[current])
-      step <- signif(max((max-min)*0.01, abs(min)*0.001, abs(max)*0.001),
-                     digits = 4)
-      slider_min <- signif((min - step*10), digits = 4)
-      slider_max <- signif((max + step*10), digits = 4)
-    }
-    else{
-      step <- 0
-      slider_min <- as.numeric(pre$abs_min()[current])
-      slider_max <- as.numeric(pre$abs_max()[current])
-    }
-    
-    slider_value <- input[[paste0('filter_', current)]]
-    if(is.null(slider_value)){
-      # TODO(tthomas): Why are we using 'step' around the already 'stepped' numerics?
-      # slider_value <- c(signif(slider_min-step*10, digits = 4),
-      #                   signif(slider_max+step*10, digits = 4))
-      slider_value <- si(paste0('filter_', current),
-                         c(signif(slider_min-step*10, digits = 4),
-                           signif(slider_max+step*10, digits = 4)))
-      # slider_value <- c(slider_min, slider_max)
-    }
-    
-    column(FILTER_WIDTH_IN_COLUMNS,
-           # Hidden well panel for slider tooltip
-           wellPanel(id = paste0("slider_tooltip_", current),
-                     style = "position: absolute; z-index: 65; box-shadow: 10px 10px 15px grey; width: 20vw; left: 1vw; top: -275%; display: none;",
-                     h4(data$meta$variables[[current]]$name_with_units),
-                     textInput(paste0("tooltip_min_", current), "Min:"),
-                     textInput(paste0("tooltip_max_", current), "Max:"),
-                     actionButton(paste0("submit_", current), "Apply","success")
-           ),
-           # The slider itself
-    )
-  }
   
   # Custom action button for exact entry. This makes a green button
   # and can also be accessed to produced different themed buttons
@@ -734,7 +748,7 @@ Server <- function(input, output, session) {
       }
       # print(nrow(data_filtered))
     }
-    cat("Data Filtered.\n")
+    # cat("Data Filtered.\n")
     data_filtered
   })
   
@@ -767,100 +781,78 @@ Server <- function(input, output, session) {
     for(index in 1:length(pre$var_names())) {
       name <- pre$var_names()[index]
       input_name <- paste("filter_", name, sep="")
-      selection <- NULL
+      selection <- input[[input_name]]
       filters[[name]] <- list()
       filters[[name]]$type <- pre$var_class()[[name]]
-      # if(pre$var_class()[[name]] == "factor") {
-      #   filters[[name]]$selection <- unname(sapply(selection,
-      #                                              RemoveItemNumber))
-      # }
-      # else {
-      min <- as.numeric(pre$abs_min()[name])
-      max <- as.numeric(pre$abs_max()[name])
-      step <- signif(max((max-min)*0.01, abs(min)*0.001, abs(max)*0.001),
-                     digits = 4)
-      slider_min <- signif((min - step*10), digits = 4)
-      slider_max <- signif((max + step*10), digits = 4)
-      
-      filters[[name]]$min <- slider_min
-      filters[[name]]$max <- slider_max
-      # }
+      if(pre$var_class()[[name]] == "factor") {
+        filters[[name]]$selection <- unname(sapply(selection,
+                                                   RemoveItemNumber))
+      }
+      else {
+        filters[[name]]$min <- selection[1]
+        filters[[name]]$max <- selection[2]
+      }
     }
     filters
   })
   
   observeEvent(input$test_filter_set, {
-    data$meta$variables$x$selection <- c(2,3)
+    cat("x: ",getFilter("x"), "\n")
+    cat("Filters()$x$max: ", data$Filters()$x$max, "\n")
+    setFilter("x",c(2,3))
   })
   
-  observe({
-    cat("Updating UI based on reactives\n")
-    update_filter <- function(name) {
-      id <- paste0("filter_div_",name)
-      filter_name <- paste0('filter_', name)
-      
-      min <- as.numeric(pre$abs_min()[name])
-      max <- as.numeric(pre$abs_max()[name])
-      step <- signif(max((max-min)*0.01, abs(min)*0.001, abs(max)*0.001),
-                     digits = 4)
-      slider_min <- signif((min - step*10), digits = 4)
-      slider_max <- signif((max + step*10), digits = 4)
-      
-      if(id %in% filters_divs)
-      {
-        cat(paste0("Updating Filter: ", name, "\n"))
-        selection <- data$meta$variables[[name]]$selection
-        cat(paste0("Selection: ",paste0(selection, collapse = ", "), "\n"))
-        if(!is.null(selection) && !is.null(input[[filter_name]]))
-        {
-          if(selection[1] != input[[filter_name]][1] ||
-             selection[2] != input[[filter_name]][2]) {
-            cat(paste0("Selection: ",paste0(selection, collapse = ", "), "\n"))
-            updateSliderInput(session = session,
-                              inputId = filter_name,
-                              value = selection)
-          }
-        }
+  getFilter <- function(name) {
+    # This funciton can be used by the tabs to get the selection value for a
+    # given variable filter. This method offers the same functionality as using
+    # the data$Filters() reactive.
+    # 
+    # Args:
+    #   name: The name of the variable to get. Don't include "filter_" in the
+    #         name; this will be appending in the function.
+    # 
+    # Returns:
+    #   A vector of the selected items if the variable class is "factor" and a
+    #   vector c(min, max) with the min and max value of the filter if it is
+    #   numeric.
+    input[[paste0("filter_", name)]]
+  }
+  
+  setFilter <- function(name, selection) {
+    # This funciton can be used by the tabs to get the selection value for a
+    # given variable filter. This method offers the same functionality as using
+    # the data$Filters() reactive.
+    # 
+    # Args:
+    #   name: The name of the variable to set. Don't include "filter_" in the
+    #         name.
+    #   selection: The value to set in the Filter. This should be a character
+    #              vector for variables of class "factor" and a vector
+    #              c(min, max) for variables of class "numeric."
+    # 
+    # Returns:
+    #   A the selection if the operation is successful, and NULL otherwise.
+    if (name %in% data$pre$var_range())
+    {
+      filter_name <- paste0("filter_", name)
+      if (name %in% data$pre$var_range_nums_and_ints()) {
+        updateSliderInput(session = session,
+                          inputId = filter_name,
+                          value = selection)
       }
       else
       {
-        cat(paste0("Creating Filter: ", name, "\n"))
-        
-        selection <- si(filter_name, c(slider_min, slider_max))
-        data$meta$variables[[name]]$selection <- selection
-        
-        insertUI(selector = "#filters_div",
-                 ui = tags$div(
-                   sliderInput(inputId = filter_name,
-                               label = AbbreviateLabel(name),
-                               min = slider_min,
-                               max = slider_max,
-                               value = selection),
-                   id = id
-                 ))
-        filters_divs <<- c(filters_divs, id)
+        updateSelectInput(session,
+                          filter_name,
+                          value = selection)
       }
+      selection
     }
-    lapply(data$pre$var_nums_and_ints(), update_filter)
-  })
-  
-  observe({
-    cat("Updating reactiveValues based on UI values.\n")
-    lapply(data$pre$var_nums_and_ints(), function(name) {
-      filter_name <- paste0('filter_', name)
-      if( !is.null(data$meta$variables[[name]]$selection) && !is.null(input[[filter_name]]))
-      {
-        if(data$meta$variables[[name]]$selection[1] != input[[filter_name]][1] ||
-           data$meta$variables[[name]]$selection[2] != input[[filter_name]][2])
-        {
-          cat(paste0("Selection '",name,"': ",
-                     paste0(data$meta$variables[[name]]$selection, collapse = ", "),
-                     " <- ",paste0(input[[filter_name]], collapse = ", "), "\n"))
-          data$meta$variables[[name]]$selection <- input[[filter_name]]
-        }
-      }
-    })
-  })
+    else
+    {
+      NULL
+    }
+  }
   
   ColoredData <- reactive({
     data_colored <- FilteredData()
@@ -954,7 +946,7 @@ Server <- function(input, output, session) {
       }
     }
     
-    cat("Data Colored.\n")
+    # cat("Data Colored.\n")
     # TODO(tthomas): Move adding units code out into the Explore.R tab.
     # names(data_colored) <- lapply(names(data_colored), AddUnits)
     data_colored
@@ -1185,8 +1177,6 @@ Server <- function(input, output, session) {
     combined_inputs <- combined_inputs[order(names(combined_inputs))]
     visualizer_config$inputs <- combined_inputs
     
-    visualizer_config$filters <- isolate(data$Filters())
-
     # Retrive tab data to save
     tab_data <- lapply(tab_environments, function(tab_env) {
       if(!is.null(tab_env$TabData)) {
