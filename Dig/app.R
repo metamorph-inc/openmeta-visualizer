@@ -297,8 +297,8 @@ Server <- function(input, output, session) {
 
   var_class <- reactive({
     df_class <- sapply(data$raw$df, class)
-    if (any(names(df_class) %in% c("GUID", "CfgID"))) {
-      df_class <- df_class[-which(names(df_class) %in% c("GUID", "CfgID"))]
+    if (any(names(df_class) %in% c("GUID"))) {
+      df_class <- df_class[-which(names(df_class) %in% c("GUID"))]
     }
     df_class
   })
@@ -376,6 +376,23 @@ Server <- function(input, output, session) {
       }
     }
   })
+  var_range_facs_filters <- reactive({
+    # This is used by the Filters observe to populate the selects
+    # The 'CfgID' variable is removed if we have a design tree present
+    if(is.null(var_range_facs())) {
+      NULL
+    } else {
+      tentative_vars <- var_range_facs()
+      if(design_tree_present && "CfgID" %in% tentative_vars) {
+        tentative_vars <- tentative_vars[-which(tentative_vars %in% c("CfgID"))]
+      }
+      if (length(tentative_vars) == 0) {
+        NULL
+      } else {
+        tentative_vars
+      }
+    }
+  })
   var_range <- reactive({c(var_range_facs(), var_range_nums_and_ints())})
   var_range_nums_and_ints_list <- reactive({
     if (is.null(var_range_nums_and_ints())) {
@@ -416,6 +433,7 @@ Server <- function(input, output, session) {
               abs_max=abs_max,
               var_range_nums_and_ints=var_range_nums_and_ints,
               var_range_facs=var_range_facs,
+              var_range_facs_filters=var_range_facs_filters,
               var_range=var_range,
               var_range_nums_and_ints_list=var_range_nums_and_ints_list,
               var_range_facs_list=var_range_facs_list,
@@ -526,7 +544,7 @@ Server <- function(input, output, session) {
         cat(paste0("Created Select Filter '", name, "'\n"))
       }
     }
-    lapply(data$pre$var_range_facs(), update_select_filter)
+    lapply(data$pre$var_range_facs_filters(), update_select_filter)
     
     update_slider_filter <- function(name) {
       id <- paste0("filter_div_",name)

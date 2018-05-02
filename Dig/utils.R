@@ -101,6 +101,10 @@ BuildVariables <- function(pet, var_names) {
         type <- "Intermediate Variable"
         units <- CleanUnits(pet_config$drivers[[1]]$intermediateVariables[[var_name]]$units)
         name_with_units <- AddUnits(var_name, units)
+      } else if(var_name %in% c("CfgID")) {
+        type <- "Design Space"
+        units <- NULL
+        name_with_units <- var_name
       } else {
         type <- "Unknown"
         units <- NULL
