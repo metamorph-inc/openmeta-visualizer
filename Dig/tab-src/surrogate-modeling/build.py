@@ -6,8 +6,8 @@ import zipfile
 import subprocess
 import requests
 
-url = 'https://nodejs.org/dist/v6.11.2/node-v6.11.2-win-x86.zip'
-filename = 'node-v6.11.2-win-x86.zip'
+url = 'https://nodejs.org/dist/v8.11.1/node-v8.11.1-win-x86.zip'
+filename = 'node-v8.11.1-win-x86.zip'
 dirname = os.path.splitext(filename)[0]
 dst = '../../www/SurrogateModeling'
 
@@ -55,11 +55,11 @@ def build(dirname):
     npm = os.path.join(dirname, 'npm.cmd')
     node = os.path.join(dirname, 'node.exe')
     print('`npm install`')
-    subprocess.check_call([npm, 'install'])
+    subprocess.check_call([npm, '--scripts-prepend-node-path=true', 'install'])
     print('`npm run build`')
     env = dict(os.environ)
     env['PATH'] = dirname + ';' + env['PATH']
-    subprocess.check_call([npm, 'run', 'build'], env=env)
+    subprocess.check_call([npm, '--scripts-prepend-node-path=true', 'run', 'build'], env=env)
     if os.path.isdir(dst):
         shutil.rmtree(dst)
     shutil.copytree('build', dst)
