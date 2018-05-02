@@ -16,7 +16,7 @@ ui <- function(id) {
     tags$head(tags$script(src="third_party/iframeResizer.min.js")),
     tags$head(tags$style("iframe { width: 100%; }")),
     tags$iframe(src="surrogateModeling/index.html"),
-    tags$script("iFrameResize({log:false, heightCalculationMethod: 'lowestElement'});")
+    tags$script("iFrameResize({log:false, heightCalculationMethod: 'lowestElement', minHeight: 100});")
   )
 }
 
