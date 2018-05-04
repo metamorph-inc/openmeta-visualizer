@@ -20,6 +20,8 @@ build_script:
   - nuget install -Version 3.11.0 WiX
   - set PATH=%PATH%;%CD%\WiX.3.11.0\tools
   - python deploy\build_msi.py
+  - cd deploy
+  - appveyor PushArtifact openmeta-visualizer_x64.msi
 
 cache:
  - 'Dig\tab-src\surrogate-modeling\node_modules -> Dig\tab-src\surrogate-modeling\package.json, Dig\tab-src\surrogate-modeling\build.py'
@@ -32,7 +34,6 @@ test:
 
 artifacts:
   - path: "*.log"
-  - path: "deploy/openmeta-visualizer_x64.msi"
 
 deploy:
   provider: GitHub
