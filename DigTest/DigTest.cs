@@ -220,9 +220,9 @@ namespace DigTest
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
             var single_plot = new ShinyPlot(driver, "Explore-single_plot");
             var x_input = new ShinySelectInput(driver, "Explore-x_input");
-            Assert.Equal("IN_MatériauDeMoyeu", x_input.GetCurrentSelection());
+            Assert.Equal("CfgID", x_input.GetCurrentSelection());
             var y_input = new ShinySelectInput(driver, "Explore-y_input");
-            Assert.Equal("IN_E11", y_input.GetCurrentSelection());
+            Assert.Equal("IN_MatériauDeMoyeu", y_input.GetCurrentSelection());
 
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
             IAction dbl_click_pairs_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-pairs_plot")), 200, 400).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
@@ -230,7 +230,7 @@ namespace DigTest
             wait.Until(d => driver.FindElement(By.Id("Explore-single_plot")).Displayed);
             single_plot.WaitUntilImageRefreshes();
             Assert.True(single_plot.ImageHasChanged());
-            Assert.Equal("IN_E11", x_input.GetCurrentSelection());
+            Assert.Equal("IN_MatériauDeMoyeu", x_input.GetCurrentSelection());
             Assert.Equal("OUT_Blade_Tip_Deflection", y_input.GetCurrentSelection());
             x_input.SetCurrentSelectionClicked("IN_Tip_AvgCapMaterialThickness");
             single_plot.WaitUntilImageRefreshes();
@@ -297,7 +297,7 @@ namespace DigTest
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
             Assert.True(wait.Until(driver1 => driver.FindElement(By.XPath("//*[@id='Explore-pairs_plot']/img")).Displayed));
             var display = new ShinySelectMultipleInput(driver, "Explore-display");
-            Assert.Equal("IN_MatériauDeMoyeu, IN_E11, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection, IN_E22, IN_ElemCount", display.GetCurrentSelection());
+            Assert.Equal("CfgID, IN_MatériauDeMoyeu, OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection, IN_E11, IN_E22", display.GetCurrentSelection());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
             Assert.True(new ShinyCheckboxInput(driver, "Explore-auto_render").GetStartState());
@@ -369,7 +369,7 @@ namespace DigTest
             weight_metrics.AppendSelection("OUT_Blade");
             Thread.Sleep(200);
 
-            Assert.Equal(0.5, new ShinySliderInput(driver, "DataTable-rnk7").MoveSliderToValue(0.5));
+            Assert.Equal(0.5, new ShinySliderInput(driver, "DataTable-rnk8").MoveSliderToValue(0.5));
             wait.Until(d => driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[1]")).GetAttribute("textContent") == "140");
             Assert.Equal("1", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[2]")).GetAttribute("textContent"));
             Assert.Equal("0.828514676583442", driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[3]")).GetAttribute("textContent"));
@@ -390,7 +390,7 @@ namespace DigTest
             Assert.True(use_filtered.GetStartState());
             Assert.Equal("TOPSIS", new ShinySelectInput(driver, "DataTable-process_method").GetCurrentSelection());
 
-            Assert.Equal(0.5, new ShinySliderInput(driver, "DataTable-rnk7").GetValue());
+            Assert.Equal(0.5, new ShinySliderInput(driver, "DataTable-rnk8").GetValue());
             wait.Until(d => driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[1]")).GetAttribute("textContent") == "388");
             Assert.False(use_filtered.ToggleState());
             wait.Until(d => driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[1]")).GetAttribute("textContent") == "140");
