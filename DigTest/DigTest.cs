@@ -384,6 +384,7 @@ namespace DigTest
         private void DataTableCheck(IWebDriver driver)
         {
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(5.0));
+            wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException));
 
             ShinyUtilities.OpenTabPanel(driver, "master_tabset", "Data Table");
             var use_filtered = new ShinyCheckboxInput(driver, "DataTable-use_filtered");
