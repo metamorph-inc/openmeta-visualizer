@@ -41,7 +41,7 @@ deploy:
   description: Build $(appveyor_build_version)
   auth_token:
     secure: E4dwDSx1yZ7bXFaHgDpqOMfHlkN7RdobNI+H5tztVRW+npxSa7rRD8rRJQacuySJ
-  artifact: deploy/openmeta-visualizer_x64.msi
+  artifact: openmeta-visualizer_x64.msi
   draft: false
   prerelease: false
   on:
