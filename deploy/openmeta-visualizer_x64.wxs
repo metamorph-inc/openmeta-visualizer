@@ -6,7 +6,7 @@
   <?define UpgradeCode='f28b9654-9af8-496f-8887-8789ce10b0f3' ?>
 
   <Product Name='OpenMETA Visualizer' Id='*' UpgradeCode='$(var.UpgradeCode)'
-      Language='1033' Codepage='1252' Version='$(var.VERSIONSTR)' Manufacturer='Metamorph, Inc'>
+      Language='1033' Codepage='1252' Version='$(var.VERSIONSTR)' Manufacturer='MetaMorph, Inc.'>
 
     <Package Id='*' Description='OpenMETA Visualizer'
         Manufacturer='Metamorph, Inc'
