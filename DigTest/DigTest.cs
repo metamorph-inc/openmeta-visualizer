@@ -313,13 +313,13 @@ namespace DigTest
             var downloads = new DirectoryInfo(session.download_directory);
             Assert.Equal(0, downloads.EnumerateFiles().Count());
             driver.FindElement(By.Id("Explore-export_data")).Click();
-            Thread.Sleep(300);
+            Assert.True(wait.Until(d => downloads.GetFiles("*.csv").Count() == 1));
             var csv_file = downloads.GetFiles("*.csv").First();
             Assert.NotNull(csv_file);
             Assert.Equal(24, File.ReadLines(csv_file.FullName).Count()); // Check contents
+            Assert.Equal(0, downloads.GetFiles("*.pdf").Count());
             driver.FindElement(By.Id("Explore-export_plot")).Click();
-            Thread.Sleep(500);
-            Assert.Equal(1, downloads.GetFiles("*.pdf").Count());
+            Assert.True(wait.Until(d => downloads.GetFiles("*.pdf").Count() == 1));
 
             //Test Single Plot
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
