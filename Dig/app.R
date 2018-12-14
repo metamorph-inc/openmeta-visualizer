@@ -897,9 +897,9 @@ Server <- function(input, output, session) {
             }
             bins <- 30
             req(var)
-            divisor <- (data$pre$abs_max()[[var]] - data$pre$abs_min()[[var]]) / bins
-            minimum <- data$pre$abs_min()[[var]]
-            maximum <- data$pre$abs_max()[[var]]
+            minimum <- min(FilteredData()[[var]])
+            maximum <- max(FilteredData()[[var]])
+            divisor <- (maximum - minimum) / bins
             cols <- rainbow(bins, 1, 0.875, start = 0, end = 0.325)
             if (goal == "Maximize") {
               Bin <- function(value) {max(1, ceiling((value - minimum) / divisor))}
