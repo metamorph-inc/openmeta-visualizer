@@ -568,8 +568,7 @@ namespace DigTest
             var points_before_deselect_28 = stats.GetCurrentPoints();
             design_selector.ClickByName("28");
             Assert.False(design_selector.SelectedByName("28"));
-            Thread.Sleep(500);
-            Assert.True(stats.GetCurrentPoints() < points_before_deselect_28);
+            Assert.True(wait.Until(d => stats.GetCurrentPoints() < points_before_deselect_28));
 
             
             var filter_hub = new ShinySelectMultipleInput(driver, "filter_IN_MatériauDeMoyeu", false);
