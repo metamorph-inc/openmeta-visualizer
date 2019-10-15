@@ -1,5 +1,6 @@
 title <- "Data Table"
 footer <- TRUE
+library("magrittr")
 
 ui <- function(id) {
   ns <- NS(id)
@@ -476,8 +477,20 @@ server <- function(input, output, session, data) {
         name
       }
     })
-    table_data[] <- lapply(table_data, as.character)
-    table_data
+
+    # create a formatable datatable, left align everything
+    DT::datatable(table_data, rownames = FALSE, options = list(
+      processing = FALSE,
+      initComplete = DT::JS(
+        "function(settings, json) {",
+        "$(this.api().table().header()).find('th').css({'text-align' : 'left'});",
+        "}"
+        ))) %>%
+      DT::formatStyle(columns=names(table_data), textAlign="left")
+
+    # left align everything by forcing string type
+    # table_data[] <- lapply(table_data, as.character)
+    # table_data
   })
   
   #Download handler
