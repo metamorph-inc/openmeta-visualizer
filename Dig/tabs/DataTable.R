@@ -479,7 +479,7 @@ server <- function(input, output, session, data) {
     })
 
     # create a formatable datatable, left align everything
-    DT::datatable(table_data, rownames = FALSE, options = list(
+    dataTable <- DT::datatable(table_data, options = list(
       processing = FALSE,
       initComplete = DT::JS(
         "function(settings, json) {",
@@ -487,6 +487,8 @@ server <- function(input, output, session, data) {
         "}"
         ))) %>%
       DT::formatStyle(columns=names(table_data), textAlign="left")
+
+    dataTable
 
     # left align everything by forcing string type
     # table_data[] <- lapply(table_data, as.character)
