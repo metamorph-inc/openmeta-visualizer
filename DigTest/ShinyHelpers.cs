@@ -554,6 +554,7 @@ namespace DigTest
         {
             this.driver = driver;
             this.wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
+            this.wait.IgnoreExceptionTypes(typeof(NoSuchElementException));
             this.id = id;
             this.img_path = String.Format("//div[@id='{0}']/img", id);
             ReloadImage();

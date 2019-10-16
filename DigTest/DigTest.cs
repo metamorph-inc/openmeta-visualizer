@@ -154,6 +154,7 @@ namespace DigTest
         private void ExploreSet(IWebDriver driver)
         {
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
+            wait.IgnoreExceptionTypes(typeof(NoSuchElementException));
             Actions builder = new Actions(driver);
 
             ShinyUtilities.OpenTabPanel(driver, "master_tabset", "Explore");
@@ -292,6 +293,7 @@ namespace DigTest
         private void ExploreCheck(IWebDriver driver, ShinySession session)
         {
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
+            wait.IgnoreExceptionTypes(typeof(NoSuchElementException));
 
             // Test Pairs Plot
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
@@ -352,6 +354,7 @@ namespace DigTest
         private void DataTableSet(IWebDriver driver)
         {
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
+            wait.IgnoreExceptionTypes(typeof(NoSuchElementException));
 
             // Test "DataTable.R"
             ShinyUtilities.OpenTabPanel(driver, "master_tabset", "Data Table");
@@ -384,7 +387,7 @@ namespace DigTest
         private void DataTableCheck(IWebDriver driver)
         {
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(5.0));
-            wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException));
+            wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException), typeof(NoSuchElementException));
 
             ShinyUtilities.OpenTabPanel(driver, "master_tabset", "Data Table");
             var use_filtered = new ShinyCheckboxInput(driver, "DataTable-use_filtered");
