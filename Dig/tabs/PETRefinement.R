@@ -370,7 +370,7 @@ server <- function(input, output, session, data) {
       meta_python <- paste0(meta_path, "bin\\Python27\\Scripts\\python.exe")
       update_pet_parameters_script <- paste0(meta_path, "bin\\UpdatePETParameters.py")
       rc <- system2(meta_python,
-              args = c(update_pet_parameters_script,
+              args = c(paste0("\"", update_pet_parameters_script, "\""),
                        "--pet-config",
                        paste0("\"",pet_refined_filename,"\""),
                        "--new-name",
