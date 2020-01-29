@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2018, MetaMorph Software
+# Copyright (c) 2016-2020, MetaMorph Software
 # 
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -1346,8 +1346,8 @@ ui <- fluidPage(
           ),
           column(3,
             h4("About"),
-            p(strong("Version:"), "v2.1.6"),
-            p(strong("Date:"), "12/14/2018"),
+            p(strong("Version:"), "v2.1.8"),
+            p(strong("Date:"), "1/29/2020"),
             p(strong("Developer:"), "Metamorph Software"),
             p(strong("Support:"), "tthomas@metamorphsoftware.com")
           )
