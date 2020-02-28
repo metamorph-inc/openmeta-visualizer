@@ -25,7 +25,7 @@ ui <- function(id) {
               column(2),
               column(1, h5(strong('Original'))),
               column(2, h5(strong("Selection:"))),
-              column(1, h5(strong('Refined'))),
+              column(1, h5(strong('Filtered'))),
               column(2, h5(strong("Selection:"))),
               column(4, h5(strong("New Selection:")))
               ), br(),
@@ -43,7 +43,7 @@ ui <- function(id) {
                 column(1, actionButton(ns('apply_all_original_numeric'), 'Original')),
                 column(1, h5(strong("Minimum:"))),
                 column(1, h5(strong("Maximum:"))),
-                column(1, actionButton(ns('apply_all_refined_numeric'), 'Refined')),
+                column(1, actionButton(ns('apply_all_filtered_numeric'), 'Filtered')),
                 column(1, h5(strong("Minimum:"))),
                 column(1, h5(strong("Maximum:"))),
                 column(2, h5(strong("New Minimum:"))),
@@ -62,7 +62,7 @@ ui <- function(id) {
                 column(2, h5(strong("Variable Name:"))),
                 column(1, actionButton(ns('apply_all_original_enum'), 'Original')),
                 column(2, h5(strong("Selection:"))),
-                column(1, actionButton(ns('apply_all_refined_enum'), 'Refined')),
+                column(1, actionButton(ns('apply_all_filtered_enum'), 'Filtered')),
                 column(2, h5(strong("Selection:"))),
                 column(4, h5(strong("New Selection:")))
               ), 
@@ -160,7 +160,7 @@ server <- function(input, output, session, data) {
       column(12, h5(strong("Original PET Name: ")), textOutput(ns("current_pet_name_text")), br()),
       column(12, textInput(ns("newPetName"),
                            "New PET Name:",
-                           value = si(ns("newPetName"), paste0(pet$pet_name, "_Refined"))))
+                           value = si(ns("newPetName"), paste0(pet$pet_name, "_Filtered"))))
     )
   })
   
@@ -176,12 +176,12 @@ server <- function(input, output, session, data) {
     if(original_count > max_enums_display)
       original = paste0("List of ", original_count, " Configurations.")
     
-    refined <- toString(unique(FilterData()$CfgID))
-    refined_count <- length(unique(FilterData()$CfgID))
-    if(refined_count > max_enums_display)
-      refined = paste0("List of ", refined_count, " Configurations.")
-    if(refined == "")
-      refined = "No configurations available."
+    filtered <- toString(unique(FilterData()$CfgID))
+    filtered_count <- length(unique(FilterData()$CfgID))
+    if(filtered_count > max_enums_display)
+      filtered = paste0("List of ", filtered_count, " Configurations.")
+    if(filtered == "")
+      filtered = "No configurations available."
     isolate({
       selected <- input$new_cfg_ids
     })
@@ -190,8 +190,8 @@ server <- function(input, output, session, data) {
       column(2, h5(strong("Configuration Name(s)"))),
       column(1, actionButton(ns('apply_original_cfg_ids'), 'Apply')),
       column(2, h5(original)),
-      column(1, actionButton(ns('apply_refined_cfg_ids'), 'Apply')),
-      column(2, h5(refined)),
+      column(1, actionButton(ns('apply_filtered_cfg_ids'), 'Apply')),
+      column(2, h5(filtered)),
       column(4,
              textInput(ns('new_cfg_ids'),
                        NULL,
@@ -206,9 +206,9 @@ server <- function(input, output, session, data) {
     updateTextInput(session, 'new_cfg_ids', value = original)
   })
   
-  observeEvent(input$apply_refined_cfg_ids, {
-    refined <- toString(unique(FilterData()$CfgID))
-    updateTextInput(session, 'new_cfg_ids', value = refined)
+  observeEvent(input$apply_filtered_cfg_ids, {
+    filtered <- toString(unique(FilterData()$CfgID))
+    updateTextInput(session, 'new_cfg_ids', value = filtered)
   })
   
   AbbreviateNumber <- function(value) {
@@ -225,8 +225,8 @@ server <- function(input, output, session, data) {
         original_min <- AbbreviateNumber(selection[1])
         original_max <- AbbreviateNumber(selection[2])
         req(nrow(FilterData())>0)
-        refined_min <- AbbreviateNumber(min(FilterData()[var$name]))
-        refined_max <-AbbreviateNumber(max(FilterData()[var$name]))
+        filtered_min <- AbbreviateNumber(min(FilterData()[var$name]))
+        filtered_max <-AbbreviateNumber(max(FilterData()[var$name]))
         isolate({
           selected_min <- input[[paste0('new_min_', var$name)]]
           selected_max <- input[[paste0('new_max_', var$name)]]
@@ -236,9 +236,9 @@ server <- function(input, output, session, data) {
           column(1, actionButton(ns(paste0('apply_original_range_', var$name)), 'Apply')),
           column(1, h5(original_min)),
           column(1, h5(original_max)),
-          column(1, actionButton(ns(paste0('apply_refined_range_', var$name)), 'Apply')),
-          column(1, h5(refined_min)),
-          column(1, h5(refined_max)),
+          column(1, actionButton(ns(paste0('apply_filtered_range_', var$name)), 'Apply')),
+          column(1, h5(filtered_min)),
+          column(1, h5(filtered_max)),
           column(2,
                  textInput(ns(paste0('new_min_', var$name)),
                            NULL,
@@ -267,7 +267,7 @@ server <- function(input, output, session, data) {
     })
   })
   
-  observeEvent(input$apply_all_refined_numeric, {
+  observeEvent(input$apply_all_filtered_numeric, {
     lapply(design_variables, function(var){
       if(var$type == "Numeric") {
         updateTextInput(session, paste0('new_min_', var$name),
@@ -287,10 +287,10 @@ server <- function(input, output, session, data) {
         if(original_count > max_enums_display)
           original = paste0("List of ", original_count, " Enumerations.")
         
-        refined <- toString(unique(FilterData()[[var$name]]))
-        refined_count <- length(unlist(strsplit(refined, ",")))
-        if(refined_count > max_enums_display)
-          refined = paste0("List of ", refined_count, " Enumerations.")
+        filtered <- toString(unique(FilterData()[[var$name]]))
+        filtered_count <- length(unlist(strsplit(filtered, ",")))
+        if(filtered_count > max_enums_display)
+          filtered = paste0("List of ", filtered_count, " Enumerations.")
         
         isolate({
           selected <- input[[paste0('new_selection_', var$name)]]
@@ -300,8 +300,8 @@ server <- function(input, output, session, data) {
           column(2, h5(strong(var$name))),
           column(1, actionButton(ns(paste0('apply_original_selection_', var$name)), 'Apply')),
           column(2, h5(original)),
-          column(1, actionButton(ns(paste0('apply_refined_selection_', var$name)), 'Apply')),
-          column(2, h5(refined)),
+          column(1, actionButton(ns(paste0('apply_filtered_selection_', var$name)), 'Apply')),
+          column(2, h5(filtered)),
           column(4,
                  textInput(ns(paste0('new_selection_', var$name)),
                            NULL,
@@ -324,12 +324,12 @@ server <- function(input, output, session, data) {
     })
   })
 
-  observeEvent(input$apply_all_refined_enum, {
+  observeEvent(input$apply_all_filtered_enum, {
     lapply(design_variables, function(var){
       if(var$type == "Enumeration"){
-        refined <- toString(unique(FilterData()[[var$name]]))
+        filtered <- toString(unique(FilterData()[[var$name]]))
         updateTextInput(session, paste0('new_selection_', var$name),
-                        value=refined)
+                        value=filtered)
       }
     })
   })
@@ -342,7 +342,7 @@ server <- function(input, output, session, data) {
           updateTextInput(session, paste0('new_min_', var$name), value = original[1])
           updateTextInput(session, paste0('new_max_', var$name), value = original[2])
         })
-        observeEvent(input[[paste0('apply_refined_range_', var$name)]], {
+        observeEvent(input[[paste0('apply_filtered_range_', var$name)]], {
           updateTextInput(session, paste0('new_min_', var$name),
                           value = min(FilterData()[var$name]))
           updateTextInput(session, paste0('new_max_', var$name),
@@ -355,10 +355,10 @@ server <- function(input, output, session, data) {
           updateTextInput(session, paste0('new_selection_', var$name),
                           value=original)
         })
-        observeEvent(input[[paste0('apply_refined_selection_', var$name)]], {
-          refined <- toString(unique(FilterData()[[var$name]]))
+        observeEvent(input[[paste0('apply_filtered_selection_', var$name)]], {
+          filtered <- toString(unique(FilterData()[[var$name]]))
           updateTextInput(session, paste0('new_selection_', var$name),
-                          value=refined)
+                          value=filtered)
         })
       }
     })
