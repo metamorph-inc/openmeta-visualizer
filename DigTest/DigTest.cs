@@ -452,8 +452,8 @@ namespace DigTest
             ShinyUtilities.ClickIDWithScroll(driver, "PETRefinement-apply_original_cfg_ids");
             ShinyUtilities.ClickIDWithScroll(driver, "PETRefinement-apply_all_original_numeric");
             ShinyUtilities.ClickIDWithScroll(driver, "PETRefinement-apply_all_original_enum");
-            ShinyUtilities.ClickIDWithScroll(driver, "PETRefinement-apply_refined_range_IN_E11");
-            ShinyUtilities.ClickIDWithScroll(driver, "PETRefinement-apply_refined_range_IN_Root_AvgCapMaterialThickness");
+            ShinyUtilities.ClickIDWithScroll(driver, "PETRefinement-apply_filtered_range_IN_E11");
+            ShinyUtilities.ClickIDWithScroll(driver, "PETRefinement-apply_filtered_range_IN_Root_AvgCapMaterialThickness");
             Assert.Equal("600", driver.FindElement(By.Id("PETRefinement-pet_num_samples")).GetAttribute("value"));
             Assert.Equal("28-16, 28-20, 30-16, 30-20, 32-16, 32-20", driver.FindElement(By.Id("PETRefinement-new_cfg_ids")).GetAttribute("value"));
             Assert.Equal("5", driver.FindElement(By.Id("PETRefinement-new_min_IN_ElemCount")).GetAttribute("value"));
@@ -462,7 +462,7 @@ namespace DigTest
             Assert.Equal("77.01253438", driver.FindElement(By.Id("PETRefinement-new_min_IN_Root_AvgCapMaterialThickness")).GetAttribute("value"));
             Assert.Equal("30", driver.FindElement(By.Id("PETRefinement-new_max_IN_Tip_AvgCapMaterialThickness")).GetAttribute("value"));
             Assert.Equal("Acier, Aluminum", driver.FindElement(By.Id("PETRefinement-new_selection_IN_MatériauDeMoyeu")).GetAttribute("value"));
-            Assert.Equal("/Testing/Parametric Studies/WindTurbinePET_Refined", driver.FindElement(By.Id("PETRefinement-newPetName")).GetAttribute("value"));
+            Assert.Equal("/Testing/Parametric Studies/WindTurbinePET_Filtered", driver.FindElement(By.Id("PETRefinement-newPetName")).GetAttribute("value"));
             ShinyUtilities.ScrollToTop(driver);
         }
 
@@ -485,7 +485,7 @@ namespace DigTest
             Assert.Equal("77.01253438", driver.FindElement(By.Id("PETRefinement-new_min_IN_Root_AvgCapMaterialThickness")).GetAttribute("value"));
             Assert.Equal("30", driver.FindElement(By.Id("PETRefinement-new_max_IN_Tip_AvgCapMaterialThickness")).GetAttribute("value"));
             Assert.Equal("Acier, Aluminum", driver.FindElement(By.Id("PETRefinement-new_selection_IN_MatériauDeMoyeu")).GetAttribute("value"));
-            Assert.Equal("/Testing/Parametric Studies/WindTurbinePET_Refined", driver.FindElement(By.Id("PETRefinement-newPetName")).GetAttribute("value"));
+            Assert.Equal("/Testing/Parametric Studies/WindTurbinePET_Filtered", driver.FindElement(By.Id("PETRefinement-newPetName")).GetAttribute("value"));
         }
 
         /// <summary>
