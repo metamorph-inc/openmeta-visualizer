@@ -91,16 +91,30 @@ server <- function(input, output, session, data) {
   ns <- session$ns
 
   FilterData <- data$Filtered
-  var_nums_and_ints <- isolate(data$pre$var_nums_and_ints())
+  #var_nums_and_ints <- isolate(data$pre$var_nums_and_ints())
   var_facs <- isolate(data$pre$var_facs())
   
   pet <- isolate(data$meta$pet)
-  numeric_dvs <- unlist(lapply(pet$design_variable_names,
-                               function (var) {var %in% var_nums_and_ints}))
-  numeric_design_variables <- pet$design_variable_names[numeric_dvs]
-  enumerated_dvs <- unlist(lapply(pet$design_variable_names,
-                                  function (var) {var %in% var_facs}))
-  enumerated_design_variables <- pet$design_variable_names[enumerated_dvs]
+  # Need to determine numeric vs enumerated types using PET data
+  var_type <- sapply(pet$design_variables, function (var) {
+    if (var$type == "Enumeration"){
+	  ret <- "Enumeration"
+    } else {
+	  ret <- "Numeric"
+	}
+    ret
+  })
+  numeric_design_variables <- pet$design_variable_names[var_type == "Numeric"]
+  enumerated_design_variables <- pet$design_variable_names[var_type == "Enumeration"]
+
+  enumerated_types <- sapply(enumerated_design_variables, function (dv_name) {
+    if (dv_name %in% var_facs) {
+      ret <- "string"
+    } else {
+      ret <- "numeric"
+    }
+    ret
+  })
   
   design_variables <- pet$design_variables
   
@@ -417,8 +431,15 @@ server <- function(input, output, session, data) {
     
     ReassignDV <- function(dv, name) {
       if("type" %in% names(dv) && dv$type == "enum") {
-        dv$items <- unlist(lapply(strsplit(input[[paste0('new_selection_', name)]], ","),
-                                  trimws))
+        dv_item_types <- sapply(dv$items, class)
+        if (dv_item_types[[1]] == "character") {
+          dv$items <- unlist(lapply(strsplit(input[[paste0('new_selection_', name)]], ","),
+                                    trimws))
+        } else {
+          dv$items <- as.numeric(unlist(lapply(strsplit(input[[paste0('new_selection_', name)]], ","),
+                                               trimws)))
+          # TODO: Differentiate between floats/ints?
+        }
         # To retain array type in .json file
         if (length(dv$items) == 1) {
           dv$items <- list(dv$items)
