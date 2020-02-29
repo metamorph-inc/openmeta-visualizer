@@ -14,6 +14,8 @@ To create a new release of the Visualizer:
 
 1. First make sure your changes pass all tests by running them locally using the `DigTest/DigTest.sln` project or pushing the changes without a tag and letting AppVeyor build them.
 
+NOTE: Put testing instructions here.
+
 2. Update the version and release date information in the "About" section of the Visualizer. This can be done by modifying the code at the bottom of the `Dig/app.R` file.
 
 2. Create an annotate tag with the new version number, add a meaningful tag message, and push the tag.
