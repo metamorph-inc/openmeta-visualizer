@@ -149,6 +149,35 @@ ui <- function(id) {
           )
         ),
         conditionalPanel(
+          condition = paste0('output["', ns('found_cad'), '"] == true'),
+          hr(),
+          fluidRow(
+            column(12, br(),
+              extendShinyjs(functions=c("viewCADFiles"), text=
+                '
+                function sleep(miliseconds) {
+                  return new Promise(function (resolve) {
+                    setTimeout(() => {
+                      resolve()
+                    }, miliseconds)
+                  })
+                }
+                shinyjs.viewCADFiles = async function(params) {
+                  params = shinyjs.getParams(params, {cad_file_bytes:null, point_details:null})
+                  if (!params.cad_file_bytes || !params.point_details) {
+                    return null
+                  }
+                  var w = window.open("/stl_viewer/view_cad.html")
+                  w.cad_file_bytes = params.cad_file_bytes
+                  w.point_details = params.point_details
+                }
+                '
+              ),
+              actionButton(ns("view_cad"), "View Cad")
+            )
+          )
+        ),
+        conditionalPanel(
           condition = paste0('output["', ns('found_images'), '"] == true'),
           hr(),
           fluidRow(
@@ -754,5 +783,33 @@ server <- function(input, output, session, data) {
     updateSelectInput(session, "file_images",
                       choices = choices,
                       selected = choices[num_selected])
+  })
+
+  output$found_cad <- reactive({
+    guid_folder <- guid_folders[[input$details_guid]]
+    if (!is.null(guid_folder) 
+    && "toplevelstl.stl" %in% tolower(list.files(guid_folder))) {
+      shinyjs::logjs("CAD File Exists")
+      
+      TRUE
+    } else {
+      FALSE
+    }
+  })
+  outputOptions(output, "found_cad", suspendWhenHidden=FALSE)
+
+  observeEvent(input$view_cad, {
+    req(input$view_cad, input$details_guid)
+    shinyjs::logjs("Loading CAD File Bytes")
+
+    single_point <- data$raw$df[data$raw$df$GUID == input$details_guid, ]
+    guid_folder <- guid_folders[[input$details_guid]]
+    path <- file.path(guid_folder, "TopLevelSTL.stl")
+    bytes_to_read <- file.size(path)
+    stlfile <- file(path, "rb")
+    cad_file_bytes <- readBin(stlfile, integer(), size=1, n=bytes_to_read)
+
+    shinyjs::logjs("Opening CAD File in new tab")
+    js$viewCADFiles(cad_file_bytes=cad_file_bytes, point_details=single_point)
   })
 }
