@@ -10,6 +10,7 @@
 			stl_viewer = new StlViewer(document.getElementById("stl_cont"))
 			stl_viewer.ready_callback = AddModel
 		}
+		window.addEventListener("load", Initialize_STL_VIEW)
 
 		function sleep(miliseconds) {
 			return new Promise(function (resolve) {
@@ -19,11 +20,11 @@
 			})
 		}
 
-		var has_ran = false
+		// var has_ran = false
 		async function AddModel() {
-			if (!has_ran) has_ran = true
-			else return
-			
+			// if (!has_ran) has_ran = true
+			// else return
+
 			while (typeof window.cad_file_bytes === "undefined"
 				|| typeof window.point_details === "undefined") {
 				await sleep(10)
@@ -61,7 +62,7 @@
 				canvas.style.height = "calc(100% - 38px)"
 			}
 		}
-		window.addEventListener("load", AddModel)
+		// window.addEventListener("load", AddModel)
 
 		function showPointDetails() {
 			var point_details_info = document.getElementById("point_details_info")
@@ -94,13 +95,26 @@
 
 		#proc {
 			position: fixed;
-			top: calc(50% - calc(2.5em / 2));
+			top: calc(50% - calc(120px / 2));
+			left: calc(50% - calc(120px / 2));
 			display: block;
-			margin: auto;
-			width: 100%;
 
-			font-size: 2.5em;
-			text-align: center;
+			border: 16px solid #f3f3f3;
+			border-top: 16px solid #3498db;
+			border-radius: 50%;
+			width: 120px;
+			height: 120px;
+			animation: spin 2s linear infinite;
+		}
+
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+
+			100% {
+				transform: rotate(360deg);
+			}
 		}
 
 		#stl_cont {
@@ -131,6 +145,7 @@
 			margin: 0%;
 			padding: 0%;
 		}
+
 		#point_details_container:hover #view_point_details {
 			margin: 0%;
 			padding-bottom: 1em;
@@ -143,6 +158,7 @@
 
 			display: none;
 		}
+
 		#point_details_container:hover #all_point_details {
 			display: inline-block;
 		}
@@ -163,6 +179,7 @@
 		table {
 			border-collapse: collapse;
 		}
+
 		table td {
 			padding-left: 5px;
 			padding-right: 5px;
@@ -176,11 +193,8 @@
 				<table id="point_details_table"></table>
 			</div>
 		</div>
-		<label id="proc">Processing..</label>
+		<div id="proc"></div>
 	</div>
-	<script>
-		Initialize_STL_VIEW()
-	</script>
 </body>
 
 </html>
