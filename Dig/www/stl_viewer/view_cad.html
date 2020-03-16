@@ -50,7 +50,7 @@
 						</table>
 					</div>
 					<div class="control_group invisible">
-						<h4 onclick="toggleVisibility.call(this.parentElement)">Positioning</h4>
+						<h4 onclick="toggleVisibility.call(this.parentElement)">Model Positioning</h4>
 						<table cellspacing="15">
 							<tr>
 								<td>Auto-rotation</td>
@@ -60,24 +60,24 @@
 								</td>
 							</tr>
 							<tr>
-								<td colspan="2"><button type="button" name="range_center" onclick="console.log('Here'); setSTLData.call(this)" >Center</button></td>
+								<td colspan="2"><button type="button" name="model_center" onclick="console.log('Here'); setSTLData.call(this)" >Center</button></td>
 							</tr>
 							<tr>
 								<td>X</td>
-								<td><input type="range" name="x_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
+								<td><input type="range" name="model_x_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
 								<td>Y</td>
-								<td><input type="range" name="y_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
+								<td><input type="range" name="model_y_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
 								<td>Z</td>
-								<td><input type="range" name="z_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
+								<td><input type="range" name="model_z_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
 								<td>Orientation</td>
 								<td>
-									<select name="orientation" oninput="setSTLData.call(this)">
+									<select name="model_orientation" oninput="setSTLData.call(this)">
 										<option value="front">Front</option>
 										<option value="right">Right</option>
 										<option value="top">Top</option>
@@ -89,15 +89,15 @@
 							</tr>
 							<tr>
 								<td>X Rot</td>
-								<td><input type="range" name="x_rot" oninput="setSTLData.call(this)" /></td>
+								<td><input type="range" name="model_x_rot" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
 								<td>Y Rot</td>
-								<td><input type="range" name="y_rot" oninput="setSTLData.call(this)" /></td>
+								<td><input type="range" name="model_y_rot" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
 								<td>Z Rot</td>
-								<td><input type="range" name="z_rot" oninput="setSTLData.call(this)" /></td>
+								<td><input type="range" name="model_z_rot" oninput="setSTLData.call(this)" /></td>
 							</tr>
 						</table>
 					</div>
@@ -105,41 +105,29 @@
 						<h4 onclick="toggleVisibility.call(this.parentElement)">Camera Positioning</h4>
 						<table cellspacing="15">
 							<tr>
-								<td>Orientation</td>
-								<td>
-									<select name="orientation" oninput="setSTLData.call(this)">
-										<option value="front">Front</option>
-										<option value="right">Right</option>
-										<option value="top">Top</option>
-										<option value="back">Back</option>
-										<option value="left">Left</option>
-										<option value="bottom">Bottom</option>
-									</select>
-								</td>
+								<td colspan="2"><button type="button" name="camera_center" onclick="setSTLData.call(this)" >Center</button></td>
 							</tr>
 							<tr>
-								<td>X</td>
-								<td><input type="range" name="camera_x_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
+								<td>Pan Left-Right</td>
+								<td><input type="range" name="camera_pan_left_right" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
-								<td>Y</td>
-								<td><input type="range" name="camera_y_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
+								<td>Pan Up-Down</td>
+								<td><input type="range" name="camera_pan_up_down" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
-								<td>Z</td>
-								<td><input type="range" name="camera_z_range" value="0" min="-1000" max="1000" oninput="setSTLData.call(this)" /></td>
+								<td colspan="2"><button type="button" name="camera_rot_reset" onclick="setSTLData.call(this)" >Reset</button></td>
 							</tr>
 							<tr>
-								<td>X Rot</td>
-								<td><input type="range" name="camera_x_rot" oninput="setSTLData.call(this)" /></td>
+								<td>Rotate Left-Right</td>
+								<td><input type="range" name="camera_rot_left_right" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
-								<td>Y Rot</td>
-								<td><input type="range" name="camera_y_rot" oninput="setSTLData.call(this)" /></td>
+								<td>Rotate Up-Down</td>
+								<td><input type="range" name="camera_rot_up_down" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
-								<td>Z Rot</td>
-								<td><input type="range" name="camera_z_rot" oninput="setSTLData.call(this)" /></td>
+								<td colspan="2"><button type="button" name="camera_zoom_to_fit" onclick="setSTLData.call(this)" >Zoom To Fit</button></td>
 							</tr>
 						</table>
 					</div>
@@ -151,22 +139,22 @@
 								<td>
 									<input type="radio" name="display" oninput="setSTLData.call(this)" value="flat" checked />Flat Shading<br />
 									<input type="radio" name="display" oninput="setSTLData.call(this)" value="smooth" />Smooth Shading<br />
-									<input type="radio" name="display" oninput="setSTLData.call(this)" value="wire" />Wireframe Shading<br />
+									<input type="radio" name="display" oninput="setSTLData.call(this)" value="wireframe" />Wireframe Shading<br />
 								</td>
 							</tr>
 							<tr>
 								<td>Model Color</td>
-								<td><input type="color" name="model_color" oninput="setSTLData.call(this)" /></td>
+								<td><input type="color" name="model_color" value="#909090" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
 								<td>BG Color</td>
-								<td><input type="color" name="bg_color" oninput="setSTLData.call(this)" /></td>
+								<td><input type="color" name="bg_color" value="#FFFFFF" oninput="setSTLData.call(this)" /></td>
 							</tr>
 							<tr>
 								<td>Edges</td>
 								<td>
-									<input type="radio" name="edges" oninput="setSTLData.call(this)" value="yes" checked />Yes<br />
-									<input type="radio" name="edges" oninput="setSTLData.call(this)" value="no" />No
+									<input type="radio" name="edges" oninput="setSTLData.call(this)" value="true" />Yes<br />
+									<input type="radio" name="edges" oninput="setSTLData.call(this)" value="false" checked />No
 								</td>
 							</tr>
 						</table>

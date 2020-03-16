@@ -171,6 +171,15 @@ div.loading_spinner {
 #plot_controls_container #plot_controls div.control_group:hover *:not(select):not(option):not(button) {
     color: white;
 }
+#plot_controls_container #plot_controls div.control_group:hover button {
+    border: outset;
+    cursor: pointer;
+    box-shadow: 0 2px black;
+}
+#plot_controls_container #plot_controls div.control_group:hover button:active {
+    box-shadow: 0 1px black;
+    transform: translateY(1px) translateX(1px);
+}
 #plot_controls_container #plot_controls div.control_group h4 {
     margin: 0%;
     padding: 0%;

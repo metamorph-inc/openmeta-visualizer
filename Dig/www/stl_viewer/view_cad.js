@@ -76,53 +76,126 @@ async function AddModel() {
     }
 }
 
-function setModelData() {
+async function setModelData() {
     var model_info = stl_viewer.get_model_info(stl_model_id)
-    if (["orientation", "x_rot", "y_rot", "z_rot"].includes(this.name)) {
+    if (["model_orientation", "model_x_rot", "model_y_rot", "model_z_rot"].includes(this.name)) {
         stl_viewer.rotate(stl_model_id, -model_info.rotation.x
             , -model_info.rotation.y, -model_info.rotation.z)
-        stl_viewer.rotate(stl_model_id, getPlotControlData.x_rot.value
-            , getPlotControlData.y_rot.value, getPlotControlData.z_rot.value)
+        stl_viewer.rotate(stl_model_id, getPlotControlData.model_x_rot.value
+            , getPlotControlData.model_y_rot.value, getPlotControlData.model_z_rot.value)
     }
-    if (["x_range", "y_range", "z_range"].includes(this.name)) {
-        stl_viewer.set_position(stl_model_id, getPlotControlData.x_range.value
-            , getPlotControlData.y_range.value, getPlotControlData.z_range.value)
+    if (["model_x_range", "model_y_range", "model_z_range"].includes(this.name)) {
+        stl_viewer.set_position(stl_model_id, getPlotControlData.model_x_range.value
+            , getPlotControlData.model_y_range.value, getPlotControlData.model_z_range.value)
+    }
+    if (["model_center"].includes(this.name)) {
+        stl_viewer.set_position(stl_model_id, 0, 0, 0)
+    }
+    if (["camera_pan_left_right"].includes(this.name)) {
+        stl_viewer.controls.panLeft(stl_viewer.controls.center.x)
+        stl_viewer.controls.panLeft(this.value)
+    }
+    if (["camera_pan_up_down"].includes(this.name)) {
+        stl_viewer.controls.panUp(-stl_viewer.controls.center.y)
+        stl_viewer.controls.panUp(this.value)
+    }
+    if (["camera_center"].includes(this.name)) {
+        stl_viewer.controls.panLeft(stl_viewer.controls.center.x)
+        stl_viewer.controls.panUp(-stl_viewer.controls.center.y)
+        stl_viewer.controls.center.z = 0
+        stl_viewer.controls.update()
+        // stl_viewer.controls.reset()
+    }
+    if (["camera_rot_reset"].includes(this.name)) {
+        let tolerance = 0.0001
+        while (stl_viewer.camera.rotation.y > tolerance || stl_viewer.camera.rotation.y < -tolerance) {
+            stl_viewer.controls.rotateLeft(stl_viewer.camera.rotation.y)
+            await sleep(10)
+        }
+        stl_viewer.controls.rotateUp(stl_viewer.camera.rotation.x)
+    }
+    if (["camera_zoom_to_fit"].includes(this.name)) {
+        let y_zoom_amount = (stl_viewer.get_model_info(stl_model_id).dims.y / 2) / Math.tan(Math.PI / 8) / stl_viewer.camera.position.z
+        let x_zoom_amount = (stl_viewer.get_model_info(stl_model_id).dims.x / 2) / Math.tan(Math.PI / 8) / stl_viewer.camera.position.z
+
+        stl_viewer.controls.dollyOut(y_zoom_amount > x_zoom_amount ? y_zoom_amount : x_zoom_amount)
     }
 
-    stl_viewer.set_auto_rotate(JSON.parse(getPlotControlData.auto.value))
+    if (["auto"].includes(this.name)) {
+        stl_viewer.set_auto_rotate(JSON.parse(this.value))
+    }
+
+    if (["bg_color"].includes(this.name)) {
+        stl_viewer.set_bg_color(this.value)
+    }
+
+    if (["model_color"].includes(this.name)) {
+        stl_viewer.set_color(stl_model_id, this.value)
+    }
+
+    if (["edges"].includes(this.name)) {
+        stl_viewer.set_edges(stl_model_id, JSON.parse(this.value))
+    }
+
+    if (["display"].includes(this.name)) {
+        stl_viewer.set_display(stl_model_id, this.value)
+    }
+
+
 }
 
-function setRotationValues(new_rot) {
+function setModelRotationValues(new_rot) {
     [
-        getPlotControlData.x_rot.value,
-        getPlotControlData.y_rot.value,
-        getPlotControlData.z_rot.value
+        getPlotControlData.model_x_rot.value,
+        getPlotControlData.model_y_rot.value,
+        getPlotControlData.model_z_rot.value
     ] = new_rot
 }
 
+function setModelPositionValues(new_pos) {
+    [
+        getPlotControlData.model_x_range.value,
+        getPlotControlData.model_y_range.value,
+        getPlotControlData.model_z_range.value
+    ] = new_pos
+}
+
+function setCameraPanValues(new_pan) {
+    [
+        getPlotControlData.camera_pan_left_right.value,
+        getPlotControlData.camera_pan_up_down.value
+    ] = new_pan
+}
+
 function setPlotControlData() {
-    if (this.name === "orientation") {
-        if (getPlotControlData.orientation.value === "front") {
-            setRotationValues([0, 0, 0])
+    if (["model_orientation"].includes(this.name)) {
+        if (getPlotControlData.model_orientation.value === "front") {
+            setModelRotationValues([0, 0, 0])
         }
-        if (getPlotControlData.orientation.value === "right") {
-            setRotationValues([0, -(Math.PI / 2).toFixed(2), 0])
+        if (getPlotControlData.model_orientation.value === "right") {
+            setModelRotationValues([0, -(Math.PI / 2).toFixed(2), 0])
         }
-        if (getPlotControlData.orientation.value === "top") {
-            setRotationValues([(Math.PI / 2).toFixed(2), 0, 0])
+        if (getPlotControlData.model_orientation.value === "top") {
+            setModelRotationValues([(Math.PI / 2).toFixed(2), 0, 0])
         }
-        if (getPlotControlData.orientation.value === "back") {
-            setRotationValues([(Math.PI).toFixed(2), 0, 0])
+        if (getPlotControlData.model_orientation.value === "back") {
+            setModelRotationValues([(Math.PI).toFixed(2), 0, 0])
         }
-        if (getPlotControlData.orientation.value === "left") {
-            setRotationValues([0, (Math.PI / 2).toFixed(2), 0])
+        if (getPlotControlData.model_orientation.value === "left") {
+            setModelRotationValues([0, (Math.PI / 2).toFixed(2), 0])
         }
-        if (getPlotControlData.orientation.value === "bottom") {
-            setRotationValues([-(Math.PI / 2).toFixed(2), 0, 0])
+        if (getPlotControlData.model_orientation.value === "bottom") {
+            setModelRotationValues([-(Math.PI / 2).toFixed(2), 0, 0])
         }
     }
-    if (["x_rot", "y_rot", "z_rot"].includes(this.name)) {
-        getPlotControlData.orientation.value = ""
+    if (["model_x_rot", "model_y_rot", "model_z_rot"].includes(this.name)) {
+        getPlotControlData.model_orientation.value = ""
+    }
+    if (["model_center"].includes(this.name)) {
+        setModelPositionValues([0, 0, 0])
+    }
+    if (["camera_center"].includes(this.name)) {
+        setCameraPanValues([0, 0, 0])
     }
 
     var model_info = stl_viewer.get_model_info(stl_model_id)
@@ -153,75 +226,67 @@ function setPlotControlData() {
 
 function updatePositionAndRotationControls(event) {
     if (!event) {
-        getPlotControlData.x_rot.min = (-2 * Math.PI).toFixed(2)
-        getPlotControlData.y_rot.min = (-2 * Math.PI).toFixed(2)
-        getPlotControlData.z_rot.min = (-2 * Math.PI).toFixed(2)
-        getPlotControlData.x_rot.max = (2 * Math.PI).toFixed(2)
-        getPlotControlData.y_rot.max = (2 * Math.PI).toFixed(2)
-        getPlotControlData.z_rot.max = (2 * Math.PI).toFixed(2)
-        getPlotControlData.x_rot.step = "0.01"
-        getPlotControlData.y_rot.step = "0.01"
-        getPlotControlData.z_rot.step = "0.01"
-        getPlotControlData.x_rot.value = "0.00"
-        getPlotControlData.y_rot.value = "0.00"
-        getPlotControlData.z_rot.value = "0.00"
+        getPlotControlData.model_x_rot.min = (-2 * Math.PI).toFixed(2)
+        getPlotControlData.model_y_rot.min = (-2 * Math.PI).toFixed(2)
+        getPlotControlData.model_z_rot.min = (-2 * Math.PI).toFixed(2)
+        getPlotControlData.model_x_rot.max = (2 * Math.PI).toFixed(2)
+        getPlotControlData.model_y_rot.max = (2 * Math.PI).toFixed(2)
+        getPlotControlData.model_z_rot.max = (2 * Math.PI).toFixed(2)
+        getPlotControlData.model_x_rot.step = "0.01"
+        getPlotControlData.model_y_rot.step = "0.01"
+        getPlotControlData.model_z_rot.step = "0.01"
+        getPlotControlData.model_x_rot.value = "0.00"
+        getPlotControlData.model_y_rot.value = "0.00"
+        getPlotControlData.model_z_rot.value = "0.00"
+
+        getPlotControlData.camera_pan_left_right.min = (-1000).toFixed(2)
+        getPlotControlData.camera_pan_left_right.max = (1000).toFixed(2)
+        getPlotControlData.camera_pan_left_right.step = "0.01"
+
+        getPlotControlData.camera_pan_up_down.min = (-1000).toFixed(2)
+        getPlotControlData.camera_pan_up_down.max = (1000).toFixed(2)
+        getPlotControlData.camera_pan_up_down.step = "0.01"
     }
     else {
-        var model_info = stl_viewer.get_model_info(stl_model_id)
-        var new_values = [
-            model_info.rotation.x.toFixed(2),
-            model_info.rotation.y.toFixed(2),
-            model_info.rotation.z.toFixed(2),
-            Number(Math.min(...[model_info.dims.x, getPlotControlData.x_range.min])).toFixed(2),
-            Number(Math.max(...[model_info.dims.x, getPlotControlData.x_range.max])).toFixed(2),
-            model_info.dims.x.toFixed(2),
-            Number(Math.min(...[model_info.dims.y, getPlotControlData.y_range.min])).toFixed(2),
-            Number(Math.max(...[model_info.dims.y, getPlotControlData.y_range.max])).toFixed(2),
-            model_info.dims.y.toFixed(2),
-            Number(Math.min(...[model_info.dims.z, getPlotControlData.z_range.min])).toFixed(2),
-            Number(Math.max(...[model_info.dims.z, getPlotControlData.z_range.max])).toFixed(2),
-            model_info.dims.z.toFixed(2)
-        ]
-
-        [
-            getPlotControlData.x_rot.value,
-            getPlotControlData.y_rot.value,
-            getPlotControlData.z_rot.value,
-            getPlotControlData.x_range.min,
-            getPlotControlData.x_range.max,
-            getPlotControlData.x_range.value,
-            getPlotControlData.y_range.min,
-            getPlotControlData.y_range.max,
-            getPlotControlData.y_range.value,
-            getPlotControlData.z_range.min,
-            getPlotControlData.z_range.max,
-            getPlotControlData.z_range.value
-        ] = new_values
+        setCameraPanValues([
+            -stl_viewer.controls.center.x,
+            stl_viewer.controls.center.y
+        ])
     }
+}
+
+function setGetPlotControlData(queryString) {
+    getPlotControlData[queryString.replace(/^.*\[name=(.*)\].*$/g, "$1")] = document.querySelector(queryString)
 }
 
 function getPlotControlData() {
-    getPlotControlData.file_units = document.querySelector("[name=file_units]:checked")
-    getPlotControlData.size_units = document.querySelector("[name=size_units]")
-    getPlotControlData.size = document.querySelector("[name=size]")
-    getPlotControlData.volume_units = document.querySelector("[name=volume_units]")
-    getPlotControlData.volume = document.querySelector("[name=volume]")
-    getPlotControlData.auto = document.querySelector("[name=auto]:checked")
-    getPlotControlData.orientation = document.querySelector("[name=orientation]")
-    getPlotControlData.x_range = document.querySelector("[name=x_range]")
-    getPlotControlData.y_range = document.querySelector("[name=y_range]")
-    getPlotControlData.z_range = document.querySelector("[name=z_range]")
-    getPlotControlData.x_rot = document.querySelector("[name=x_rot]")
-    getPlotControlData.y_rot = document.querySelector("[name=y_rot]")
-    getPlotControlData.z_rot = document.querySelector("[name=z_rot]")
-    getPlotControlData.display = document.querySelector("[name=display]:checked")
-    getPlotControlData.model_color = document.querySelector("[name=model_color]")
-    getPlotControlData.bg_color = document.querySelector("[name=bg_color]")
-    getPlotControlData.edges = document.querySelector("[name=edges]:checked")
+    setGetPlotControlData("[name=file_units]:checked")
+    setGetPlotControlData("[name=size_units]")
+    setGetPlotControlData("[name=size]")
+    setGetPlotControlData("[name=volume_units]")
+    setGetPlotControlData("[name=volume]")
+    setGetPlotControlData("[name=auto]:checked")
+    setGetPlotControlData("[name=display]:checked")
+
+    setGetPlotControlData("[name=model_orientation]")
+    setGetPlotControlData("[name=model_x_range]")
+    setGetPlotControlData("[name=model_y_range]")
+    setGetPlotControlData("[name=model_z_range]")
+    setGetPlotControlData("[name=model_x_rot]")
+    setGetPlotControlData("[name=model_y_rot]")
+    setGetPlotControlData("[name=model_z_rot]")
+
+    setGetPlotControlData("[name=camera_pan_left_right]")
+    setGetPlotControlData("[name=camera_pan_up_down]")
+
+    setGetPlotControlData("[name=display]:checked")
+    setGetPlotControlData("[name=model_color]")
+    setGetPlotControlData("[name=bg_color]")
+    setGetPlotControlData("[name=edges]:checked")
 }
 
-function setSTLData() {
+async function setSTLData() {
     getPlotControlData.call(this)
     setPlotControlData.call(this)
-    setModelData.call(this)
+    await setModelData.call(this)
 }
