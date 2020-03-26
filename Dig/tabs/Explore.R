@@ -169,7 +169,6 @@ ui <- function(id) {
                 }
                 '
               ),
-              # actionButton(ns("view_cad"), "View Cad")
               selectInput(ns("cad_files"), label="CAD Files", choices = c(), NULL),
               actionButton(ns("view_cad"), "View CAD")
             )
@@ -806,22 +805,6 @@ server <- function(input, output, session, data) {
 
     single_point <- data$raw$df[data$raw$df$GUID == input$details_guid, ]
     guid_folder <- guid_folders[[input$details_guid]]
-    # archived_files <- list.files(guid_folder)
-    # stl_file_indicies <- grep("^.*\\.stl$", archived_files)
-
-    # cad_file_bytes <- lapply(stl_file_indicies, function(index) {
-    #   path <- file.path(guid_folder, archived_files[index])
-    #   bytes_to_read <- file.size(path)
-    #   stl_file <- file(path, "rb")
-    #   bytes <- readBin(stl_file, integer(), size=1, n=bytes_to_read)
-    #   close(stl_file)
-    #   bytes
-    # })
-
-    # path <- file.path(guid_folder, "TopLevelSTL.stl")
-    # bytes_to_read <- file.size(path)
-    # stlfile <- file(path, "rb")
-    # cad_file_bytes <- readBin(stlfile, integer(), size=1, n=bytes_to_read)
 
     path <- file.path(guid_folder, input$cad_files)
     bytes_to_read <- file.size(path)
