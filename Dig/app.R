@@ -879,7 +879,6 @@ Server <- function(input, output, session) {
           type <- data$meta$colorings[[input$coloring_source]]$type
         }
         isolate({
-          data$colorings$current <- list()
           data$colorings$current$name <- input$coloring_source
           data$colorings$current$type <- type
         })
@@ -916,6 +915,9 @@ Server <- function(input, output, session) {
             isolate({
               data$colorings$current$var <- var
               data$colorings$current$goal <- goal
+              data$colorings$current$colors <- cols
+              data$colorings$current$max <- maximum
+              data$colorings$current$min <- minimum
             })
           },
           "Discrete" = 
@@ -937,7 +939,7 @@ Server <- function(input, output, session) {
                 v_value <- scheme$rainbow_v
               }
             }
-            variables_list = names(table(data_colored[[var]]))
+            variables_list <- names(table(droplevels(FilteredData()[[var]])))
             switch(palette_selection,
                    "Rainbow"={cols <- rainbow(length(variables_list),
                                               s_value,
@@ -952,9 +954,15 @@ Server <- function(input, output, session) {
             isolate({
               data$colorings$current$var <- var
               data$colorings$current$colors <- cols
+              data$colorings$current$variables_list <- variables_list
             })
           }
         )
+      }
+      else {
+        isolate({
+          data$colorings$current <- NULL
+        })
       }
     }
     
@@ -1017,17 +1025,52 @@ Server <- function(input, output, session) {
     req(data$colorings$current$type)
     req(data$colorings$current$var)
     req(data$raw$df)
-    if (data$colorings$current$type == "Discrete") {
-      names <- names(table(data$raw$df[data$colorings$current$var]))
-      raw_label <- ""
-      for(i in 1:length(data$colorings$current$colors)){
-        raw_label <- HTML(paste(raw_label, "<font color=",
-                                sub("FF$", "", data$colorings$current$colors[i]),
-                                "<b>", "&#9632", " ",
-                                names[i], '<br/>'))
-      }
-      raw_label
+    truncDigits <- function(number) {
+      substr(paste0(number), 0, 10)
     }
+    switch(data$colorings$current$type,
+      "Discrete"={
+        raw_label <- ""
+        for(i in 1:length(data$colorings$current$colors)){
+          raw_label <- HTML(paste(raw_label, "<font color=\"",
+                                  sub("FF$", "", data$colorings$current$colors[i]),
+                                  "\"><b>", "&#9632", " ",
+                                  data$colorings$current$variables_list[i], '</b></font><br/>'))
+        }
+      },
+      "Max/Min"={
+        raw_label <- ""
+        switch(data$colorings$current$goal, 
+          "Maximize"={
+            raw_label <- paste0(
+              raw_label, 
+              "<label>", truncDigits(data$colorings$current$min), "</label>",
+              "replace-with-gradient",
+              "<label>", truncDigits(data$colorings$current$max), "</label>"
+            )
+          },
+          "Minimize"={
+            raw_label <- paste0(
+              raw_label, 
+              "<label>", truncDigits(data$colorings$current$max), "</label>",
+              "replace-with-gradient",
+              "<label>", truncDigits(data$colorings$current$min), "</label>"
+            )
+          }
+        )
+
+        raw_label <- HTML(sub(
+          "replace-with-gradient",
+          paste0(
+            "&nbsp;</div><div style=\"height: 10em; width: 5.5em; background-image: linear-gradient(to bottom, ",
+            gsub("[\\\"\\[\\]]", "", toJSON(data$colorings$current$colors), perl=TRUE),
+            ");\"></div>"
+          ),
+          raw_label
+        ))
+      }
+    )
+    raw_label
   })
   
   observe({
@@ -1119,6 +1162,7 @@ Server <- function(input, output, session) {
   data$Filters <- Filters
   
   # Build the 'meta' list.
+  data$colorings <- reactiveValues()
   data$meta <- reactiveValues(variables=variables,
                               colorings=colorings,
                               pet=pet,
