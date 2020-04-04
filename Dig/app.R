@@ -939,7 +939,11 @@ Server <- function(input, output, session) {
                 v_value <- scheme$rainbow_v
               }
             }
-            variables_list <- names(table(droplevels(FilteredData()[[var]])))
+            variables_list <- if (input$keep_coloring_while_filtering) {
+              names(table(FilteredData()[[var]]))
+            } else {
+              names(table(droplevels(FilteredData()[[var]])))
+            }
             switch(palette_selection,
                    "Rainbow"={cols <- rainbow(length(variables_list),
                                               s_value,
@@ -1028,17 +1032,36 @@ Server <- function(input, output, session) {
     truncDigits <- function(number) {
       substr(paste0(number), 0, 10)
     }
+
     switch(data$colorings$current$type,
       "Discrete"={
-        raw_label <- ""
-        for(i in 1:length(data$colorings$current$colors)){
-          raw_label <- HTML(paste(raw_label, "<font color=\"",
-                                  sub("FF$", "", data$colorings$current$colors[i]),
-                                  "\"><b>", "&#9632", " ",
-                                  data$colorings$current$variables_list[i], '</b></font><br/>'))
+        all_variables_list <- names(table(data$raw$df[data$colorings$current$var]))
+        visible_variables_list <- names(table(droplevels(FilteredData()[[data$colorings$current$var]])))
+
+        shinyjs::show("keep_coloring_while_filtering")
+        raw_label <- "<label style=\"display: block;\">Visible Values</label>visible-values"
+        if (length(all_variables_list) != length(visible_variables_list)) {
+          raw_label <- paste0(raw_label, "<label style=\"display: block;\">Filtered Out Variabels</label>filtered-out")
         }
+
+        current_color_index <- 1
+        for(i in 1:length(all_variables_list)){
+          variable <- all_variables_list[i]
+          visible <- variable %in% visible_variables_list
+          add_color <- variable %in% data$colorings$current$variables_list
+          replace_string <- if (visible) { "visible-values" } else { "filtered-out" }
+          replace_value <- paste("<label style=\"display: block; color: ",
+                              sub("FF$", "", if (add_color) { data$colorings$current$colors[current_color_index] } else { "black" }, perl=TRUE),
+                              "\">", "&#9632", " ",
+                              variable, '</label>', replace_string)
+          current_color_index <- if (add_color) { current_color_index + 1 } else { current_color_index }
+          raw_label <- sub(replace_string, replace_value, raw_label, perl=TRUE)
+        }
+
+        raw_label <- gsub("(visible-values|filtered-out)", "", raw_label, perl=TRUE)
       },
       "Max/Min"={
+        shinyjs::hide("keep_coloring_while_filtering")
         raw_label <- ""
         switch(data$colorings$current$goal, 
           "Maximize"={
@@ -1059,7 +1082,7 @@ Server <- function(input, output, session) {
           }
         )
 
-        raw_label <- HTML(sub(
+        raw_label <- sub(
           "replace-with-gradient",
           paste0(
             "&nbsp;</div><div style=\"height: 10em; width: 5.5em; background-image: linear-gradient(to bottom, ",
@@ -1067,10 +1090,10 @@ Server <- function(input, output, session) {
             ");\"></div>"
           ),
           raw_label
-        ))
+        )
       }
     )
-    raw_label
+    HTML(raw_label)
   })
   
   observe({
@@ -1325,6 +1348,7 @@ ui <- fluidPage(
         column(3,
           h4("Coloring Source"),
           selectInput("coloring_source", "Source", choices = c("None", "Live")),  #, selected = si("coloring_source", "None")),
+          checkboxInput("keep_coloring_while_filtering", label="Keep Coloring While Filtering"),
           htmlOutput("coloring_legend")
         ),
         column(3,
