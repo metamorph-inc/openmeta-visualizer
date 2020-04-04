@@ -878,10 +878,11 @@ Server <- function(input, output, session) {
         else {
           type <- data$meta$colorings[[input$coloring_source]]$type
         }
-        isolate({
-          data$colorings$current$name <- input$coloring_source
-          data$colorings$current$type <- type
-        })
+        
+        current <- list()
+        current$name <- input$coloring_source
+        current$type <- type
+        
         switch(type,
           "Max/Min" = 
           {
@@ -912,12 +913,15 @@ Server <- function(input, output, session) {
                 cols[Bin(value)]
               }
             }))
+            
+            current$var <- var
+            current$goal <- goal
+            current$colors <- cols
+            current$max <- maximum
+            current$min <- minimum
+
             isolate({
-              data$colorings$current$var <- var
-              data$colorings$current$goal <- goal
-              data$colorings$current$colors <- cols
-              data$colorings$current$max <- maximum
-              data$colorings$current$min <- minimum
+              data$colorings$current <- current
             })
           },
           "Discrete" = 
@@ -939,11 +943,8 @@ Server <- function(input, output, session) {
                 v_value <- scheme$rainbow_v
               }
             }
-            variables_list <- if (input$keep_coloring_while_filtering) {
-              names(table(FilteredData()[[var]]))
-            } else {
-              names(table(droplevels(FilteredData()[[var]])))
-            }
+
+            variables_list <- names(table(droplevels(FilteredData()[[var]])))
             switch(palette_selection,
                    "Rainbow"={cols <- rainbow(length(variables_list),
                                               s_value,
@@ -955,11 +956,22 @@ Server <- function(input, output, session) {
             for(i in 1:length(variables_list)){
               data_colored$color[(data_colored[[var]] == variables_list[i])] <- cols[i]
             }
-            isolate({
-              data$colorings$current$var <- var
-              data$colorings$current$colors <- cols
-              data$colorings$current$variables_list <- variables_list
-            })
+            
+            current$var <- var
+            current$colors <- cols
+            current$variables_list <- variables_list
+            
+            if (!input$keep_coloring_while_filtering 
+              || !all(current[!names(current) %in% c("variables_list", "colors")] %in% isolate({ data$colorings$current[!names(data$colorings$current) %in% c("variables_list", "colors")] }))
+              || !all(current$variables_list %in% isolate({ data$colorings$current$variables_list }))) {
+              isolate({
+                  data$colorings$current <- current
+              })
+            } else {
+              isolate({
+                data$colorings$current <- data$colorings$current
+              })
+            }
           }
         )
       }
