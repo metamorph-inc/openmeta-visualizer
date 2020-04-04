@@ -878,7 +878,7 @@ Server <- function(input, output, session) {
         else {
           type <- data$meta$colorings[[input$coloring_source]]$type
         }
-        
+
         current <- list()
         current$name <- input$coloring_source
         current$type <- type
@@ -960,6 +960,7 @@ Server <- function(input, output, session) {
             current$var <- var
             current$colors <- cols
             current$variables_list <- variables_list
+            current$palette_selection <- palette_selection
             
             if (!input$keep_coloring_while_filtering 
               || !all(current[!names(current) %in% c("variables_list", "colors")] %in% isolate({ data$colorings$current[!names(data$colorings$current) %in% c("variables_list", "colors")] }))
