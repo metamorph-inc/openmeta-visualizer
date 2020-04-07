@@ -41,6 +41,7 @@ library(shinyjs)
 library(shinyBS)
 library(jsonlite)
 library(topsis)
+library(colourpicker)
 source("utils.R")
 
 # Defined Constants ----------------------------------------------------------
@@ -933,6 +934,9 @@ Server <- function(input, output, session) {
                 s_value <- input$live_color_rainbow_s
                 v_value <- input$live_color_rainbow_v
               }
+              if (palette_selection == "Custom") {
+                custom_colors <- data$colorings$custom$colors
+              }
             }
             else {
               scheme <- data$meta$colorings[[input$coloring_source]]
@@ -942,9 +946,25 @@ Server <- function(input, output, session) {
                 s_value <- scheme$rainbow_s
                 v_value <- scheme$rainbow_v
               }
+              if (palette_selection == "Custom") {
+                custom_colors <- scheme$custom_colors
+              }
             }
 
+            current$var <- var
             variables_list <- names(table(droplevels(FilteredData()[[var]])))
+            keep_colored_variables_in_colored_list <- (
+              input$keep_coloring_while_filtering 
+              && current$name == data$colorings$current$name
+              && current$type == data$colorings$current$type
+              && current$var == data$colorings$current$var
+              && all(variables_list %in% isolate({ data$colorings$current$variables_list }))
+            )
+
+            if (keep_colored_variables_in_colored_list) {
+              variables_list <- data$colorings$current$variables_list
+            }
+
             switch(palette_selection,
                    "Rainbow"={cols <- rainbow(length(variables_list),
                                               s_value,
@@ -952,25 +972,41 @@ Server <- function(input, output, session) {
                    "Heat"={cols <- heat.colors(length(variables_list))},
                    "Terrain"={cols <- terrain.colors(length(variables_list))},
                    "Topo"={cols <- topo.colors(length(variables_list))},
-                   "Cm"={cols <- cm.colors(length(variables_list))})
+                   "Cm"={cols <- cm.colors(length(variables_list))},
+                   "Custom"={cols <- sapply(colorRampPalette(custom_colors)(length(variables_list)), function(color) { paste0(color, "FF") }, USE.NAMES=FALSE)})
+            
             for(i in 1:length(variables_list)){
               data_colored$color[(data_colored[[var]] == variables_list[i])] <- cols[i]
             }
             
-            current$var <- var
             current$colors <- cols
             current$variables_list <- variables_list
             current$palette_selection <- palette_selection
+            if (palette_selection == "Rainbow") {
+              current$s_value <- s_value
+              current$v_value <- v_value
+            }
+            if (palette_selection == "Custom") {
+              current$custom_colors <- custom_colors
+            }
             
-            if (!input$keep_coloring_while_filtering 
-              || !all(current[!names(current) %in% c("variables_list", "colors")] %in% isolate({ data$colorings$current[!names(data$colorings$current) %in% c("variables_list", "colors")] }))
-              || !all(current$variables_list %in% isolate({ data$colorings$current$variables_list }))) {
+            if (!keep_colored_variables_in_colored_list) {
               isolate({
                   data$colorings$current <- current
               })
             } else {
               isolate({
                 data$colorings$current <- data$colorings$current
+                data$colorings$current$palette_selection <- current$palette_selection
+                data$colorings$current$colors <- current$colors
+                
+                if (palette_selection == "Rainbow") {
+                  data$colorings$current$s_value <- current$s_value
+                  data$colorings$current$v_value <- current$v_value
+                }
+                if (palette_selection == "Custom") {
+                  data$colorings$current$custom_colors <- current$custom_colors
+                }
               })
             }
           }
@@ -1031,9 +1067,84 @@ Server <- function(input, output, session) {
             data$meta$colorings[[name]]$palette <- input$live_color_palette
             data$meta$colorings[[name]]$rainbow_s <- input$live_color_rainbow_s
             data$meta$colorings[[name]]$rainbow_v <- input$live_color_rainbow_v
+            data$meta$colorings[[name]]$custom_colors <- data$colorings$custom$colors
           }
         )
         updateTextInput(session, "live_coloring_name", value = "")
+      }
+    })
+  })
+
+  convertHTMLBackgroundRGBColorToHex <- function(color) {
+    isrgb <- grepl("^rgb\\(.*\\)$", color, perl=TRUE)
+    if (isrgb) {
+      color <- gsub("(^rgb\\(|\\)$|\\s)", "", color, perl=TRUE)
+      color <- unlist(strsplit(color, ","))
+      color <- paste0(as.hexmode(as.integer(color)))
+      color <- paste0("#", paste0(sapply(color, function(col) { if (nchar(col) == 2) { col } else { paste0("0", col) } }, USE.NAMES=FALSE), collapse=""))
+    }
+    color
+  }
+
+  determineTextColorFromBackgroundColor <- function(color) {
+    rgbc <- col2rgb(color)
+    luminance <- ((0.299 * rgbc[1]) + (0.587 * rgbc[2]) + (0.114*rgbc[3])) / 255
+    if (luminance > 0.5) {
+      "#000000"
+    } 
+    else {
+      "#FFFFFF"
+    }
+  }
+
+  output$live_color_custom_colorings <- renderUI({
+    if (!"selected" %in% names(data$colorings$custom) || !"colors" %in% names(data$colorings$custom)) { 
+      data$colorings$custom$selected <- 1
+      data$colorings$custom$colors[1] <- "#0000FF"
+    }
+    if (data$colorings$custom$selected > length(data$colorings$custom$colors)) {
+      data$colorings$custom$selected <- 1
+    }
+
+    raw_html <- ""
+    for (index in 1:length(data$colorings$custom$colors)) {
+      classlist <- paste0("list-group-item", if(data$colorings$custom$selected == index) { " active" } else { "" })
+      style <- paste0(
+        "background-color: ", data$colorings$custom$colors[index], 
+        "; color: ", determineTextColorFromBackgroundColor(data$colorings$custom$colors[index]), 
+        "; width: 2em; height: 2em; border-radius: 0em; text-align: center; line-height: 2em; padding: 0em;"
+      )
+      onclick <- "Shiny.onInputChange('live_color_custom_colorings_clicked', {id: parseInt(this.innerHTML), color: this.style.backgroundColor});"
+      raw_html <- paste0(
+        raw_html,
+        tags$li(paste0(index),class=classlist, style=style, onclick=onclick)
+      )
+    }
+    updateColourInput(session=session, inputId="live_color_custom_color_picker", value=data$colorings$custom$colors[data$colorings$custom$selected])
+    HTML(raw_html)
+  })
+
+  observeEvent(input$live_color_custom_colorings_clicked, {
+    updateColourInput(session=session, inputId="live_color_custom_color_picker", value=convertHTMLBackgroundRGBColorToHex(input$live_color_custom_colorings_clicked$color))
+    isolate({
+      data$colorings$custom$selected <- input$live_color_custom_colorings_clicked$id
+      data$colorings$custom$colors[input$live_color_custom_colorings_clicked$id] <- convertHTMLBackgroundRGBColorToHex(input$live_color_custom_colorings_clicked$color)
+    })
+  })
+
+  observeEvent(input$live_color_custom_color_picker, {
+    isolate({
+      data$colorings$custom$colors[data$colorings$custom$selected] <- input$live_color_custom_color_picker
+    })
+  })
+
+  observeEvent(input$live_color_custom_count, {
+    isolate({
+      if (input$live_color_custom_count > length(data$colorings$custom$colors)) {
+        data$colorings$custom$colors[(length(data$colorings$custom$colors)+1):input$live_color_custom_count] <- "#0000FF"
+      }
+      if (input$live_color_custom_count < length(data$colorings$custom$colors)) {
+        data$colorings$custom$colors <- data$colorings$custom$colors[-(input$live_color_custom_count+1):-length(data$colorings$custom$colors)]
       }
     })
   })
@@ -1382,7 +1493,7 @@ ui <- fluidPage(
                         c()),
             selectInput("live_color_palette",
                         "Color Palette:",
-                        c("Rainbow", "Heat", "Terrain", "Topo", "Cm"),
+                        c("Rainbow", "Heat", "Terrain", "Topo", "Cm", "Custom"),
                         si("live_color_palette", "Rainbow")),
             conditionalPanel(
               condition = "input.live_color_palette == 'Rainbow'",
@@ -1394,6 +1505,12 @@ ui <- fluidPage(
                           min=0, max=1,
                           value=si("live_color_rainbow_v", 1),
                           step=0.025)
+            ),
+            conditionalPanel(
+              condition = "input.live_color_palette == 'Custom'",
+              sliderInput("live_color_custom_count", label="Select the number of colors for the gradient", min=2, max=15, step=1, value=3),
+              htmlOutput("live_color_custom_colorings", container=tags$ul, label="Color Gradient Input", class="list-group list-inline form-group shiny-input-container", style="margin-left: 0em;"),
+              colourInput("live_color_custom_color_picker", label=NULL) # set palette="limited" for a simpler color picker. #set allowedCols=c("blue", "#FF0000", ...) for allowing only specific colors. To allow all named colors set allowedCols=colors()
             )
           )
         ),
