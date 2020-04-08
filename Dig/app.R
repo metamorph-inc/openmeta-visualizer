@@ -936,6 +936,9 @@ Server <- function(input, output, session) {
               }
               if (palette_selection == "Custom") {
                 custom_colors <- data$colorings$custom$colors
+                if (length(custom_colors) < 2) {
+                  custom_colors[1:2] <- c("#FF0000", "#0000FF")
+                }
               }
             }
             else {
@@ -948,6 +951,9 @@ Server <- function(input, output, session) {
               }
               if (palette_selection == "Custom") {
                 custom_colors <- scheme$custom_colors
+                if (length(custom_colors) < 2) {
+                  custom_colors[1:2] <- c("#FF0000", "#0000FF")
+                }
               }
             }
 
@@ -1098,21 +1104,30 @@ Server <- function(input, output, session) {
   }
 
   output$live_color_custom_colorings <- renderUI({
-    if (!"selected" %in% names(data$colorings$custom) || !"colors" %in% names(data$colorings$custom)) { 
+    if (!"selected" %in% names(data$colorings$custom)) { 
       data$colorings$custom$selected <- 1
-      data$colorings$custom$colors[1] <- "#0000FF"
     }
-    if (data$colorings$custom$selected > length(data$colorings$custom$colors)) {
-      data$colorings$custom$selected <- 1
+    if (!"colors" %in% names(data$colorings$custom) || length(data$colorings$custom$colors) < 2) {
+      data$colorings$custom$colors[1:2] <- c("#FF0000", "#0000FF")
     }
 
-    raw_html <- ""
+    raw_html <- tags$style(paste0(
+      ".list-group-item:first-child { border-radius: 0em; }",
+      ".list-group-item:last-child { border-radius: 0em; }",
+      ".list-group-item, button.list-group-item { width: 2em; height: 2em; border-radius: 0em; text-align: center; line-height: 2em; font-size: 1.5em; font-weight: bolder; padding: 0em; margin-bottom: 0em; }",
+      ".list-group-item.active { position: relative; border-width: 4px; line-height: calc(2em - 5px); }",
+      ".list-group-item.active::before { position: absolute; content: ' '; top: -1px; left: -1px; right: -1px; bottom: -1px; border: 1px solid white }"
+    ))
+    raw_html <- paste0(
+      raw_html,
+      tags$button(HTML("&#43;"), class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_add', (new Date()).getTime()); this.blur()"),
+      tags$button(HTML("&#128465;"), class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_trash', (new Date()).getTime()); this.blur()")
+    )
     for (index in 1:length(data$colorings$custom$colors)) {
       classlist <- paste0("list-group-item", if(data$colorings$custom$selected == index) { " active" } else { "" })
       style <- paste0(
         "background-color: ", data$colorings$custom$colors[index], 
-        "; color: ", determineTextColorFromBackgroundColor(data$colorings$custom$colors[index]), 
-        "; width: 2em; height: 2em; border-radius: 0em; text-align: center; line-height: 2em; padding: 0em;"
+        "; color: ", determineTextColorFromBackgroundColor(data$colorings$custom$colors[index])
       )
       onclick <- "Shiny.onInputChange('live_color_custom_colorings_clicked', {id: parseInt(this.innerHTML), color: this.style.backgroundColor});"
       raw_html <- paste0(
@@ -1120,6 +1135,12 @@ Server <- function(input, output, session) {
         tags$li(paste0(index),class=classlist, style=style, onclick=onclick)
       )
     }
+
+    raw_html <- paste0(
+      raw_html,
+      tags$button(HTML("&#43;"), class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_add_end', (new Date()).getTime()); this.blur()")
+    )
+
     updateColourInput(session=session, inputId="live_color_custom_color_picker", value=data$colorings$custom$colors[data$colorings$custom$selected])
     HTML(raw_html)
   })
@@ -1138,15 +1159,24 @@ Server <- function(input, output, session) {
     })
   })
 
-  observeEvent(input$live_color_custom_count, {
-    isolate({
-      if (input$live_color_custom_count > length(data$colorings$custom$colors)) {
-        data$colorings$custom$colors[(length(data$colorings$custom$colors)+1):input$live_color_custom_count] <- "#0000FF"
+  observeEvent(input$live_color_custom_colorings_add, {
+    data$colorings$custom$colors <- c(
+      data$colorings$custom$colors[0:(data$colorings$custom$selected-1)], data$colorings$custom$colors[data$colorings$custom$selected],
+      data$colorings$custom$colors[data$colorings$custom$selected:length(data$colorings$custom$colors)]
+    )
+  })
+
+  observeEvent(input$live_color_custom_colorings_add_end, {
+    data$colorings$custom$colors[length(data$colorings$custom$colors)+1] <- data$colorings$custom$colors[length(data$colorings$custom$colors)]
+  })
+
+  observeEvent(input$live_color_custom_colorings_trash, {
+    if (length(data$colorings$custom$colors) != 2) {
+      data$colorings$custom$colors <- data$colorings$custom$colors[-data$colorings$custom$selected]
+      if (data$colorings$custom$selected > length(data$colorings$custom$colors)) { 
+        data$colorings$custom$selected <- length(data$colorings$custom$colors) 
       }
-      if (input$live_color_custom_count < length(data$colorings$custom$colors)) {
-        data$colorings$custom$colors <- data$colorings$custom$colors[-(input$live_color_custom_count+1):-length(data$colorings$custom$colors)]
-      }
-    })
+    }
   })
   
   output$coloring_legend <- renderUI({
@@ -1508,9 +1538,8 @@ ui <- fluidPage(
             ),
             conditionalPanel(
               condition = "input.live_color_palette == 'Custom'",
-              sliderInput("live_color_custom_count", label="Select the number of colors for the gradient", min=2, max=15, step=1, value=3),
               htmlOutput("live_color_custom_colorings", container=tags$ul, label="Color Gradient Input", class="list-group list-inline form-group shiny-input-container", style="margin-left: 0em;"),
-              colourInput("live_color_custom_color_picker", label=NULL) # set palette="limited" for a simpler color picker. #set allowedCols=c("blue", "#FF0000", ...) for allowing only specific colors. To allow all named colors set allowedCols=colors()
+              colourInput("live_color_custom_color_picker", label=NULL, showColour="background") # set palette="limited" for a simpler color picker. #set allowedCols=c("blue", "#FF0000", ...) for allowing only specific colors. To allow all named colors set allowedCols=colors()
             )
           )
         ),
