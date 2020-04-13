@@ -571,10 +571,9 @@ namespace DigTest
             var points_before_deselect_28 = stats.GetCurrentPoints();
             design_selector.ClickByName("28");
             Assert.False(design_selector.SelectedByName("28"));
-            Thread.Sleep(500);
-            Assert.True(stats.GetCurrentPoints() < points_before_deselect_28);
+            Assert.True(wait.Until(driver1 => stats.GetCurrentPoints() < points_before_deselect_28));
 
-            
+
             var filter_hub = new ShinySelectMultipleInput(driver, "filter_IN_MatériauDeMoyeu", false);
             //Assert.Equal("1. Acier, 2. Aluminum", filter_hub.GetCurrentSelection());
             // OPENMETA-380 (tthomas): Had to replace filter_hub.GetCurrentSelection() with stat.GetCurrentPoints() due to issue with Shiny; will possibly revert when shiny patch is release.
