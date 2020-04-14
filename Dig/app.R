@@ -211,6 +211,12 @@ if(file.exists(file.path(launch_dir, 'metadata.json'))) {
   results_dir <- file.path(launch_dir,"..","..","results")
   guid_folders <- FindGUIDFolders(results_dir, config_folders)
   cat(paste0("  GUID Folders: ", length(guid_folders), "\n"))
+} else if(file.exists(file.path(launch_dir, 'exported_metadata.json'))) {
+  config_folders <- list(".")
+  cat(paste0("  Config Folders: ", length(config_folders), "\n"))
+  results_dir <- launch_dir
+  guid_folders <- FindGUIDFolders(launch_dir, config_folders)
+  cat(paste0("  GUID Folders: ", length(guid_folders), "\n"))
 } else {
   cat("  No Artifacts Found.\n")
 }
