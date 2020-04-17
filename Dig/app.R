@@ -1218,8 +1218,11 @@ Server <- function(input, output, session) {
     Sys.setenv(DIG_DATASET_CONFIG="")
     stopApp()
   })
-  
-  
+
+  # testing hook
+  observe({
+    session$sendCustomMessage("server-test-progress", input$test_progress)
+  })
 }
 
 # UI -------------------------------------------------------------------------

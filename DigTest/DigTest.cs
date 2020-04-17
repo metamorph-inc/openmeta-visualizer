@@ -95,7 +95,9 @@ namespace DigTest
             
             var options = new OpenQA.Selenium.Chrome.ChromeOptions { };
             options.AddUserProfilePreference("auto-open-devtools-for-tabs", "true");
-            options.AddArgument("--start-maximized");
+            // n.b. viewport size scales plots. the width of plots determines where clicks go
+            options.AddArgument("--window-size=1024,768");
+            // options.AddArgument("--start-maximized");
             options.AddUserProfilePreference("download.default_directory", Path.GetFullPath(session.download_directory));
             options.AddUserProfilePreference("disable-popup-blocking", "true");
 
@@ -108,6 +110,14 @@ namespace DigTest
                 driver.Navigate().GoToUrl(wrapper.url);
                 Assert.True(ShinyUtilities.WaitUntilDocumentReady(driver));
                 Assert.Equal("Visualizer", driver.Title);
+                ShinyUtilities.InstallShinyWait(driver);
+                ShinyUtilities.ShinyWait(driver);
+                var bodySize = driver.FindElement(By.TagName("body")).Size;
+                var width = (Int64)((IJavaScriptExecutor)driver).ExecuteScript("return window.innerWidth");
+                var height = (Int64)((IJavaScriptExecutor)driver).ExecuteScript("return window.innerHeight");
+                // test was written against 1012x638
+                // appveyor reports 1008x636
+                Console.Out.WriteLine(String.Format("viewport size is {0}x{1}", width, height));
 
                 ExploreSet(driver);
                 DataTableSet(driver);
@@ -119,9 +129,9 @@ namespace DigTest
 
                 FooterSet(driver);
 
-                //TODO(tthomas): Find a better way to allow shiny to finish before exiting.
-                Thread.Sleep(500);
+                ShinyUtilities.ShinyWait(driver);
                 driver.Close();
+                wrapper.WaitForStdoutText("Session saved");
                 wrapper.AppendLog(session.log_file);
             }
 
@@ -133,6 +143,7 @@ namespace DigTest
                 wrapper.Start(session.copied_config);
                 driver.Navigate().GoToUrl(wrapper.url);
                 Assert.True(ShinyUtilities.WaitUntilDocumentReady(driver));
+                ShinyUtilities.InstallShinyWait(driver);
 
                 ExploreCheck(driver, session);
                 DataTableCheck(driver);
@@ -158,6 +169,7 @@ namespace DigTest
             Actions builder = new Actions(driver);
 
             ShinyUtilities.OpenTabPanel(driver, "master_tabset", "Explore");
+            ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
 
             // Test Pairs Plot
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Variables");
@@ -174,16 +186,16 @@ namespace DigTest
             pairs_plot.ImageHasChanged(); // Clear Flag
             Assert.True(auto_render.GetStartState());
             Assert.False(auto_render.ToggleState());
-            Thread.Sleep(400);
+            ShinyUtilities.ShinyWait(driver);
             Assert.False(pairs_plot.ImageHasChanged());
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Variables");
             display.AppendSelection("IN");
-            Thread.Sleep(300);
+            ShinyUtilities.ShinyWait(driver);
             Assert.False(pairs_plot.ImageHasChanged());
             ShinyUtilities.ClickIDWithScroll(driver, "Explore-render_plot");
             wait.Until(d => pairs_plot.ImageHasChanged());
             display.AppendSelection("IN");
-            Thread.Sleep(300);
+            ShinyUtilities.ShinyWait(driver);
             Assert.False(pairs_plot.ImageHasChanged());
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
             Assert.True(auto_render.ToggleState());
@@ -216,17 +228,20 @@ namespace DigTest
             var third_count = pairs_plot.ImageStats();
             Assert.True(third_count[Color.FromArgb(255, 0, 0, 0)] > second_count[Color.FromArgb(255, 0, 0, 0)]);
 
-
             //Test Single Plot
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
             var single_plot = new ShinyPlot(driver, "Explore-single_plot");
             var x_input = new ShinySelectInput(driver, "Explore-x_input");
+            //x_input.SetCurrentSelectionClicked("CfgID");
             Assert.Equal("CfgID", x_input.GetCurrentSelection());
             var y_input = new ShinySelectInput(driver, "Explore-y_input");
+            //y_input.SetCurrentSelectionClicked("IN_MatériauDeMoyeu");
             Assert.Equal("IN_MatériauDeMoyeu", y_input.GetCurrentSelection());
 
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
-            IAction dbl_click_pairs_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-pairs_plot")), 200, 400).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
+            var plot_size = driver.FindElement(By.Id("Explore-pairs_plot")).Size;
+            IAction dbl_click_pairs_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-pairs_plot")), 200 * plot_size.Width / 694, 400 * plot_size.Height / 700).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
+
             dbl_click_pairs_plot.Perform();
             wait.Until(d => driver.FindElement(By.Id("Explore-single_plot")).Displayed);
             single_plot.WaitUntilImageRefreshes();
@@ -249,6 +264,7 @@ namespace DigTest
             Assert.True(single_plot.ImageHasChanged());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Filter");
+            ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Filters");
             // Perform plot brush sequence
             var brush_single_plot = builder.MoveToElement(single_plot.GetElement(), 200, 200).ClickAndHold();
             brush_single_plot.MoveByOffset(400, 400).Release().Build().Perform();
@@ -273,9 +289,11 @@ namespace DigTest
             var guid = new ShinySelectInput(driver, "Explore-details_guid");
             Assert.Equal("d6d307bd-ea1c-4d99-9d92-c82d0f239142", guid.GetCurrentSelection());
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
-            IAction dbl_click_single_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-single_plot")), 137, 266).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
+            var single_plotSize = driver.FindElement(By.Id("Explore-single_plot")).Size;
+            // FIXME does not work with non-1024x768 resolution
+            IAction dbl_click_single_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-single_plot")), 137 * single_plotSize.Width / 694, 266 * single_plotSize.Height / 700).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
             dbl_click_single_plot.Perform();
-            Thread.Sleep(200);
+            ShinyUtilities.ShinyWait(driver);
             Assert.Equal("39a915ac-7c32-469f-a5e5-05bb21e83297", guid.GetCurrentSelection());
             //wait.Until(d => "39a915ac-7c32-469f-a5e5-05bb21e83297" == guid.GetCurrentSelection());
             guid.SetCurrentSelectionTyped("0f700");
@@ -370,7 +388,7 @@ namespace DigTest
             //wait.Until(d => string.Join(", ", weight_metrics.GetRemainingChoices().ToArray()) == all_numeric_variable_names);
             weight_metrics.AppendSelection("OUT_Blade");
             weight_metrics.AppendSelection("OUT_Blade");
-            Thread.Sleep(200);
+            ShinyUtilities.ShinyWait(driver);
 
             Assert.Equal(0.5, new ShinySliderInput(driver, "DataTable-rnk8").MoveSliderToValue(0.5));
             wait.Until(d => driver.FindElement(By.XPath("//div[@id='DataTable-dataTable']/div[1]/table/tbody/tr[1]/td[1]")).GetAttribute("textContent") == "140");
@@ -406,7 +424,7 @@ namespace DigTest
             var weight_metrics = new ShinySelectMultipleInput(driver, "DataTable-weightMetrics");
             Assert.Equal("OUT_Blade_Cost_Total, OUT_Blade_Tip_Deflection", weight_metrics.GetCurrentSelection());
             wait.Until(ExpectedConditions.ElementIsVisible(By.Id("DataTable-clearMetrics"))).Click();
-            Thread.Sleep(500); // FIXME: Apply the correct wait statement here instead of a Thread.Sleep() call.
+            ShinyUtilities.ShinyWait(driver);
             wait.Until(d => weight_metrics.GetCurrentSelection() == "");
         }
 
@@ -571,7 +589,7 @@ namespace DigTest
             var points_before_deselect_28 = stats.GetCurrentPoints();
             design_selector.ClickByName("28");
             Assert.False(design_selector.SelectedByName("28"));
-            Thread.Sleep(500);
+            ShinyUtilities.ShinyWait(driver);
             Assert.True(stats.GetCurrentPoints() < points_before_deselect_28);
 
             
@@ -587,11 +605,11 @@ namespace DigTest
             //Assert.Equal("2. Aluminum", filter_hub.GetCurrentSelection());
             Assert.Equal(190, stats.GetCurrentPoints());
 
-            Thread.Sleep(500);
+            ShinyUtilities.ShinyWait(driver);
             Assert.Equal("20-50", new VisualizerFilterInput(driver, "IN_ElemCount").EntrySetFromTo(20, 50));
             Assert.Equal(20000, new VisualizerFilterInput(driver, "IN_E22").EntrySetFrom(20000.0));
             Assert.Equal(160000, new VisualizerFilterInput(driver, "OUT_Blade_Cost_Total").EntrySetTo(160000));
-            
+
             // Coloring
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Coloring");
             var coloring_source = new ShinySelectInput(driver, "coloring_source");
@@ -638,7 +656,7 @@ namespace DigTest
             // Filters
             ShinyUtilities.ScrollToElementID(driver, "footer_collapse");
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Filters");
-            Thread.Sleep(500);
+            ShinyUtilities.ShinyWait(driver);
 
             var design_selector = new VisualizerDesignTreeSelector(driver);
             Assert.True(design_selector.SelectedByName("16"));
@@ -683,6 +701,7 @@ namespace DigTest
             public StringBuilder stderrData = new StringBuilder();
             public string url;
             Process proc;
+            private AutoResetEvent stdoutReceived = new AutoResetEvent(false);
 
             public void Start(string input_filename, bool from_csv = false)
             {
@@ -734,6 +753,7 @@ namespace DigTest
                                     }
                                 }
                                 catch (ObjectDisposedException) { }
+                                stdoutReceived.Set();
                             }
                         }
                     };
@@ -743,12 +763,14 @@ namespace DigTest
                     proc.BeginOutputReadLine();
                     proc.StandardInput.Close();
 
-                    var tokenSource = new CancellationTokenSource();
                     int timeOut = 10000; // ms
                     if (task.WaitOne(timeOut) == false)
                     {
                         Console.WriteLine("The Task timed out!");
-                        Assert.True(false, string.Format("Did not find \"Listening on\" in Dig output. Operation timed out after {0}  ms. Stderr: {1}", timeOut, stderrData.ToString()));
+                        lock (stderrData)
+                        {
+                            Assert.True(false, string.Format("Did not find \"Listening on\" in Dig output. Operation timed out after {0}  ms. Stderr: {1}", timeOut, stderrData.ToString()));
+                        }
                     }
                 }
 
@@ -764,11 +786,34 @@ namespace DigTest
                     }
                     catch (System.InvalidOperationException) { } // possible race with proc.HasExited
                 }
+                if (proc != null)
+                {
+                    proc.Dispose();
+                }
+            }
+
+            public void WaitForStdoutText(string text)
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    lock (stdoutData)
+                    {
+                        if (stdoutData.ToString().Contains(text))
+                        {
+                            return;
+                        }
+                    }
+                    stdoutReceived.WaitOne(1000);
+                }
+                throw new TimeoutException(String.Format("Did not find '{0}' in stdout", text));
             }
 
             public void AppendLog(string log)
             {
-                File.AppendAllText(log, stdoutData.ToString());
+                lock (stdoutData)
+                {
+                    File.AppendAllText(log, stdoutData.ToString());
+                }
             }
         }
     }
