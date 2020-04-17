@@ -263,16 +263,9 @@ namespace DigTest
             single_plot.WaitUntilImageRefreshes();
             Assert.True(single_plot.ImageHasChanged());
 
-            ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Filter");
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Filters");
-            // Perform plot brush sequence
-            var brush_single_plot = builder.MoveToElement(single_plot.GetElement(), 200, 200).ClickAndHold();
-            brush_single_plot.MoveByOffset(400, 400).Release().Build().Perform();
             var in_e11_filter = new VisualizerFilterInput(driver, "IN_E11");
             Assert.Equal("25520-32480", in_e11_filter.GetFromTo());
-            driver.FindElement(By.Id("Explore-update_y")).Click();
-            builder.MoveToElement(single_plot.GetElement(), 100, 100).Click().Build().Perform();
-            Assert.Equal("25520-32480", in_e11_filter.GetFromTo()); // This should fail when UpdateX/Y/Both are fixed.
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Overlays");
             Assert.Equal("false", driver.FindElement(By.Id("Explore-add_regression")).GetAttribute("data-shinyjs-resettable-value"));
