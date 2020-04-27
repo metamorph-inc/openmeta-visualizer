@@ -122,6 +122,9 @@ def build_msi():
         version = subprocess.check_output('git describe --tags --exact-match --dirty').strip().lstrip('v')
     except subprocess.CalledProcessError:
         version = '0.1.0'
+    if os.environ.get('DIG_VERSION') is not None:
+        vcsverion = os.environ['DIG_VERSION'] or '0.1.1'
+        version = os.environ['DIG_VERSION'] or '0.1.1'
     print 'Installer version: ' + version
     defines.append(('VERSIONSTR', version))
     defines.append(('VCSVERSION', vcsversion))
@@ -164,6 +167,7 @@ def dig_mods():
     tree = ElementTree.parse(output_filename, parser=CommentedTreeBuilder()).getroot()
     dig_dir = tree.findall(".//{http://schemas.microsoft.com/wix/2006/wi}ComponentGroup[@Id='Dig']")[0]
     dig_dir.insert(0, ElementTree.fromstring("""<Component Id="dir_Dig_perms" Guid="d89d2032-5658-4f31-8d61-cfdd3a6934b5" Directory="Dig">
+  <Condition>ALLUSERS=1</Condition>
   <CreateFolder>
     <PermissionEx xmlns="http://schemas.microsoft.com/wix/UtilExtension" User="[WIX_ACCOUNT_USERS]" GenericWrite="yes" GenericRead="yes" Read="yes" GenericExecute="yes" ChangePermission="yes"/>
   </CreateFolder>
