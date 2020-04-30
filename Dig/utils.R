@@ -167,6 +167,7 @@ FindGUIDFolders <- function(results_dir, config_folders) {
         normalizePath(file.path(results_dir,
                                 dirname(config_folders[[i]]),
                                 'artifacts')))
+      print(artifacts_folder)
       guids <- list.files(artifacts_folder)
       if(length(guids) != 0) {
         # print(paste0(artifacts_folder,": ",length(guids)," points."))

@@ -11,7 +11,7 @@
     <Package Id='*' Description='OpenMETA Visualizer'
         Manufacturer='Metamorph, Inc'
         InstallerVersion='405' Languages='1033' Compressed='yes' SummaryCodepage='1252'
-        InstallPrivileges='elevated' InstallScope='perMachine' Platform='x64'
+        Platform='x64'
 		Comments='($var.VERSIONSTR), created from $(var.VCSVERSION) ($(var.VCSHASH))'/>
 
     <Upgrade Id="$(var.UpgradeCode)">
@@ -49,14 +49,16 @@
     <WixVariable Id="WixUIBannerBmp" Value="WixUiBanner.bmp" />
     <WixVariable Id="WixUIDialogBmp" Value="WixUIDialog.bmp" />
 
+
+    <Property Id="ApplicationFolderName" Value="OpenMETA-Visualizer" />
+    <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+
     <!-- =========================================================== -->
     <!-- DIRECTORY STRUCTURE -->
     <!-- =========================================================== -->
     <Directory Id='TARGETDIR' Name='SourceDir'>
-      <Directory Id='SystemFolder' Name='SystemFolder'/>
-      <Directory Id='System64Folder' Name='System64Folder'/>
       <Directory Id='ProgramFilesFolder'>
-        <Directory Id='INSTALLDIR' Name='OpenMETA-Visualizer'>
+        <Directory Id='APPLICATIONFOLDER' Name='OpenMETA-Visualizer'>
           <Directory Id='Dig' Name='Dig' />
           <Directory Id='R' Name='R' />
         </Directory>
@@ -67,27 +69,27 @@
     <!-- COMPONENTS -->
     <!-- =========================================================== -->
 
-    <DirectoryRef Id='INSTALLDIR'>
+    <DirectoryRef Id='APPLICATIONFOLDER'>
       <Component Id='reg_PATH' Guid='{c59ab1c9-dd57-45fb-91a2-210007e68a19}' Win64='no'>
-        <RegistryKey Root='HKLM' Key='Software\Metamorph\OpenMETA-Visualizer'>
-          <RegistryValue Name='PATH' Type='string' Value='[INSTALLDIR]'/>
+        <RegistryKey Root='HKMU' Key='Software\Metamorph\OpenMETA-Visualizer'>
+          <RegistryValue Name='PATH' Type='string' Value='[APPLICATIONFOLDER]'/>
         </RegistryKey>
       </Component>
       <Component Id='reg_VERSIONSTR' Guid='{2091de3f-3d5a-4875-a347-c4f654eb8f48}' Win64='no'>
-        <RegistryKey Root='HKLM' Key='Software\Metamorph\OpenMETA-Visualizer'>
+        <RegistryKey Root='HKMU' Key='Software\Metamorph\OpenMETA-Visualizer'>
           <RegistryValue Name='VERSION' Type='string' Value='$(var.VERSIONSTR)'/>
         </RegistryKey>
       </Component>
       <Component Id='reg_VCSHASH' Guid='{9ea65e2e-c8b3-4345-a948-3f9c3fab6789}' Win64='no'>
-        <RegistryKey Root='HKLM' Key='Software\Metamorph\OpenMETA-Visualizer'>
+        <RegistryKey Root='HKMU' Key='Software\Metamorph\OpenMETA-Visualizer'>
           <RegistryValue Name='VCSHASH' Type='string' Value='$(var.VCSHASH)'/>
         </RegistryKey>
       </Component>
       <Component Id='reg_PETBROWSER' Guid='{094b0ccf-de16-4167-932d-42293fa20d6e}' Win64='no'>
-        <RegistryKey Root='HKLM' Key='Software\META\PETBrowser\PETTools\OpenMetaVisualizer'>
+        <RegistryKey Root='HKMU' Key='Software\META\PETBrowser\PETTools\OpenMetaVisualizer'>
           <RegistryValue Type='string' Value='OpenMETA Visualizer'/>
           <RegistryValue Name='ActionName' Type='string' Value='Launch in OpenMETA Visualizer'/>
-          <RegistryValue Name='ExecutableFilePath' Type='string' Value='[INSTALLDIR]\Dig\run.cmd'/>
+          <RegistryValue Name='ExecutableFilePath' Type='string' Value='[APPLICATIONFOLDER]\Dig\run.cmd'/>
           <RegistryValue Name='ProcessArguments' Type='string' Value='"%1" "%4"'/>
           <RegistryValue Name='WorkingDirectory' Type='string' Value='%2'/>
           <RegistryValue Name='ShowConsoleWindow' Type='integer' Value='0'/>
@@ -101,7 +103,7 @@
     <!-- =========================================================== -->
     <!-- FEATURES -->
     <!-- =========================================================== -->
-    <Feature Id='Complete' Title='OpenMETA Visualizer' Description='The complete package' Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
+    <Feature Id='Complete' Title='OpenMETA Visualizer' Description='The complete package' Display='expand' Level='1' ConfigurableDirectory='APPLICATIONFOLDER'>
       <ComponentGroupRef Id='R'/>
       <ComponentGroupRef Id='Dig'/>
       <ComponentGroupRef Id='SurrogateModeling'/>
@@ -115,8 +117,18 @@
     <!-- =========================================================== -->
     <!-- USER INTERFACE -->
     <!-- =========================================================== -->
+    <Property Id="MSIINSTALLPERUSER" Value="1" />
+    <Property Id="ALLUSERS" Value="2" />
     <UI>
-      <UIRef Id="WixUI_Minimal" />
+      <UIRef Id="WixUI_Advanced" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="FindRelatedProducts">1</Publish>
+
+      <Publish Dialog="InstallScopeDlg" Control="Next" Property="MSIINSTALLPERUSER" Value="1" Order="3">WixAppFolder = "WixPerUserFolder"</Publish>
+      <Publish Dialog="InstallScopeDlg" Control="Next" Property="MSIINSTALLPERUSER" Value="{}" Order="2">WixAppFolder = "WixPerMachineFolder"</Publish>
+      <Publish Dialog="InstallScopeDlg" Control="Next" Event="DoAction" Value="WixSetDefaultPerMachineFolder" Order="3">WixAppFolder = "WixPerMachineFolder"    </Publish>
+      <Publish Dialog="InstallScopeDlg" Control="Next" Event="DoAction" Value="WixSetDefaultPerUserFolder" Order="3">WixAppFolder = "WixPerUserFolder"</Publish>
+      <Publish Dialog="InstallScopeDlg" Control="Next" Event="NewDialog" Value="FeaturesDlg" Order="7">WixAppFolder = "WixPerMachineFolder"</Publish>
+
       <UIRef Id="WixUI_ErrorProgressText" />
       <InstallUISequence>
 	    <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>

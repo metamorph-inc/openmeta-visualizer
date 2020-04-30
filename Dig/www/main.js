@@ -29,7 +29,7 @@ Shiny.addCustomMessageHandler("update_widths", function(message) {
 
 /* Sends shiny the pixel lengths of each slider */
 function update_slider_width() {
-  var $sliders = document.querySelector("#filters").querySelectorAll("div.form-group.shiny-input-container");
+  var $sliders = document.querySelector("#filters_div").querySelectorAll("div.form-group.shiny-input-container");
 
   var slider_width = 0;
 
@@ -42,7 +42,8 @@ function update_slider_width() {
     //console.log("slider_width");
     //console.log(slider_width);
 
-    Shiny.onInputChange("slider_width", slider_width);
+    // FIXME: this causes the app to lose footer->filters discrete choices, e.g. tests will fail
+    // Shiny.onInputChange("slider_width", slider_width);
   }
 }
 

@@ -12,7 +12,7 @@ Then, add registry entry to note location of this repository: `add_reg_path.cmd`
 
 To create a new release of the Visualizer:
 
-1. First make sure your changes pass all tests by running them locally using the `DigTest/DigTest.sln` project or pushing the changes without a tag and letting AppVeyor build them.
+1. First make sure your changes pass all tests by running them locally using the `DigTest/DigTest.sln` project or pushing the changes without a tag and letting AppVeyor build them. If you are running the tests locally, you will need to set your screen resolution to 1024x768 for the tests to run properly.
 
 NOTE: Put testing instructions here.
 

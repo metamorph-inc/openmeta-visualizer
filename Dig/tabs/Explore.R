@@ -106,12 +106,6 @@ ui <- function(id) {
                 sliderInput(ns("single_plot_marker_size"), "Marker Size:",
                             min=0.5, max=2.5, value=si(ns("single_plot_marker_size"), 1), step=0.025),
                 style = "default"),
-              bsCollapsePanel("Filter", 
-                p(strong("Adjust Sliders to Selection")),
-                actionButton(ns("update_x"), "X"),
-                actionButton(ns("update_y"), "Y"),
-                actionButton(ns("update_both"), "Both"),
-                style = "default"),
               # TODO(wknight): Restore this functionality.
               # br(), br(),
               # p(strong("Highlight Selection")),
@@ -570,18 +564,6 @@ server <- function(input, output, session, data) {
     names(near_points) <- sapply(names(near_points),
       function(name) {data$meta$variables[[name]]$name_with_units})
     t(near_points)
-  })
-  
-  UpdateX <- observeEvent(input$update_x, {
-    cat("Warning: UpdateX() is currently unimplemented.\n")
-  })
-  
-  UpdateY <- observeEvent(input$update_y, {
-    cat("Warning: UpdateY() is currently unimplemented.\n")
-  })
-  
-  UpdateBoth <- observeEvent(input$update_both, {
-    cat("Warning: UpdateBoth() is currently unimplemented.\n")
   })
   
   # Point Details -----------------------------------------------------
