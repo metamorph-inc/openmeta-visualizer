@@ -25,7 +25,8 @@ namespace DigTest
         {
             all_vars = "";
             original_config = Path.Combine(DigTest.RootPath, config_file);
-            copied_config = original_config.Insert(original_config.LastIndexOf(".json"), "_test");
+            // add process id, because sometimes there's an old R process overwriting our config
+            copied_config = original_config.Insert(original_config.LastIndexOf(".json"), Process.GetCurrentProcess().Id + "_test");
             log_file = Path.ChangeExtension(copied_config, ".log");
             data_file = Path.ChangeExtension(copied_config.Insert(original_config.LastIndexOf(".json"), "_data"), ".csv");
             download_directory = Path.Combine(DigTest.RootPath, "Downloads");
@@ -86,6 +87,7 @@ namespace DigTest
             var new_x = width * (target - low) / (high - low);
             builder.MoveToElement(grid, (int)old_x, 0).ClickAndHold();
             builder.MoveByOffset((int)(new_x - old_x), 0).Release().Build().Perform();
+            ShinyUtilities.ShinyWait(driver);
             this.current = Double.Parse(driver.FindElement(By.XPath(current_path)).GetAttribute("textContent"));
             return this.current;
         }
@@ -148,7 +150,7 @@ namespace DigTest
 
             wait.Until(d => GetValue(from_path) == from);
             this.from = from;
-            Thread.Sleep(800);
+            ShinyUtilities.ShinyWait(driver);
             return this.from;
         }
 
@@ -166,7 +168,7 @@ namespace DigTest
 
             wait.Until(d => GetValue(to_path) == to);
             this.to = to;
-            Thread.Sleep(800);
+            ShinyUtilities.ShinyWait(driver);
             return this.to;
         }
 
@@ -192,7 +194,7 @@ namespace DigTest
             wait.Until(d => GetValue(from_path) == from);
             this.to = to;
             this.from = from;
-            Thread.Sleep(800);
+            ShinyUtilities.ShinyWait(driver);
             return this.from.ToString() + "-" + this.to.ToString();
         }
 
@@ -252,7 +254,7 @@ namespace DigTest
         public void ClickByName(string n)
         {
             driver.FindElement(By.XPath("//*[name()='svg' and @id='design_configurations_svg']/*[name()='g']/*[name()='g']/*[name()='text' and text()='" + n + "']/..")).Click();
-            Thread.Sleep(200);
+            ShinyUtilities.ShinyWait(driver);
         }
 
         public bool SelectedByName(string n)
@@ -290,9 +292,9 @@ namespace DigTest
             {
                 // Force the choices to appear.
                 master_div.Click();
-                Thread.Sleep(300);
+                ShinyUtilities.ShinyWait(driver);
                 this.driver.FindElement(By.XPath(this.input)).SendKeys(Keys.Escape);
-                Thread.Sleep(1000);
+                ShinyUtilities.ShinyWait(driver);
             }
             if (this.driver.FindElement(By.XPath(this.choices)).GetAttribute("data-value") == null)
             {
@@ -338,7 +340,7 @@ namespace DigTest
                 }
                 catch (OpenQA.Selenium.NoSuchElementException)
                 {
-                    Thread.Sleep(300);
+                    ShinyUtilities.ShinyWait(driver);
                     if (--tries == 0)
                     {
                         throw;
@@ -346,7 +348,7 @@ namespace DigTest
                 }
                 catch (OpenQA.Selenium.StaleElementReferenceException)
                 {
-                    Thread.Sleep(300);
+                    ShinyUtilities.ShinyWait(driver);
                     if (--tries == 0)
                     {
                         throw;
@@ -360,11 +362,24 @@ namespace DigTest
         {
             var master_div = driver.FindElement(By.XPath(div));
             master_div.Click();
-            Thread.Sleep(300);
-            var choices = this.GetAllChoiceDivs();
-            var to_select = from choice in choices
+            ShinyUtilities.ShinyWait(driver);
+            IEnumerable<IWebElement> choices = null;
+            IEnumerable<IWebElement> to_select = null;
+            string[] values = null;
+            for (int retry = 0; retry < 5; retry++)
+            {
+                choices = this.GetAllChoiceDivs();
+                to_select = from choice in choices
                             where choice.GetAttribute("data-value") == v
                             select choice;
+
+                values = to_select.Select(x => x.Text).ToArray();
+                if (values.Length > 0)
+                {
+                    break;
+                }
+                ShinyUtilities.ShinyWait(driver);
+            }
             this.wait.Until(driver1 => to_select.First().Displayed);
             to_select.First().Click();
         }
@@ -410,9 +425,9 @@ namespace DigTest
                 {
                     // Force the choices to appear.
                     this.driver.FindElement(By.XPath(this.div)).Click();
-                    Thread.Sleep(300);
+                    ShinyUtilities.ShinyWait(driver);
                     this.driver.FindElement(By.XPath(this.input)).SendKeys(Keys.Escape);
-                    Thread.Sleep(1000);
+                    ShinyUtilities.ShinyWait(driver);
                 }
                 if (this.driver.FindElement(By.XPath(this.choices)).GetAttribute("data-value") == null)
                 {
@@ -458,7 +473,7 @@ namespace DigTest
         {
             // TODO(tthomas): Find a way to turn the retry logic into a function.
             IEnumerable<string> choices;
-            Thread.Sleep(3000);
+            ShinyUtilities.ShinyWait(driver);
             int tries = 3;
             while (true)
             {
@@ -470,7 +485,7 @@ namespace DigTest
                 }
                 catch (OpenQA.Selenium.NoSuchElementException)
                 {
-                    Thread.Sleep(300);
+                    ShinyUtilities.ShinyWait(driver);
                     if (--tries == 0)
                     {
                         throw;
@@ -489,20 +504,31 @@ namespace DigTest
             input.SendKeys(Keys.Escape);
         }
 
-        public void ToggleItem(string v)
+        public void ToggleItem(string v, bool? select = null)
         {
             if(!selectize)
             {
                 var path = this.div + "/select/option[@value='" + v + "']";
                 if (driver.FindElement(By.XPath(path)).Displayed)
                 {
+                    if (select != null)
+                    {
+                        var selectElement = driver.FindElement(By.XPath(this.div + "/select"));
+                        var isSelected = (Int64)((IJavaScriptExecutor)driver).ExecuteScript(
+                            "return [].slice.call(arguments[0].selectedOptions).filter(function (option) { return option.value === arguments[1] }).length", new object[] { selectElement, v });
+                        if ((isSelected == 1) == select)
+                        {
+                            // already selected/deselected
+                            return;
+                        }
+                    }
+
                     //var original_state = driver.FindElement(By.XPath(path)).GetAttribute("selected");
                     driver.FindElement(By.XPath(path)).Click();
-                    Thread.Sleep(800);
+                    ShinyUtilities.ShinyWait(driver);
                     //var expected_new_state = original_state == "true" ? null : "true";
                     //wait.Until(d => driver.FindElement(By.XPath(path)).GetAttribute("selected") == expected_new_state);
                 }
-                
             }
         }
     }
@@ -525,7 +551,7 @@ namespace DigTest
         public bool ToggleState()
         {
             driver.FindElement(By.Id(id)).Click();
-            Thread.Sleep(100);
+            ShinyUtilities.ShinyWait(driver);
             return state = !state;
         }
 
@@ -719,7 +745,8 @@ namespace DigTest
                                              collapse_id, panel_name);
             string link_path = base_path + "/div[@class='panel-heading']/h4/a";
             string content_path = base_path + "/div[2]";
-            if(!driver.FindElement(By.XPath(content_path)).GetAttribute("class").Split().Contains("in"))
+            string class_attribute = driver.FindElement(By.XPath(content_path)).GetAttribute("class");
+            if (!class_attribute.Split().Contains("in"))
             {
                 if (!driver.FindElement(By.XPath(link_path)).Displayed)
                 {
@@ -769,50 +796,36 @@ namespace DigTest
             return wait10.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
         }
 
+        public static void InstallShinyWait(IWebDriver driver)
+        {
+            ((IJavaScriptExecutor)driver).ExecuteScript("document.body.insertAdjacentHTML('afterbegin', '<div id=\"test-progress\" style=\"position: absolute; left:  50%;\">test-init</div>');");
+            ((IJavaScriptExecutor)driver).ExecuteScript("Shiny.addCustomMessageHandler('server-test-progress', function(message) { document.getElementById('test-progress').innerText = message })");
+        }
+
+        public static void ShinyWait(IWebDriver driver)
+        {
+            // this waits for an injected input change to be echoed back to the client by the shiny server
+            var unique_string = Guid.NewGuid().ToString("");
+            ((IJavaScriptExecutor)driver).ExecuteScript("Shiny.onInputChange('test_progress', arguments[0])", new object[] { unique_string });
+
+            IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
+            try
+            {
+                wait.Until(ExpectedConditions.TextToBePresentInElement(driver.FindElement(By.Id("test-progress")), unique_string));
+            }
+            catch (NoSuchElementException e)
+            {
+                if (e.Message.Contains("test-output"))
+                {
+                    throw new NoSuchElementException("Cannot find test-progress element. Did you call InstallShinyWait?", e);
+                }
+                throw;
+            }
+        }
+
         public static string ReadVerbatimText(IWebDriver driver, string id)
         {
             return driver.FindElement(By.Id(id)).GetAttribute("textContent");
-        }
-
-        public static void RetryStaleElement(Action a)
-        {
-            int tries = 3;
-            while (true)
-            {
-                try
-                {
-                    a();
-                    break;
-                }
-                catch (OpenQA.Selenium.StaleElementReferenceException)
-                {
-                    //Thread.Sleep(100);
-                    if (--tries == 0)
-                    {
-                        throw;
-                    }
-                }
-            }
-        }
-
-        public static void RetryNoSuchElement(Action a)
-        {
-            int tries = 3;
-            while (true)
-            {
-                try
-                {
-                    a();
-                    break;
-                }
-                catch (OpenQA.Selenium.NoSuchElementException)
-                {
-                    if (--tries == 0)
-                    {
-                        throw;
-                    }
-                }
-            }
         }
     }
 }
