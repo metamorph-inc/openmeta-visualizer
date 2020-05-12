@@ -15,7 +15,7 @@ ui <- function(id) {
   ns <- NS(id)
   
   fluidPage(
-  	tags$head(tags$style(".uqVar{height:250px;}")),
+  	tags$head(tags$style(".uqVar{height:250px;}")), 
     br(),
     tabsetPanel(
       tabPanel("Weighting",
@@ -24,7 +24,7 @@ ui <- function(id) {
           column(3,
             checkboxInput(ns('design_configs_present'),
                           "Multiple Design Configurations Present",
-                          value = si(ns('design_configs_present'), FALSE))
+                          value = si(ns('design_configs_present'), default_inputs$Tabs$`Uncertainty Quantification`$Weighting$`Multiple Design Configurations Present`))
           )
         ),
         fluidRow(
@@ -238,12 +238,42 @@ server <- function(input, output, session, data) {
     # Real Resample
     req(uiInitialized)
     if (uiInitialized) {
-      output_data <- resampleData(input_data, directions, types, params)
+      if (nrow(input_data) < 2) {
+        output_data <- list(error="Selected value for Design Configuration Identifier must have two or more rows of data")
+      } else if (NA %in% unlist(params)) {
+        output_data <- list(error=unlist(lapply(names(params), function(var) {
+          error <- NULL
+          if (NA %in% unlist(params[[var]])) {
+            error <- c()
+            global_index <- which(varNames == var)
+            input_mean <- as.numeric(input[[paste0('gaussian_mean', global_index)]])
+            input_sd <- as.numeric(input[[paste0('gaussian_sd', global_index)]])
+            var_sd <- sd(filtered_data()[[var]])
+            error[1] <- paste0("Variable: ", var)
+            if (is.na(params[[var]]$mean)) {
+              error[length(error)+1] <- paste0(
+                "input mean must fall between: ",
+                abs_min[[var]], " and ", abs_max[[var]])
+            }
+            if (is.na(params[[var]]$stdDev)) {
+              error[length(error)+1] <- paste0(
+                "input standard deviation must fall between: ",
+                0.1*var_sd, " and ", 1.1*var_sd)
+            }
+            error[length(error)+1] <- ""
+          }
+          error
+        }), use.names=FALSE))
+      } else {
+        output_data <- resampleData(input_data, directions, types, params)
+      }
     }
     else
     {
       output_data <- NULL
     }
+
+    # print("Done uqData()")
     output_data
   })
   
@@ -254,11 +284,7 @@ server <- function(input, output, session, data) {
     data_mean <- apply(filtered_data()[varNums], 2, mean)
     data_sd <- apply(filtered_data()[varNums], 2, function(x) {sd(x)})
     
-    choices <- varNums
-    if(!input$display_all)
-      choices <- varNums[varsList()]
-    
-    lapply(choices, function(var) {
+    lapply(varNums, function(var) {
       # UI calculations
       global_index <- which(varNames == var) # globalId
       #gaussianCondition = toString(paste0("input.gaussian",i," == true"))
@@ -275,7 +301,7 @@ server <- function(input, output, session, data) {
       }
       this_gaussian <- isolate(input[[paste0('gaussian_', global_index)]])
       if(is.null(this_gaussian)) {
-        this_gaussian <- si(ns(paste0('gaussian_', global_index)), FALSE)
+        this_gaussian <- si(ns(paste0('gaussian_', global_index)), default_inputs$Tabs$`Uncertainty Quantification`$Weighting$`Reshape To Gaussian`)
       }
       this_gaussian_mean <- isolate(input[[paste0('gaussian_mean', global_index)]])
       if(is.null(this_gaussian_mean)) {
@@ -287,71 +313,75 @@ server <- function(input, output, session, data) {
       }
       this_constraint <- isolate(input[[paste0("fuq_constraint_enable", global_index)]])
       if(is.null(this_constraint)) {
-        this_constraint <- si(ns(paste0("fuq_constraint_enable", global_index)), FALSE)
+        this_constraint <- si(ns(paste0("fuq_constraint_enable", global_index)), default_inputs$Tabs$`Uncertainty Quantification`$Weighting$`Enable Constraint`)
       }
       this_constraint_value <- isolate(input[[paste0("fuq_constraint_value", global_index)]])
       if(is.null(this_constraint_value)) {
         this_constraint_value <- si(ns(paste0("fuq_constraint_value", global_index)), data_mean[[var]])
       }
-      
-      fluidRow(class = "uqVar", column(12,
-        # Type select
-        fluidRow(
-          hr(),
-          column(8,
-                 
-                 selectInput(
-                   ns(paste0('varDirection', global_index)),
-                   label = var,
-                   choices = var_directions,
-                   selected = this_direction)
-          ),
-          column(4)
-        ),
-        conditionalPanel(condition = paste0('input["', ns(paste0('varDirection', global_index)), '"] == "Input"'),
-          # Gaussian
+
+      visible_vars <- if(input$display_all) { varNums } else { varNums[varsList()] }
+      conditionalPanel(condition = paste0(toJSON(visible_vars), ".includes(",toJSON(var, auto_unbox=TRUE),")"),
+        fluidRow(class = "uqVar", column(12,
+          # Type select
           fluidRow(
-            column(4, 
-              checkboxInput(
-                inputId = ns(paste0('gaussian_', global_index)),
-                label = "Reshape to Gaussian",
-                value = this_gaussian)
+            hr(),
+            column(8,
+                  
+                  selectInput(
+                    ns(paste0('varDirection', global_index)),
+                    label = var,
+                    choices = var_directions,
+                    selected = this_direction)
             ),
-            #conditionalPanel(condition = toString(paste0('input.gaussian', global_index, ' == true')),
-              column(4,
-                     textInput(ns(paste0('gaussian_mean', global_index)),
-                               HTML("&mu;:"),
-                               placeholder = "Mean",
-                               value = this_gaussian_mean)
-              ),
-              column(4,
-                     textInput(ns(paste0('gaussian_sd',global_index)),
-                               HTML("&sigma;:"),
-                               placeholder = "StdDev",
-                               value = this_gaussian_sd)
-              )
-          #  )
+            column(4)
           ),
-          # Constraint
-          fluidRow(
-            column(4, checkboxInput(inputId = ns(paste0("fuq_constraint_enable", global_index)),
-                                    label = "Enable Constraint",
-                                    value = this_constraint)),
-          #  conditionalPanel(condition = toString(paste0('input.fuq_constraint_enable', global_index, ' == true')),
-              column(4, textInput(inputId = ns(paste0("fuq_constraint_value", global_index)),
-                                  label = NULL,
-                                  value = this_constraint_value)),
-              column(4)
-          #  )
-            
+          conditionalPanel(condition = paste0('input["', ns(paste0('varDirection', global_index)), '"] == "Input"'),
+            # Gaussian
+            fluidRow(
+              column(4, 
+                checkboxInput(
+                  inputId = ns(paste0('gaussian_', global_index)),
+                  label = "Reshape to Gaussian",
+                  value = this_gaussian)
+              ),
+              #conditionalPanel(condition = toString(paste0('input.gaussian', global_index, ' == true')),
+                column(4,
+                      textInput(ns(paste0('gaussian_mean', global_index)),
+                                HTML("&mu;:"),
+                                placeholder = "Mean",
+                                value = this_gaussian_mean)
+                ),
+                column(4,
+                      textInput(ns(paste0('gaussian_sd',global_index)),
+                                HTML("&sigma;:"),
+                                placeholder = "StdDev",
+                                value = this_gaussian_sd)
+                )
+            #  )
+            ),
+            # Constraint
+            fluidRow(
+              column(4, checkboxInput(inputId = ns(paste0("fuq_constraint_enable", global_index)),
+                                      label = "Enable Constraint",
+                                      value = this_constraint)),
+            #  conditionalPanel(condition = toString(paste0('input.fuq_constraint_enable', global_index, ' == true')),
+                column(4, textInput(inputId = ns(paste0("fuq_constraint_value", global_index)),
+                                    label = NULL,
+                                    value = this_constraint_value)),
+                column(4)
+            #  )
+              
+            )
           )
-        )
-      ))
+        ))
+      )
     })
     # print("Done with vars_ui()")
   })
   
   uqCalc <- observe({
+    # print("In uqCalc()")
     for(i in 1:length(varNums)){
       var <- varNums[i]
       global_index <- which(varNames == var)
@@ -364,12 +394,18 @@ server <- function(input, output, session, data) {
           input_mean <- as.numeric(input[[paste0('gaussian_mean', global_index)]])
           input_sd <- as.numeric(input[[paste0('gaussian_sd', global_index)]])
           var_sd <- sd(filtered_data()[[var]])
-          if(!is.na(input_mean) && !is.na(input_sd) &&
-             input_mean > abs_min[[var]] && input_mean < abs_max[[var]] &&
-             input_sd > 0.1*var_sd && input_sd < 1.1*var_sd) {
-            types[[var]] <<- "norm"
+          types[[var]] <<- "norm"
+          if(!is.na(input_mean) && input_mean > abs_min[[var]] 
+             && input_mean < abs_max[[var]]) {
             params[[var]]$mean <<- input_mean
+          } else { 
+            params[[var]]$mean <<- NA 
+          }
+          if (!is.na(input_sd) && !is.na(var_sd) &&
+             input_sd > 0.1*var_sd && input_sd < 1.1*var_sd) {
             params[[var]]$stdDev <<- input_sd
+          } else {
+            params[[var]]$stdDev <<- NA
           }
         }
         else {
@@ -380,20 +416,24 @@ server <- function(input, output, session, data) {
       }
     }
     uiInitialized <<- TRUE
+    # print("Done in uqCalc()")
   })
   
   output$vars_plots <- renderUI({
     # print("In vars_plots")
-    # print(varsList())
     data <- uqData()$dist
     variables <- varNums
-    # print(!input$display_all)
+    
     if(!input$display_all){
-      print("In not display all")
+      # print("In not display all")
       variables <- varNums[varsList()]
     }
+
     if(is.null(data)) {
-      verbatimTextOutput(ns("uq_plot_initializing"))
+      HTML(paste0(
+        tags$style(paste0("#", ns("uq_plot_initializing"), "{ white-space: pre-wrap }")),
+        verbatimTextOutput(ns("uq_plot_initializing"))
+      ))
     }
     else {
       lapply(variables, function(var) {
@@ -406,7 +446,14 @@ server <- function(input, output, session, data) {
     }
   })
   
-  output$uq_plot_initializing <- renderText("Initializing...")
+  output$uq_plot_initializing <- renderText({
+    uq_data <- uqData()
+    if (!is.null(uq_data$error)) {
+      paste0(unlist(lapply(uq_data$error, function(msg) { paste0(msg, "\n")})), collapse="")
+    } else {
+      "Initializing..."
+    }
+  })
   
   observe({
     data <- uqData()$dist
@@ -423,7 +470,8 @@ server <- function(input, output, session, data) {
                       max(filtered_data_histo$density, data[[var]][["yOrig"]], data[[var]][["yResampled"]]))
         # print(paste(var, x_bounds, y_bounds))
         output[[paste0("uq_plot_", var)]] <- renderPlot({
-          hist(filtered_data()[[var]],
+          if (length(filtered_data()[[var]]) > 0) {
+            hist(filtered_data()[[var]],
                freq = FALSE,
                col = input$hist_color,
                border = "#C0C0C0",
@@ -437,6 +485,7 @@ server <- function(input, output, session, data) {
                #asp = 1.3,
                breaks = 30,
                bty = "o")
+          }
           if (directions[[var]] == "Input") {
             lines(data[[var]][["xOrig"]],
                   data[[var]][["yOrig"]],
@@ -556,6 +605,7 @@ server <- function(input, output, session, data) {
   })
   
   uqInputs <- reactive({
+    # print("In uqInputs()")
     inputs <- sapply(varNums, function(var) {directions[[var]] == "Input"})
     subset(varNums, inputs)
   })
@@ -574,14 +624,18 @@ server <- function(input, output, session, data) {
       threshold <-input[[paste0('queryThreshold', id)]]
       req(threshold)
       data <- uqData()$dist[[name]]
-      
-      value <- integrateData(data$xResampled,
-                             data$yResampled,
-                             min(data$xResampled),
-                             as.numeric(threshold))
-      value <- max(0,min(1,value))
-      if (direction == "Above") {
-        value <- (1-value)
+
+      if (!is.null(data)) {      
+        value <- integrateData(data$xResampled,
+                              data$yResampled,
+                              min(data$xResampled),
+                              as.numeric(threshold))
+        value <- max(0,min(1,value))
+        if (direction == "Above") {
+          value <- (1-value)
+        }
+      } else {
+        value <- "View error in Variable Plots"
       }
       
       print(paste("Query: ", name, direction, threshold, value))
@@ -616,7 +670,6 @@ server <- function(input, output, session, data) {
             numberOfInputs <- numberOfInputs + 1
           }
         }
-        
         if (numberOfInputs > 0) {
           print("Started Forward UQ.")
           temp_results <- processForwardUQ(filtered_data()[varNums], uqData(), uqInputs())
@@ -691,6 +744,7 @@ server <- function(input, output, session, data) {
       # print(paste(config))
       configData <- subset(raw_data, raw_data[[paste0(input$design_config_var)]] == config)
       configData <- configData[varNums]
+      req(!NA %in% unlist(params))
       resampledData <- resampleData(configData, directions, types, params)$dist
       answers <- c(paste0(config))
       for(j in 1:length(probability_queries$rows)) {
@@ -711,7 +765,6 @@ server <- function(input, output, session, data) {
       }
       data[nrow(data)+1,] <- answers
     }
-    # print(data)
     data
   })
   

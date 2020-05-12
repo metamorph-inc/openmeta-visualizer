@@ -114,6 +114,46 @@ if (file.exists(design_tree_filename)) {
   design_tree_present <- TRUE
 }
 
+user_default_input_filename <- file.path(Sys.getenv("APPDATA"), "\\OpenMeta\\Visualizer\\default_input.json")
+if (file.exists(user_default_input_filename)) {
+  user_default_inputs <- fromJSON(file(user_default_input_filename, encoding="UTF-8"), simplifyDataFrame=FALSE)
+} else {
+  user_default_inputs <- list()
+}
+
+default_input_template_filename <- file.path("./default_input.template.json")
+default_inputs <- fromJSON(file(default_input_template_filename, encoding="UTF-8"), simplifyDataFrame=FALSE)
+
+merge_lists <- function(default, ..., KEEP.FIRST.TYPE=TRUE) {
+  lists_to_merge <- list(...)
+  result <- default
+  for (list_to_merge in lists_to_merge) {
+    for (name in names(list_to_merge)) {
+      if (is.list(list_to_merge[[name]]) && (is.list(result[[name]]) || is.null(result[[name]]))) {
+        result[[name]] <- merge_lists(result[[name]], list_to_merge[[name]])
+      } else if (typeof(list_to_merge[[name]]) != typeof(result[[name]]) && !all(c(typeof(list_to_merge[[name]]), typeof(result[[name]])) %in% c("integer", "double"))) {
+        if (!KEEP.FIRST.TYPE) {
+          result[[name]] <- list_to_merge[[names]]
+        }
+      } else {
+        result[[name]][1:length(list_to_merge[[name]])] <- list_to_merge[[name]]
+        result[[name]] <- result[[name]][-(1+length(list_to_merge[[name]])):-(1+length(result[[name]]))]
+      }
+    }
+  }
+  result
+}
+default_inputs <- merge_lists(default_inputs, user_default_inputs)
+
+if (!identical(default_inputs, user_default_inputs)) {
+  tryCatch(
+    write(toJSON(default_inputs, pretty=TRUE, auto_unbox=TRUE), user_default_input_filename),
+    error=function(e) { print(e) }
+  )
+}
+
+
+
 # Saved Input Functions ------------------------------------------------------
 
 si <- function(id, default) {
@@ -1289,19 +1329,19 @@ ui <- fluidPage(
       bsCollapsePanel("Coloring",
         column(3,
           h4("Coloring Source"),
-          selectInput("coloring_source", "Source", choices = c("None", "Live")),  #, selected = si("coloring_source", "None")),
+          selectInput("coloring_source", "Source", choices = c("None", "Live"), selected=default_inputs$Footer$Coloring$Source),  #, selected = si("coloring_source", "None")),
           htmlOutput("coloring_legend")
         ),
         column(3,
           h4("Live"),
-          selectInput("live_coloring_type", "Type:", choices = c("Max/Min", "Discrete"), selected = si("live_coloring_type", "Max/Min")),  #, "Highlighted", "Ranked"), selected = "None")
+          selectInput("live_coloring_type", "Type:", choices = c("Max/Min", "Discrete"), selected = si("live_coloring_type", default_inputs$Footer$Coloring$Type)),  #, "Highlighted", "Ranked"), selected = "None")
           conditionalPanel(
             condition = "input.live_coloring_type == 'Max/Min'",
             selectInput("live_coloring_variable_numeric", "Colored Variable:", c()),
             radioButtons(inputId = "live_coloring_max_min",
                          label = NULL,
                          choices = c("Maximize" = "Maximize", "Minimize" = "Minimize"),
-                         selected = si("live_coloring_max_min", "Maximize"))
+                         selected = si("live_coloring_max_min", default_inputs$Footer$Coloring$`Max/Min Mode`))
           ),
           conditionalPanel(
             condition = "input.live_coloring_type == 'Discrete'",
@@ -1311,16 +1351,16 @@ ui <- fluidPage(
             selectInput("live_color_palette",
                         "Color Palette:",
                         c("Rainbow", "Heat", "Terrain", "Topo", "Cm"),
-                        si("live_color_palette", "Rainbow")),
+                        si("live_color_palette", default_inputs$Footer$Coloring$`Color Palette`)),
             conditionalPanel(
               condition = "input.live_color_palette == 'Rainbow'",
               sliderInput("live_color_rainbow_s", "Saturation:",
                           min=0, max=1,
-                          value=si("live_color_rainbow_s", 1),
+                          value=si("live_color_rainbow_s", default_inputs$Footer$Coloring$Saturation),
                           step=0.025),
               sliderInput("live_color_rainbow_v", "Value/Brightness:",
                           min=0, max=1,
-                          value=si("live_color_rainbow_v", 1),
+                          value=si("live_color_rainbow_v", default_inputs$Footer$Coloring$`Value/Brightness`),
                           step=0.025)
             )
           )
@@ -1347,11 +1387,11 @@ ui <- fluidPage(
           column(3,
             h4("Data Processing"),
             checkboxInput("remove_missing", "Remove Missing",
-                          si("remove_missing", FALSE)),
+                          si("remove_missing", default_inputs$Footer$Configuration$`Remove Missing`)),
             checkboxInput("remove_outliers", "Remove Outlier",
-                          si("remove_outliers", FALSE)),
+                          si("remove_outliers", default_inputs$Footer$Configuration$`Remove Outlier`)),
             sliderInput("num_sd", HTML("&sigma;:"), min = 1, max = 11, step = 0.1,
-                        value = si("num_sd", 6))
+                        value = si("num_sd", default_inputs$Footer$Configuration$sigma))
           ),
           column(3,
             h4("About"),

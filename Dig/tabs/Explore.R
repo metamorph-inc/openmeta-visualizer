@@ -53,22 +53,22 @@ ui <- function(id) {
               ),
               bsCollapsePanel("Plot Options",
                 checkboxInput(ns("auto_render"), "Render Automatically",
-                              value = si(ns("auto_render"), TRUE)),
+                              value = si(ns("auto_render"), default_inputs$Tabs$Explore$`Pairs Plot`$`Plot Options`$`Render Automatically`)),
                 checkboxInput(ns("pairs_upper_panel"), "Display Upper Panel",
-                              value = si(ns("pairs_upper_panel"), FALSE)),
+                              value = si(ns("pairs_upper_panel"), default_inputs$Tabs$Explore$`Pairs Plot`$`Plot Options`$`Display Upper Panel`)),
                 checkboxInput(ns("pairs_trendlines"), "Add Trendlines",
-                              value = si(ns("pairs_trendlines"), FALSE)),
+                              value = si(ns("pairs_trendlines"), default_inputs$Tabs$Explore$`Pairs Plot`$`Plot Options`$`Add Trendlines`)),
                 checkboxInput(ns("pairs_units"), "Display Units",
-                              value = si(ns("pairs_units"), TRUE))
+                              value = si(ns("pairs_units"), default_inputs$Tabs$Explore$`Pairs Plot`$`Plot Options`$`Display Units`))
               ),
               bsCollapsePanel("Markers",
                 selectInput(ns("pairs_plot_marker"),
                             "Plot Markers:",
                             plot_markers,
-                            selected=si(ns("pairs_plot_marker"), 1)),
+                            selected=si(ns("pairs_plot_marker"), plot_markers[[default_inputs$Tabs$Explore$`Pairs Plot`$Markers$`Plot Markers`]])),
                 sliderInput(ns("pairs_plot_marker_size"), "Marker Size:",
                             min=0.5, max=2.5,
-                            value=si(ns("pairs_plot_marker_size"),1),
+                            value=si(ns("pairs_plot_marker_size"), default_inputs$Tabs$Explore$`Pairs Plot`$Markers$`Marker Size`),
                             step=0.025)
               ),
               bsCollapsePanel("Export",
@@ -102,9 +102,9 @@ ui <- function(id) {
                 selectInput(ns("single_plot_marker"),
                             "Plot Markers:",
                             plot_markers,
-                            selected = si(ns("single_plot_marker"), 1)),
+                            selected = si(ns("single_plot_marker"), plot_markers[[default_inputs$Tabs$Explore$`Single Plot`$`Markers`$`Plot Markers`]])),
                 sliderInput(ns("single_plot_marker_size"), "Marker Size:",
-                            min=0.5, max=2.5, value=si(ns("single_plot_marker_size"), 1), step=0.025),
+                            min=0.5, max=2.5, value=si(ns("single_plot_marker_size"), default_inputs$Tabs$Explore$`Single Plot`$`Markers`$`Marker Size`), step=0.025),
                 style = "default"),
               # TODO(wknight): Restore this functionality.
               # br(), br(),
@@ -113,11 +113,11 @@ ui <- function(id) {
               #   actionButton(ns("highlightData"), "Highlight Selection", class = "btn btn-primary")
               # )
               bsCollapsePanel("Overlays",
-                checkboxInput(ns("add_regression"), "Add Regression", si(ns("add_regression"), FALSE)),
-                selectInput(ns("regression_type"), "Regression Type", c("Linear", "Quadratic", "Exponential"), selected=si(ns("regression_type"), "Linear")),
-                checkboxInput(ns("add_contour"), "Add Contour Plot", si(ns("add_contour"), FALSE)),
+                checkboxInput(ns("add_regression"), "Add Regression", si(ns("add_regression"), default_inputs$Tabs$Explore$`Single Plot`$`Overlays`$`Add Regression`)),
+                selectInput(ns("regression_type"), "Regression Type", c("Linear", "Quadratic", "Exponential"), selected=si(ns("regression_type"), default_inputs$Tabs$Explore$`Single Plot`$`Overlays`$`Regression Type`)),
+                checkboxInput(ns("add_contour"), "Add Contour Plot", si(ns("add_contour"), default_inputs$Tabs$Explore$`Single Plot`$`Overlays`$`Add Contour Plot`)),
                 selectInput(ns("contour_var"), "Contour Variable", c(), selected=NULL),
-                checkboxInput(ns("add_pareto"), "Add Pareto Plot", si(ns("add_pareto"), FALSE)),
+                checkboxInput(ns("add_pareto"), "Add Pareto Plot", si(ns("add_pareto"), default_inputs$Tabs$Explore$`Single Plot`$`Overlays`$`Add Pareto Plot`)),
                 style = "default")
             )
           ),
@@ -180,13 +180,13 @@ server <- function(input, output, session, data) {
   observe({
     selected <- isolate(input$display)
     if(is.null(selected)) {
-      selected <- data$pre$var_range()[c(1,2)]
+      selected <- data$pre$var_range()[1:default_inputs$Tabs$Explore$`Pairs Plot`$`Variables`$`Display Variables`]
     }
     saved <- si_read(ns("display"))
     if (is.empty(saved)) {
       si_clear(ns("display"))
     } else if (all(saved %in% c(data$pre$var_range(), ""))) {
-      selected <- si(ns("display"), NULL)
+      selected <- si(ns("display"), selected)
     }
     updateSelectInput(session,
                       "display",

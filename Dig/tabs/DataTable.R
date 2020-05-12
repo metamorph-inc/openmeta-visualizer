@@ -19,8 +19,8 @@ ui <- function(id) {
     # checkboxInput(ns("autoRanking"), "Automatic Refresh", value = TRUE),
     wellPanel(
       h4("Data Processing"),
-      checkboxInput(ns("use_filtered"), "Apply Filters", value=si(ns("use_filtered"), TRUE)),
-      fluidRow(column(4,selectInput(ns("process_method"), "Method", choices = c("None", "TOPSIS"), selected = si(ns("process_method"), "None")))),
+      checkboxInput(ns("use_filtered"), "Apply Filters", value=si(ns("use_filtered"), default_inputs$Tabs$`Data Table`$`Apply Filters`)),
+      fluidRow(column(4,selectInput(ns("process_method"), "Method", choices = c("None", "TOPSIS"), selected = si(ns("process_method"), default_inputs$Tabs$`Data Table`$Method)))),
       conditionalPanel(condition = paste0("input['", ns("process_method"), "'] != 'None'"),
         # conditionalPanel(condition = paste0("input['", ns("autoRanking"), "'] == false"),
         #   actionButton(ns("applyRanking"), "Apply Ranking"),
@@ -140,15 +140,15 @@ server <- function(input, output, session, data) {
     
     slider <- input[[paste0('rnk', current)]]
     if(is.null(slider))
-      slider <- si(ns(paste0('rnk', current)), 1)
+      slider <- si(ns(paste0('rnk', current)), default_inputs$Tabs$`Data Table`$`Weight Amount`)
     
     radio <- input[[paste0('sel', current)]]
     if(is.null(radio))
-      radio <- si(ns(paste0('sel', current)), "Min")
+      radio <- si(ns(paste0('sel', current)), default_inputs$Tabs$`Data Table`$`Ranking Mode`)
     
     util <- input[[paste0('util', current)]]
     if(is.null(util))
-      util <- si(ns(paste0('util', current)), FALSE)
+      util <- si(ns(paste0('util', current)), default_inputs$Tabs$`Data Table`$`Add Transfer Function`)
     
     func <- input[[paste0('func', current)]]
     if(is.null(func))
@@ -485,7 +485,7 @@ server <- function(input, output, session, data) {
         "function(settings, json) {",
         "$(this.api().table().header()).find('th').css({'text-align' : 'left'});",
         "}"
-        ))) %>%
+      ), pageLength = default_inputs$Tabs$`Data Table`$`Show Entries`)) %>%
       DT::formatStyle(columns=names(table_data), textAlign="left")
 
     dataTable
