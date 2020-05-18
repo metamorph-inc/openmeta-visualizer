@@ -143,6 +143,32 @@ ui <- function(id) {
           )
         ),
         conditionalPanel(
+          condition = paste0('output["', ns('found_cad'), '"] == true'),
+          hr(),
+          fluidRow(
+            column(12,
+              extendShinyjs(functions=c("viewCADFiles", "openCADWindow"), text=
+                '
+                shinyjs.viewCADFiles = async function(params) {
+                  params = shinyjs.getParams(params, {cad_file_bytes:null, point_details:null})
+                  if (!params.cad_file_bytes || !params.point_details) {
+                    return null
+                  }
+                  var w = shinyjs.viewCADFiles.window
+                  w.cad_file_bytes = params.cad_file_bytes
+                  w.point_details = params.point_details
+                }
+                shinyjs.openCADWindow = function() {
+                  shinyjs.viewCADFiles.window = window.open("/stl_viewer/view_cad.html")
+                }
+                '
+              ),
+              selectInput(ns("cad_files"), label="CAD Files", choices = c(), NULL),
+              actionButton(ns("view_cad"), "View CAD")
+            )
+          )
+        ),
+        conditionalPanel(
           condition = paste0('output["', ns('found_images'), '"] == true'),
           hr(),
           fluidRow(
@@ -736,5 +762,39 @@ server <- function(input, output, session, data) {
     updateSelectInput(session, "file_images",
                       choices = choices,
                       selected = choices[num_selected])
+  })
+
+  output$found_cad <- reactive({
+    guid_folder <- guid_folders[[input$details_guid]]
+    archived_files <- list.files(guid_folder)
+
+    if (!is.null(guid_folder) 
+    && any(grepl("^.*\\.stl$", archived_files))) {
+      shinyjs::logjs("CAD File Exists")
+      stl_file_indicies <- grep("^.*\\.stl$", archived_files)
+      updateSelectInput(session, "cad_files", choices=lapply(stl_file_indicies, function(index) { archived_files[index] }))
+      
+      TRUE
+    } else {
+      FALSE
+    }
+  })
+  outputOptions(output, "found_cad", suspendWhenHidden=FALSE)
+
+  observeEvent(input$view_cad, {
+    req(input$view_cad, input$details_guid, input$cad_files)
+    shinyjs::logjs("Loading CAD File Bytes")
+
+    single_point <- data$raw$df[data$raw$df$GUID == input$details_guid, ]
+    guid_folder <- guid_folders[[input$details_guid]]
+
+    path <- file.path(guid_folder, input$cad_files)
+    bytes_to_read <- file.size(path)
+    stlfile <- file(path, "rb")
+    cad_file_bytes <- readBin(stlfile, integer(), size=1, n=bytes_to_read)
+
+    shinyjs::logjs("Opening CAD File in new tab")
+    js$openCADWindow()
+    js$viewCADFiles(cad_file_bytes=cad_file_bytes, point_details=single_point)
   })
 }

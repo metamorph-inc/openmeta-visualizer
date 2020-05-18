@@ -1,4 +1,4 @@
-﻿using OpenQA.Selenium;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Interactions.Internal;
@@ -585,7 +585,6 @@ namespace DigTest
             ShinyUtilities.ShinyWait(driver);
             Assert.True(stats.GetCurrentPoints() < points_before_deselect_28);
 
-            
             var filter_hub = new ShinySelectMultipleInput(driver, "filter_IN_MatériauDeMoyeu", false);
             //Assert.Equal("1. Acier, 2. Aluminum", filter_hub.GetCurrentSelection());
             // OPENMETA-380 (tthomas): Had to replace filter_hub.GetCurrentSelection() with stat.GetCurrentPoints() due to issue with Shiny; will possibly revert when shiny patch is release.
