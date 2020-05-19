@@ -1154,7 +1154,8 @@ Server <- function(input, output, session) {
       data$colorings$custom$selected <- 1
     }
     if (!"colors" %in% names(data$colorings$custom) || length(data$colorings$custom$colors) < 2) {
-      data$colorings$custom$colors[1:2] <- c("#FF0000", "#0000FF")
+      default_colors <- default_inputs$Footer$Coloring$`Custom Colors`
+      data$colorings$custom$colors[1:length(default_colors)] <- default_colors
     }
 
     raw_html <- tags$style(paste0(
