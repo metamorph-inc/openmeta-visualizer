@@ -115,7 +115,11 @@ if (file.exists(design_tree_filename)) {
   design_tree_present <- TRUE
 }
 
-user_default_input_filename <- file.path(Sys.getenv("APPDATA"), "\\OpenMeta\\Visualizer\\default_input.json")
+user_default_input_file_directory <- file.path(Sys.getenv("APPDATA"), "\\OpenMETA\\Visualizer")
+if (!dir.exists(user_default_input_file_directory)) {
+  dir.create(user_default_input_file_directory, showWarnings=TRUE, recursive=TRUE)
+}
+user_default_input_filename <- file.path(user_default_input_file_directory, "\\default_input.json")
 if (file.exists(user_default_input_filename)) {
   user_default_inputs <- fromJSON(file(user_default_input_filename, encoding="UTF-8"), simplifyDataFrame=FALSE)
 } else {
