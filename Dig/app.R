@@ -1473,7 +1473,13 @@ ui <- fluidPage(
   tags$script(src = "d3.v3.min.js"),
   tags$script(src = "design_config_selector.js"),
   
-  titlePanel("Visualizer"),
+  titlePanel(
+    title=div(
+              div("Visualizer"), 
+              div(a(href="https://www.metamorphsoftware.com/", target="_blank", img(src="metamorph_logo.png", height="64px", width="210px", align="right", style="padding: 10px")))
+          ),
+	  windowTitle="Visualizer"
+  ),
   
   # Generates the master tabset from the user-defined tabs provided.
   do.call(tabsetPanel, tabset_arguments),
