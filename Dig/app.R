@@ -1588,8 +1588,8 @@ ui <- fluidPage(
           ),
           column(3,
             h4("About"),
-            p(strong("Version:"), "v2.3.0"),
-            p(strong("Date:"), "5/18/2020"),
+            p(strong("Version:"), "v2.4.0"),
+            p(strong("Date:"), "6/23/2020"),
             p(strong("Developer:"), "Metamorph Inc."),
 			p(strong("Website:"), "https://www.metamorphsoftware.com/"),
             p(strong("Support:"), "jcoombe@metamorphsoftware.com")
