@@ -13,3 +13,5 @@ license.rtf
 /WiX.3.11.0/
 .Rproj.user
 viz-electron-bin/
+node-v*.zip
+node-v*/

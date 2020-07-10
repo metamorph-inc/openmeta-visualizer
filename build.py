@@ -7,11 +7,13 @@ import subprocess
 import requests
 
 url = 'https://nodejs.org/dist/v12.18.2/node-v12.18.2-win-x64.zip'
-filename = 'node-v12.18.2-win-x86.zip'
+filename = 'node-v12.18.2-win-x64.zip'
 dirname = os.path.splitext(filename)[0]
 
 tab_dir = os.path.join("Dig", "tab-src", "surrogate-modeling")
 tab_dst = os.path.join('Dig', 'www', 'SurrogateModeling')
+
+electron_dir = "viz-electron"
 
 
 def download(url, filename):
@@ -66,9 +68,22 @@ def build_tab(node_dirname):
         shutil.rmtree(tab_dst)
     shutil.copytree(os.path.join(tab_dir, 'build'), tab_dst)
 
+def build_electron(node_dirname):
+    npm = os.path.join(node_dirname, 'npm.cmd')
+    yarn = os.path.join(node_dirname, 'yarn.cmd')
+    node = os.path.join(node_dirname, 'node.exe')
+    print('`npm install -g yarn`')
+    subprocess.check_call([npm, 'install', "-g", "yarn"], cwd=electron_dir)
+    print('`yarn install`')
+    subprocess.check_call([yarn, 'install'], cwd=electron_dir)
+    print('`yarn run dist`')
+    env = dict(os.environ)
+    env['PATH'] = dirname + ';' + env['PATH']
+    subprocess.check_call([yarn, 'run', 'dist'], env=env, cwd=electron_dir)
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     download(url, filename)
     decompress(filename, dirname)
-    build_tab(dirname)
+    build_tab(os.path.abspath(dirname))
+    build_electron(os.path.abspath(dirname))
