@@ -61,7 +61,7 @@
         <Directory Id='APPLICATIONFOLDER' Name='OpenMETA-Visualizer'>
           <Directory Id='Dig' Name='Dig' />
           <Directory Id='R' Name='R' />
-          <Directory ID='viz-electron-bin' Name='viz-electron-bin' />
+          <Directory Id='viz-electron-bin' Name='viz-electron-bin' />
         </Directory>
       </Directory>
     </Directory>
