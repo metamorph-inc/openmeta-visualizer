@@ -8,6 +8,7 @@
 body {
     max-height: 100vh;
     max-width: 100vw;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 
 input:not([type=radio]), select, button {
