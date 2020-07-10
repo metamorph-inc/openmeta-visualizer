@@ -40,9 +40,9 @@ def build_msi():
     # gen_dir_from_vc: "explicit is better than implicit"
     #  consider: generated files are left on disk after an svn switch, and get included in an installer that shouldn't have them
     gen_dir_wxi.gen_dir_from_vc(r"..\R",)
-    gen_dir_wxi.gen_dir_from_vc(r"..\viz-electron-bin",)
     gen_dir_wxi.gen_dir_from_vc(r"..\Dig",)
     gen_dir_wxi.main(r"..\Dig\www\SurrogateModeling")
+    gen_dir_wxi.main(r"..\viz_electron_bin")
 
     dig_mods()
 

@@ -9,7 +9,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "lint": "eslint --ext .ts .",
-    "dist": "yarn run make && rimraf ../viz-electron-bin && shx cp -r out/viz-electron-win32-x64 ../viz-electron-bin"
+    "dist": "yarn run make && rimraf ../viz_electron_bin && shx cp -r out/viz-electron-win32-x64 ../viz_electron_bin"
   },
   "keywords": [],
   "author": {
