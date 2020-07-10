@@ -61,7 +61,7 @@
         <Directory Id='APPLICATIONFOLDER' Name='OpenMETA-Visualizer'>
           <Directory Id='Dig' Name='Dig' />
           <Directory Id='R' Name='R' />
-          <Directory Id='viz-electron-bin' Name='viz-electron-bin' />
+          <Directory Id='viz_electron_bin' Name='viz-electron-bin' />
         </Directory>
       </Directory>
     </Directory>
@@ -106,7 +106,7 @@
     <!-- =========================================================== -->
     <Feature Id='Complete' Title='OpenMETA Visualizer' Description='The complete package' Display='expand' Level='1' ConfigurableDirectory='APPLICATIONFOLDER'>
       <ComponentGroupRef Id='R'/>
-      <ComponentGroupRef Id='viz-electron-bin'/>
+      <ComponentGroupRef Id='viz_electron_bin'/>
       <ComponentGroupRef Id='Dig'/>
       <ComponentGroupRef Id='SurrogateModeling'/>
       <ComponentGroupRef Id='Dig_run'/>
