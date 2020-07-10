@@ -54,7 +54,7 @@ namespace DigTest
                 driver.Navigate().GoToUrl(wrapper.url);
                 IWait<IWebDriver> wait0 = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(30.0));
                 Assert.True(wait0.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete")));
-                Assert.Equal("Visualizer", driver.Title);
+                Assert.Equal("OpenMETA Visualizer", driver.Title);
                 IWait<IWebDriver> wait1 = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
                 Assert.True(wait1.Until(driver1 => driver.FindElement(By.Id("Explore-pairs_stats")).Text.Contains("Total Points: 319")));
                 Assert.True(wait1.Until(driver1 => driver.FindElement(By.Id("Explore-pairs_stats")).Text.Contains("Current Points: 319")));
@@ -76,7 +76,7 @@ namespace DigTest
                 driver.Navigate().GoToUrl(wrapper.url);
                 IWait<IWebDriver> wait0 = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(30.0));
                 Assert.True(wait0.Until(driver1 => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete")));
-                Assert.Equal("Visualizer", driver.Title);
+                Assert.Equal("OpenMETA Visualizer", driver.Title);
                 IWait<IWebDriver> wait1 = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
                 Assert.True(wait1.Until(driver1 => driver.FindElement(By.Id("Explore-pairs_stats")).Text.Contains("Total Points: 5000")));
             }
@@ -109,7 +109,7 @@ namespace DigTest
                 wrapper.Start(session.copied_config);
                 driver.Navigate().GoToUrl(wrapper.url);
                 Assert.True(ShinyUtilities.WaitUntilDocumentReady(driver));
-                Assert.Equal("Visualizer", driver.Title);
+                Assert.Equal("OpenMETA Visualizer", driver.Title);
                 ShinyUtilities.InstallShinyWait(driver);
                 ShinyUtilities.ShinyWait(driver);
                 var bodySize = driver.FindElement(By.TagName("body")).Size;
