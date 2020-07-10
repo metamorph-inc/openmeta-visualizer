@@ -155,8 +155,10 @@ ui <- function(id) {
                     return null
                   }
                   var w = shinyjs.viewCADFiles.window
-                  w.cad_file_bytes = params.cad_file_bytes
-                  w.point_details = params.point_details
+                  w.postMessage({
+                    cad_file_bytes: params.cad_file_bytes,
+                    point_details: params.point_details
+                  }, location.origin)
                 }
                 shinyjs.openCADWindow = function() {
                   shinyjs.viewCADFiles.window = window.open("/stl_viewer/view_cad.html")

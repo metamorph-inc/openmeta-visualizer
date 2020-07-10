@@ -6,6 +6,21 @@ function Initialize_STL_VIEW() {
 }
 window.addEventListener("load", Initialize_STL_VIEW)
 
+window.addEventListener("message", receiveMessage, false);
+
+function receiveMessage(event) {
+  if (event.origin !== location.origin)
+    return;
+
+  if(event.data.cad_file_bytes) {
+      window.cad_file_bytes = event.data.cad_file_bytes;
+  }
+
+  if(event.data.point_details) {
+      window.point_details = event.data.point_details;
+  }
+}
+
 function sleep(miliseconds) {
     return new Promise(function (resolve) {
         setTimeout(() => {
