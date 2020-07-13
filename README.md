@@ -4,7 +4,7 @@
 
 ## Development:
 
-To build: run `python Dig\tab-src\surrogate-modeling\build.py`
+To build: run `python build.py`
 
 Then, add registry entry to note location of this repository: `add_reg_path.cmd`
 
