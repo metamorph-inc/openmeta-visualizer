@@ -1,11 +1,15 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2003-12 The R Core Team.
+ *  Copyright (C) 2003-2019 The R Core Team.
  *
- *  This program is free software; you can redistribute it and/or modify
+ *  This header file is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
  *  the Free Software Foundation; either version 2.1 of the License, or
  *  (at your option) any later version.
+ *
+ *  This file is part of R. R is distributed under the terms of the
+ *  GNU General Public License, either Version 2, June 1991 or Version 3,
+ *  June 2007. See doc/COPYRIGHTS for details of the copyright status of R.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,7 +26,7 @@
 
    Part of the API.
 
-   R packages that use these should have PKG_LIBS in src/Makevars include 
+   R packages that use these should have PKG_LIBS in src/Makevars include
    $(BLAS_LIBS) $(FLIBS)
  */
 
@@ -33,6 +37,15 @@
 
 #include <R_ext/RS.h>		/* for F77_... */
 #include <R_ext/Complex.h>	/* for Rcomplex */
+
+#ifdef FC_LEN_T
+# include <stddef.h> // for size_t if needed
+# define FCLEN ,FC_LEN_T
+# define FCONE ,(FC_LEN_T)1
+#else
+# define FCLEN
+# define FCONE
+#endif
 
 #ifdef  __cplusplus
 extern "C" {
@@ -47,8 +60,8 @@ extern "C" {
 
 BLAS_extern double /* DASUM - sum of absolute values of a one-dimensional array */
 F77_NAME(dasum)(const int *n, const double *dx, const int *incx);
-BLAS_extern void   /* DAXPY - replace y by alpha*x + y */
-F77_NAME(daxpy)(const int *n, const double *alpha,
+BLAS_extern void   /* DAXPY - replace y by da*x + y */
+F77_NAME(daxpy)(const int *n, const double *da,
 		const double *dx, const int *incx,
 		double *dy, const int *incy);
 BLAS_extern void   /* DCOPY - copy x to y */
@@ -87,28 +100,28 @@ F77_NAME(dgbmv)(const char *trans, const int *m, const int *n,
 		const int *kl,const int *ku,
 		const double *alpha, const double *a, const int *lda,
 		const double *x, const int *incx,
-		const double *beta, double *y, const int *incy);
+		const double *beta, double *y, const int *incy FCLEN);
 /* DGEMV - perform one of the matrix-vector operations */
 /* y := alpha*A*x + beta*y, or y := alpha*A'*x + beta*y,  */
 BLAS_extern void
 F77_NAME(dgemv)(const char *trans, const int *m, const int *n,
 		const double *alpha, const double *a, const int *lda,
 		const double *x, const int *incx, const double *beta,
-		double *y, const int *incy);
+		double *y, const int *incy FCLEN);
 /* DSBMV - perform the matrix-vector operation */
 /* y := alpha*A*x + beta*y, */
 BLAS_extern void
 F77_NAME(dsbmv)(const char *uplo, const int *n, const int *k,
 		const double *alpha, const double *a, const int *lda,
 		const double *x, const int *incx,
-		const double *beta, double *y, const int *incy);
+		const double *beta, double *y, const int *incy FCLEN);
 /* DSPMV - perform the matrix-vector operation */
 /* y := alpha*A*x + beta*y, */
 BLAS_extern void
 F77_NAME(dspmv)(const char *uplo, const int *n,
 		const double *alpha, const double *ap,
 		const double *x, const int *incx,
-		const double *beta, double *y, const int *incy);
+		const double *beta, double *y, const int *incy FCLEN);
 
 /* DSYMV - perform the matrix-vector operation */
 /*  y := alpha*A*x + beta*y, */
@@ -116,46 +129,47 @@ BLAS_extern void
 F77_NAME(dsymv)(const char *uplo, const int *n, const double *alpha,
 		const double *a, const int *lda,
 		const double *x, const int *incx,
-		const double *beta, double *y, const int *incy);
+		const double *beta, double *y, const int *incy FCLEN);
 /* DTBMV - perform one of the matrix-vector operations */
 /* x := A*x, or x := A'*x, */
 BLAS_extern void
 F77_NAME(dtbmv)(const char *uplo, const char *trans,
 		const char *diag, const int *n, const int *k,
 		const double *a, const int *lda,
-		double *x, const int *incx);
+		double *x, const int *incx FCLEN FCLEN FCLEN);
 /* DTPMV - perform one of the matrix-vector operations */
 /* x := A*x, or x := A'*x, */
 BLAS_extern void
 F77_NAME(dtpmv)(const char *uplo, const char *trans, const char *diag,
 		const int *n, const double *ap,
-		double *x, const int *incx);
+		double *x, const int *incx FCLEN FCLEN FCLEN);
 /* DTRMV - perform one of the matrix-vector operations  */
 /* x := A*x, or x := A'*x, */
 BLAS_extern void
 F77_NAME(dtrmv)(const char *uplo, const char *trans, const char *diag,
 		const int *n, const double *a, const int *lda,
-		double *x, const int *incx);
+		double *x, const int *incx FCLEN FCLEN FCLEN);
 /* DTBSV - solve one of the systems of equations */
 /* A*x = b, or A'*x = b, */
 BLAS_extern void
 F77_NAME(dtbsv)(const char *uplo, const char *trans,
 		const char *diag, const int *n, const int *k,
 		const double *a, const int *lda,
-		double *x, const int *incx);
+		double *x, const int *incx FCLEN FCLEN FCLEN);
 /* DTPSV - solve one of the systems of equations */
 /* A*x = b, or A'*x = b, */
 BLAS_extern void
 F77_NAME(dtpsv)(const char *uplo, const char *trans,
 		const char *diag, const int *n,
-		const double *ap, double *x, const int *incx);
+		const double *ap, double *x, const int *incx
+		FCLEN FCLEN FCLEN);
 /* DTRSV - solve one of the systems of equations */
 /* A*x = b, or A'*x = b, */
 BLAS_extern void
 F77_NAME(dtrsv)(const char *uplo, const char *trans,
 		const char *diag, const int *n,
 		const double *a, const int *lda,
-		double *x, const int *incx);
+		double *x, const int *incx FCLEN FCLEN FCLEN);
 /* DGER - perform the rank 1 operation   A := alpha*x*y' + A */
 BLAS_extern void
 F77_NAME(dger)(const int *m, const int *n, const double *alpha,
@@ -166,24 +180,24 @@ F77_NAME(dger)(const int *m, const int *n, const double *alpha,
 BLAS_extern void
 F77_NAME(dsyr)(const char *uplo, const int *n, const double *alpha,
 	       const double *x, const int *incx,
-	       double *a, const int *lda);
+	       double *a, const int *lda FCLEN);
 /* DSPR - perform the symmetric rank 1 operation A := alpha*x*x' + A */
 BLAS_extern void
 F77_NAME(dspr)(const char *uplo, const int *n, const double *alpha,
-	       const double *x, const int *incx, double *ap);
+	       const double *x, const int *incx, double *ap FCLEN);
 /* DSYR2 - perform the symmetric rank 2 operation */
 /* A := alpha*x*y' + alpha*y*x' + A, */
 BLAS_extern void
 F77_NAME(dsyr2)(const char *uplo, const int *n, const double *alpha,
 		const double *x, const int *incx,
 		const double *y, const int *incy,
-		double *a, const int *lda);
+		double *a, const int *lda FCLEN);
 /* DSPR2 - perform the symmetric rank 2 operation */
 /* A := alpha*x*y' + alpha*y*x' + A,  */
 BLAS_extern void
 F77_NAME(dspr2)(const char *uplo, const int *n, const double *alpha,
 		const double *x, const int *incx,
-		const double *y, const int *incy, double *ap);
+		const double *y, const int *incy, double *ap FCLEN);
 
 /* Double Precision Level 3 BLAS */
 
@@ -194,7 +208,8 @@ F77_NAME(dgemm)(const char *transa, const char *transb, const int *m,
 		const int *n, const int *k, const double *alpha,
 		const double *a, const int *lda,
 		const double *b, const int *ldb,
-		const double *beta, double *c, const int *ldc);
+		const double *beta, double *c, const int *ldc 
+		FCLEN FCLEN);
 /* DTRSM - solve one of the matrix equations  */
 /* op(A)*X = alpha*B, or  X*op(A) = alpha*B  */
 BLAS_extern void
@@ -202,14 +217,16 @@ F77_NAME(dtrsm)(const char *side, const char *uplo,
 		const char *transa, const char *diag,
 		const int *m, const int *n, const double *alpha,
 		const double *a, const int *lda,
-		double *b, const int *ldb);
+		double *b, const int *ldb
+		FCLEN FCLEN FCLEN FCLEN);
 /* DTRMM - perform one of the matrix-matrix operations */
 /* B := alpha*op( A )*B, or B := alpha*B*op( A ) */
 BLAS_extern void
 F77_NAME(dtrmm)(const char *side, const char *uplo, const char *transa,
 		const char *diag, const int *m, const int *n,
 		const double *alpha, const double *a, const int *lda,
-		double *b, const int *ldb);
+		double *b, const int *ldb
+		FCLEN FCLEN FCLEN FCLEN);
 /* DSYMM - perform one of the matrix-matrix operations   */
 /*  C := alpha*A*B + beta*C, */
 BLAS_extern void
@@ -217,14 +234,16 @@ F77_NAME(dsymm)(const char *side, const char *uplo, const int *m,
 		const int *n, const double *alpha,
 		const double *a, const int *lda,
 		const double *b, const int *ldb,
-		const double *beta, double *c, const int *ldc);
+		const double *beta, double *c, const int *ldc
+		FCLEN FCLEN);
 /* DSYRK - perform one of the symmetric rank k operations */
 /* C := alpha*A*A' + beta*C or C := alpha*A'*A + beta*C */
 BLAS_extern void
 F77_NAME(dsyrk)(const char *uplo, const char *trans,
 		const int *n, const int *k,
 		const double *alpha, const double *a, const int *lda,
-		const double *beta, double *c, const int *ldc);
+		const double *beta, double *c, const int *ldc
+		FCLEN FCLEN);
 /* DSYR2K - perform one of the symmetric rank 2k operations */
 /* C := alpha*A*B' + alpha*B*A' + beta*C or */
 /* C := alpha*A'*B + alpha*B'*A + beta*C */
@@ -233,7 +252,8 @@ F77_NAME(dsyr2k)(const char *uplo, const char *trans,
 		 const int *n, const int *k,
 		 const double *alpha, const double *a, const int *lda,
 		 const double *b, const int *ldb,
-		 const double *beta, double *c, const int *ldc);
+		 const double *beta, double *c, const int *ldc
+		 FCLEN FCLEN);
 /*
   LSAME is a LAPACK support routine, not part of BLAS
 */
@@ -241,19 +261,19 @@ F77_NAME(dsyr2k)(const char *uplo, const char *trans,
 /* Double complex BLAS routines added for 2.3.0 */
 /* #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX */
     BLAS_extern double
-    F77_NAME(dcabs1)(double *z);
+    F77_NAME(dcabs1)(const Rcomplex *z);
     BLAS_extern double
-    F77_NAME(dzasum)(int *n, Rcomplex *zx, int *incx);
+    F77_NAME(dzasum)(const int *n, const Rcomplex *zx, const int *incx);
     BLAS_extern double
-    F77_NAME(dznrm2)(int *n, Rcomplex *x, int *incx);
+    F77_NAME(dznrm2)(const int *n, const Rcomplex *x, const int *incx);
     BLAS_extern int
-    F77_NAME(izamax)(int *n, Rcomplex *zx, int *incx);
+    F77_NAME(izamax)(const int *n, const Rcomplex *zx, const int *incx);
     BLAS_extern void
-    F77_NAME(zaxpy)(int *n, Rcomplex *za, Rcomplex *zx,
-		    int *incx, Rcomplex *zy, int *incy);
+    F77_NAME(zaxpy)(const int *n, const Rcomplex *za, const Rcomplex *zx,
+		    const int *incx, const Rcomplex *zy, const int *incy);
     BLAS_extern void
-    F77_NAME(zcopy)(int *n, Rcomplex *zx, int *incx,
-		    Rcomplex *zy, int *incy);
+    F77_NAME(zcopy)(const int *n, const Rcomplex *zx, const int *incx,
+		    const Rcomplex *zy, const int *incy);
 
     /* WARNING!  The next two return a value that may not be
        compatible between C and Fortran, and even if it is, this might
@@ -261,118 +281,159 @@ F77_NAME(dsyr2k)(const char *uplo, const char *trans,
        configure-testing with your compilers.
      */
     BLAS_extern Rcomplex
-    F77_NAME(zdotc)(int *n,
-		    Rcomplex *zx, int *incx, Rcomplex *zy, int *incy);
+    F77_NAME(zdotc)(const int *n,
+		    const Rcomplex *zx, const int *incx, 
+		    const Rcomplex *zy, const int *incy);
     BLAS_extern Rcomplex
-    F77_NAME(zdotu)(int *n,
-		    Rcomplex *zx, int *incx, Rcomplex *zy, int *incy);
+    F77_NAME(zdotu)(const int *n,
+		    const Rcomplex *zx, const int *incx,
+		    const Rcomplex *zy, const int *incy);
 
     BLAS_extern void
-    F77_NAME(zdrot)(int *n, Rcomplex *zx, int *incx, Rcomplex *zy,
-		int *incy, double *c, double *s);
+    F77_NAME(zdrot)(const int *n, 
+		    const Rcomplex *zx, const int *incx, 
+		    Rcomplex *zy, const int *incy, 
+		    const double *c, const double *s);
     BLAS_extern void
-    F77_NAME(zdscal)(int *n, double *da, Rcomplex *zx, int *incx);
+    F77_NAME(zdscal)(const int *n, const double *da, 
+		     Rcomplex *zx, const int *incx);
     BLAS_extern void
-    F77_NAME(zgbmv)(char *trans, int *m, int *n, int *kl,
+    F77_NAME(zgbmv)(const char *trans, int *m, int *n, int *kl,
 		    int *ku, Rcomplex *alpha, Rcomplex *a, int *lda,
 		    Rcomplex *x, int *incx, Rcomplex *beta, Rcomplex *y,
-		    int *incy);
+		    int *incy FCLEN);
     BLAS_extern void
     F77_NAME(zgemm)(const char *transa, const char *transb, const int *m,
 		    const int *n, const int *k, const Rcomplex *alpha,
 		    const Rcomplex *a, const int *lda,
 		    const Rcomplex *b, const int *ldb,
-		    const Rcomplex *beta, Rcomplex *c, const int *ldc);
+		    const Rcomplex *beta, Rcomplex *c, const int *ldc
+		    FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zgemv)(char *trans, int *m, int *n, Rcomplex *alpha,
-		    Rcomplex *a, int *lda, Rcomplex *x, int *incx,
-		    Rcomplex *beta, Rcomplex *y, int * incy);
+    F77_NAME(zgemv)(const char *trans, const int *m, const int *n,
+		    const Rcomplex *alpha, const Rcomplex *a, const int *lda,
+		    const Rcomplex *x, const int *incx, const Rcomplex *beta,
+		    Rcomplex *y, const int *incy FCLEN);
     BLAS_extern void
-    F77_NAME(zgerc)(int *m, int *n, Rcomplex *alpha, Rcomplex *x,
-		    int *incx, Rcomplex *y, int *incy, Rcomplex *a, int *lda);
+    F77_NAME(zgerc)(const int *m, const int *n, const Rcomplex *alpha,
+		    const Rcomplex *x, const int *incx, const Rcomplex *y,
+		    const int *incy, Rcomplex *a, const int *lda);
     BLAS_extern void
-    F77_NAME(zgeru)(int *m, int *n, Rcomplex *alpha, Rcomplex *x,
-		    int *incx, Rcomplex *y, int *incy, Rcomplex *a, int *lda);
+    F77_NAME(zgeru)(const int *m, const int *n, const Rcomplex *alpha,
+		    const Rcomplex *x, const int *incx, const Rcomplex *y,
+		    const int *incy, Rcomplex *a, const int *lda);
     BLAS_extern void
-    F77_NAME(zhbmv)(char *uplo, int *n, int *k, Rcomplex *alpha,
-		    Rcomplex *a, int *lda, Rcomplex *x, int *incx,
-		    Rcomplex *beta, Rcomplex *y, int *incy);
+    F77_NAME(zhbmv)(const char *uplo, const int *n, const int *k,
+		    const Rcomplex *alpha, const Rcomplex *a, const int *lda,
+		    const Rcomplex *x, const int *incx, const Rcomplex *beta,
+		    Rcomplex *y, const int *incy FCLEN);
     BLAS_extern void
-    F77_NAME(zhemm)(char *side, char *uplo, int *m, int *n,
-		    Rcomplex *alpha, Rcomplex *a, int *lda, Rcomplex *b,
-		    int *ldb, Rcomplex *beta, Rcomplex *c, int *ldc);
+    F77_NAME(zhemm)(const char *side, const char *uplo, const int *m,
+		    const int *n, const Rcomplex *alpha, const Rcomplex *a,
+		    const int *lda, const Rcomplex *b, const int *ldb,
+		    const Rcomplex *beta, Rcomplex *c, const int *ldc
+		    FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zhemv)(char *uplo, int *n, Rcomplex *alpha, Rcomplex *a,
-		    int *lda, Rcomplex *x, int *incx, Rcomplex *beta,
-		    Rcomplex *y, int *incy);
+    F77_NAME(zhemv)(const char *uplo, const int *n, const Rcomplex *alpha,
+		    const Rcomplex *a, const int *lda, const Rcomplex *x,
+		    const int *incx, const Rcomplex *beta,
+		    Rcomplex *y, const int *incy FCLEN);
     BLAS_extern void
-    F77_NAME(zher)(char *uplo, int *n, double *alpha, Rcomplex *x,
-		   int *incx, Rcomplex *a, int *lda);
+    F77_NAME(zher)(const char *uplo, const int *n, const double *alpha,
+		   const Rcomplex *x, const int *incx, Rcomplex *a,
+		   const int *lda FCLEN);
     BLAS_extern void
-    F77_NAME(zher2)(char *uplo, int *n, Rcomplex *alpha, Rcomplex *x,
-		    int *incx, Rcomplex *y, int *incy, Rcomplex *a, int *lda);
+    F77_NAME(zher2)(const char *uplo, const int *n, const Rcomplex *alpha,
+		    const Rcomplex *x, const int *incx, const Rcomplex *y,
+		    const int *incy, Rcomplex *a, const int *lda FCLEN);
     BLAS_extern void
-    F77_NAME(zher2k)(char *uplo, char *trans, int *n, int *k,
+    F77_NAME(zher2k)(const char *uplo, const char *trans, const int *n,
+		     const int *k, const Rcomplex *alpha, const Rcomplex *a,
+		     const int *lda, const Rcomplex *b, const  int *ldb,
+		     const double *beta, Rcomplex *c, const int *ldc
+		     FCLEN FCLEN);
+    BLAS_extern void
+    F77_NAME(zherk)(const char *uplo, const char *trans, const int *n,
+		    const int *k, const double *alpha, const Rcomplex *a,
+		    const int *lda, const double *beta, Rcomplex *c,
+		    const int *ldc FCLEN FCLEN);
+    BLAS_extern void
+    F77_NAME(zhpmv)(const char *uplo, const int *n, const Rcomplex *alpha,
+		    const Rcomplex *ap, const Rcomplex *x, const int *incx,
+		    const Rcomplex * beta, Rcomplex *y, const int *incy
+		    FCLEN);
+    BLAS_extern void
+    F77_NAME(zhpr)(const char *uplo, const int *n, const double *alpha,
+		   const Rcomplex *x, const int *incx, Rcomplex *ap
+		   FCLEN);
+    BLAS_extern void
+    F77_NAME(zhpr2)(const char *uplo, const int *n, const Rcomplex *alpha,
+		    const Rcomplex *x, const int *incx, const Rcomplex *y,
+		    const int *incy, Rcomplex *ap FCLEN);
+    BLAS_extern void
+    F77_NAME(zrotg)(const Rcomplex *ca, const Rcomplex *cb, 
+		    double *c, Rcomplex *s);
+    BLAS_extern void
+    F77_NAME(zscal)(const int *n, const Rcomplex *za, Rcomplex *zx,
+		    const int *incx);
+    BLAS_extern void
+    F77_NAME(zswap)(const int *n, Rcomplex *zx, const int *incx,
+		    Rcomplex *zy, const int *incy);
+    BLAS_extern void
+    F77_NAME(zsymm)(const char *side, const char *uplo, const int *m,
+		    const int *n, const Rcomplex *alpha, const Rcomplex *a,
+		    const int *lda, const Rcomplex *b, const int *ldb,
+		    const Rcomplex *beta, Rcomplex *c, const int *ldc
+		    FCLEN FCLEN);
+    BLAS_extern void
+    F77_NAME(zsyr2k)(const char *uplo, const char *trans, int *n, int *k,
 		     Rcomplex *alpha, Rcomplex *a, int *lda, Rcomplex *b,
-		     int *ldb, double *beta, Rcomplex *c, int *ldc);
+		     int *ldb, Rcomplex *beta, Rcomplex *c, int *ldc
+		     FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zherk)(char *uplo, char *trans, int *n, int *k,
-		    double *alpha, Rcomplex *a, int *lda, double *beta,
-		    Rcomplex *c, int *ldc);
+    F77_NAME(zsyrk)(const char *uplo, const char *trans, const  int *n,
+		    const int *k, const Rcomplex *alpha, const Rcomplex *a,
+		    const int *lda, const Rcomplex *beta, Rcomplex *c,
+		    const int *ldc FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zhpmv)(char *uplo, int *n, Rcomplex *alpha, Rcomplex *ap,
-		    Rcomplex *x, int *incx, Rcomplex * beta, Rcomplex *y,
-		    int *incy);
+    F77_NAME(ztbmv)(const char *uplo, const char *trans, const char *diag,
+		    const int *n, const int *k, const Rcomplex *a,
+		    const int *lda, Rcomplex *x, const int *incx
+		    FCLEN FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zhpr)(char *uplo, int *n, double *alpha,
-		   Rcomplex *x, int *incx, Rcomplex *ap);
+    F77_NAME(ztbsv)(const char *uplo, const char *trans, const char *diag,
+		    const int *n, const int *k, const Rcomplex *a,
+		    const int *lda, Rcomplex *x, const int *incx
+		    FCLEN FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zhpr2)(char *uplo, int *n, Rcomplex *alpha, Rcomplex *x,
-		    int *incx, Rcomplex *y, int *incy, Rcomplex *ap);
+    F77_NAME(ztpmv)(const char *uplo, const char *trans, const char *diag,
+		    const int *n, const Rcomplex *ap, Rcomplex *x,
+		    const int *incx FCLEN FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zrotg)(Rcomplex *ca, Rcomplex *cb, double *c, Rcomplex *s);
+    F77_NAME(ztpsv)(const char *uplo, const char *trans, const char *diag,
+		    const int *n, const Rcomplex *ap, Rcomplex *x,
+		    const int *incx FCLEN FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zscal)(int *n, Rcomplex *za, Rcomplex *zx, int *incx);
+    F77_NAME(ztrmm)(const char *side, const char *uplo, const char *transa,
+		    const char *diag, const int *m, const int *n,
+		    const Rcomplex *alpha, const Rcomplex *a,
+		    const int *lda, Rcomplex *b, const int *ldb
+		    FCLEN FCLEN FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zswap)(int *n, Rcomplex *zx, int *incx, Rcomplex *zy, int *incy);
+    F77_NAME(ztrmv)(const char *uplo, const char *trans, const char *diag,
+		    const int *n, const Rcomplex *a, const int *lda,
+		    Rcomplex *x, const int *incx
+		    FCLEN FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zsymm)(char *side, char *uplo, int *m, int *n,
-		    Rcomplex *alpha, Rcomplex *a, int *lda, Rcomplex *b,
-		    int *ldb, Rcomplex *beta, Rcomplex *c, int *ldc);
+    F77_NAME(ztrsm)(const char *side, const char *uplo, const char *transa,
+		    const char *diag, int *m, int *n, Rcomplex *alpha,
+		    Rcomplex *a, int *lda, Rcomplex *b, int *ldb
+		    FCLEN FCLEN FCLEN FCLEN);
     BLAS_extern void
-    F77_NAME(zsyr2k)(char *uplo, char *trans, int *n, int *k,
-		     Rcomplex *alpha, Rcomplex *a, int *lda, Rcomplex *b,
-		     int *ldb, Rcomplex *beta, Rcomplex *c, int *ldc);
-    BLAS_extern void
-    F77_NAME(zsyrk)(char *uplo, char *trans, int *n, int *k,
-		    Rcomplex *alpha, Rcomplex *a, int *lda,
-		    Rcomplex *beta, Rcomplex *c, int *ldc);
-    BLAS_extern void
-    F77_NAME(ztbmv)(char *uplo, char *trans, char *diag, int *n, int *k,
-		    Rcomplex *a, int *lda, Rcomplex *x, int *incx);
-    BLAS_extern void
-    F77_NAME(ztbsv)(char *uplo, char *trans, char *diag, int *n, int *k,
-		    Rcomplex *a, int *lda, Rcomplex *x, int *incx);
-    BLAS_extern void
-    F77_NAME(ztpmv)(char *uplo, char *trans, char *diag, int *n,
-		    Rcomplex *ap, Rcomplex *x, int *incx);
-    BLAS_extern void
-    F77_NAME(ztpsv)(char *uplo, char *trans, char *diag, int *n,
-		    Rcomplex *ap, Rcomplex *x, int *incx);
-    BLAS_extern void
-    F77_NAME(ztrmm)(char *side, char *uplo, char *transa, char *diag,
-		    int *m, int *n, Rcomplex *alpha, Rcomplex *a,
-		    int *lda, Rcomplex *b, int *ldb);
-    BLAS_extern void
-    F77_NAME(ztrmv)(char *uplo, char *trans, char *diag, int *n,
-		    Rcomplex *a, int *lda, Rcomplex *x, int *incx);
-    BLAS_extern void
-    F77_NAME(ztrsm)(char *side, char *uplo, char *transa, char *diag,
-		    int *m, int *n, Rcomplex *alpha, Rcomplex *a,
-		    int *lda, Rcomplex *b, int *ldb);
-    BLAS_extern void
-    F77_NAME(ztrsv)(char *uplo, char *trans, char *diag, int *n,
-		    Rcomplex *a, int *lda, Rcomplex *x, int *incx);
+    F77_NAME(ztrsv)(const char *uplo, const char *trans, const char *diag,
+		    const int *n, const Rcomplex *a, const int *lda,
+		    Rcomplex *x, const int *incx
+		    FCLEN FCLEN FCLEN);
 /* #endif */
 
 #ifdef  __cplusplus

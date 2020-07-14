@@ -1,13 +1,9 @@
 DiceKriging             Kriging Methods for Computer Experiments
 SCAD                    Penalty function
-affineScalingFun        Scaling function (affine case)
-affineScalingGrad       Gradient of the Scaling function (affine case)
 checkNames              Consistency test between the column names of
                         two matrices
 coef                    Get coefficients values
 computeAuxVariables     Auxiliary variables for kriging
-covAffineScaling-class
-                        Class "covAffineScaling"
 covIso-class            Class of tensor-product spatial covariances
                         with isotropic range
 covKernel-class         Class "covKernel"
@@ -38,6 +34,7 @@ plot                    Diagnostic plot for the validation of a km
 predict                 Predict values and confidence intervals at
                         newdata for a km object
 scalingFun              Scaling function
+scalingFun1d            Scaling 1-dimensional function
 scalingGrad             Gradient of the dimensional Scaling function
 show,km-method          Print values of a km object
 simulate                Simulate GP values at any given set of points

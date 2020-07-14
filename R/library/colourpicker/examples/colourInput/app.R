@@ -53,110 +53,117 @@ shinyApp(
         )
     ),
     div(
-      class = "section",
-      div(class = "title", "Simple"),
-      div(class = "output", "Selected colour:",
-          textOutput("valueSimple", inline = TRUE)),
-      colourInput("colSimple", NULL, "blue"),
-      tags$pre('colourInput("col", NULL, "blue")')
+      id = "sections-container",
+      `data-columns` = NA,
+      div(
+        class = "section",
+        div(class = "title", "Simple"),
+        div(class = "output", "Selected colour:",
+            textOutput("valueSimple", inline = TRUE)),
+        colourInput("colSimple", NULL, "blue"),
+        tags$pre('colourInput("col", NULL, "blue")')
+      ),
+
+      div(
+        class = "section",
+        div(class = "title", "Limited colour palette"),
+        div(class = "output", "Selected colour:",
+            textOutput("valueLimited", inline = TRUE)),
+        colourInput("colLimited", NULL, "yellow", palette = "limited"),
+        tags$pre(HTML(paste0(
+          'colourInput(<br>',
+          '  "col", NULL, "yellow",<br>',
+          '  palette = "limited")'
+        )))
+      ),
+
+      div(
+        class = "section",
+        div(class = "title", "Allow Transparent"),
+        div(class = "output", "Selected colour:",
+            textOutput("valueTransparent", inline = TRUE)),
+        colourInput("colTransparent", NULL, "#00FF0080", allowTransparent = TRUE),
+        tags$pre(HTML(paste0(
+          'colourInput(<br>',
+          '  "col", NULL, "#00FF0080",<br>',
+          '  allowTransparent = TRUE)'
+        )))
+      ),
+
+      div(
+        class = "section",
+        div(class = "title", "Return colour name"),
+        div(class = "output", "Selected colour:",
+            textOutput("valueName", inline = TRUE)),
+        colourInput("colName", NULL, "green", returnName = TRUE, palette = "limited"),
+        tags$pre(HTML(paste0(
+          'colourInput(<br>',
+          '  "col", NULL, "green",<br>',
+          '  returnName = TRUE, <br>',
+          '  palette = "limited")'
+        )))
+      ),
+
+      div(
+        class = "section",
+        div(class = "title", "Background only"),
+        div(class = "output", "Selected colour:",
+            textOutput("valueBg", inline = TRUE)),
+        colourInput("colBg", NULL, "red", showColour = "background"),
+        tags$pre(HTML(paste0(
+          'colourInput(<br>',
+          '  "col", NULL, "red",<br>',
+          '  showColour = "background")'
+        )))
+      ),
+
+      div(
+        class = "section",
+        div(class = "title", "Custom colour list"),
+        div(class = "output", "Selected colour:",
+            textOutput("valueCustom", inline = TRUE)),
+        colourInput("colCustom", NULL, palette = "limited",
+                    allowedCols = c("white", "black", "red", "#DDD",
+                                    "blue", "#0000FFA0", "#0000FF30", "rgb(255, 255, 0)")),
+        tags$pre(HTML(paste0(
+          'colourInput(<br>',
+          '  "col", NULL,<br>',
+          '  palette = "limited",<br>',
+          '  allowedCols = c(<br>',
+          '    "white", "black", "red",<br>',
+          '    "#DDD", "blue",<br>',
+          '    "#0000FFA0", "#0000FF30",<br>',
+          '    "rgb(255, 255, 0)"'
+        )))
+      ),
+
+      div(
+        class = "section",
+        div(class = "title", "Update input control"),
+        div(class = "output", "Selected colour:",
+            textOutput("valueUpdate", inline = TRUE)),
+        colourInput("colUpdate", NULL, "brown"),
+        tags$hr(),
+        textInput("text", "New colour: (colour name or HEX value)", "brown"),
+        selectInput("showColour", "Show colour",
+                    c("both", "text", "background")),
+        shiny::selectInput("palette", "Colour palette",
+                           c("square", "limited")),
+        checkboxInput("allowTransparent", "Allow transparent", FALSE),
+        checkboxInput("returnName", "Return R colour name", FALSE),
+        actionButton("update", "Update")
+      ),
+
+      div(
+        class = "section",
+        div(class = "title", "Use output in a plot"),
+        colourInput("colPlotFill", "Points colour", "purple", allowTransparent = TRUE),
+        colourInput("colPlotOutline", "Points outline", "black", allowTransparent = TRUE),
+        plotOutput("plot")
+      )
     ),
 
-    div(
-      class = "section",
-      div(class = "title", "Limited colour palette"),
-      div(class = "output", "Selected colour:",
-          textOutput("valueLimited", inline = TRUE)),
-      colourInput("colLimited", NULL, "yellow", palette = "limited"),
-      tags$pre(HTML(paste0(
-        'colourInput(<br>',
-        '  "col", NULL, "yellow",<br>',
-        '  palette = "limited")'
-      )))
-    ),
-
-    div(
-      class = "section",
-      div(class = "title", "Return R colour name"),
-      div(class = "output", "Selected colour:",
-          textOutput("valueName", inline = TRUE)),
-      colourInput("colName", NULL, "green", returnName = TRUE, palette = "limited"),
-      tags$pre(HTML(paste0(
-        'colourInput(<br>',
-        '  "col", NULL, "green",<br>',
-        '  returnName = TRUE, <br>',
-        '  palette = "limited")'
-      )))
-    ),
-
-    div(
-      class = "section",
-      div(class = "title", "Only show background"),
-      div(class = "output", "Selected colour:",
-          textOutput("valueBg", inline = TRUE)),
-      colourInput("colBg", NULL, "red", showColour = "background"),
-      tags$pre(HTML(paste0(
-        'colourInput(<br>',
-        '  "col", NULL, "red",<br>',
-        '  showColour = "background")'
-      )))
-    ),
-
-    div(
-      class = "section",
-      div(class = "title", "Allow \"transparent\""),
-      div(class = "output", "Selected colour:",
-          textOutput("valueTransparent", inline = TRUE)),
-      colourInput("colTransparent", NULL, "orange", allowTransparent = TRUE),
-      tags$pre(HTML(paste0(
-        'colourInput(<br>',
-        '  "col", NULL, "orange",<br>',
-        '  allowTransparent = TRUE)'
-      )))
-    ),
-
-    div(
-      class = "section",
-      div(class = "title", "Update input control"),
-      div(class = "output", "Selected colour:",
-          textOutput("valueUpdate", inline = TRUE)),
-      colourInput("colUpdate", NULL, "brown"),
-      tags$hr(),
-      textInput("text", "New colour: (colour name or HEX value)"),
-      selectInput("showColour", "Show colour",
-                  c("both", "text", "background")),
-      shiny::selectInput("palette", "Colour palette",
-                         c("square", "limited")),
-      checkboxInput("allowTransparent", "Allow transparent", FALSE),
-      checkboxInput("returnName", "Return R colour name", FALSE),
-      actionButton("update", "Update")
-    ),
-
-    div(
-      class = "section",
-      div(class = "title", "Use output in a plot"),
-      colourInput("colPlotFill", "Points colour", "purple"),
-      colourInput("colPlotOutline", "Points outline", "black", allowTransparent = TRUE),
-      plotOutput("plot")
-    ),
-
-    div(
-      class = "section",
-      div(class = "title", "Custom colour list"),
-      div(class = "output", "Selected colour:",
-          textOutput("valueCustom", inline = TRUE)),
-      colourInput("colCustom", NULL, palette = "limited",
-                  allowedCols = c("white", "black", "red", "blue", "yellow",
-                                  "purple", "green", "#DDD")),
-      tags$pre(HTML(paste0(
-        'colourInput(<br>',
-        '  "col", NULL,<br>',
-        '  palette = "limited",<br>',
-        '  allowedCols = c(<br>',
-        '    "white", "black", "red",<br>',
-        '    "blue", "yellow", "purple",<br>',
-        '    "green", "#DDD"))'
-      )))
-    )
+    includeScript(file.path("www", "salvattore.min.js"))
   ),
   server = function(input, output, session) {
     # show the selected colours

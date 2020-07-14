@@ -44,4 +44,13 @@
 \newcommand{\packageIndices}{\Sexpr[results=rd,stage=build]{tools:::Rd_package_indices("#1")}}
 
 % To indicate a DOI.
-\newcommand{\doi}{doi:\sspace\href{http://doi.org/#1}{#1}}
+\newcommand{\doi}{\Sexpr[results=rd,stage=build]{tools:::Rd_expr_doi("#1")}}
+
+% To indicate LaTeX.
+\newcommand{\LaTeX}{\ifelse{latex}{\out{{\LaTeX}}}{LaTeX}}
+
+% To indicate a programming language.
+% Ideally this would also do something like
+%   \ifelse{html}{\out{<span style="font-family: sans-serif;">#1</span>}}
+% but this does not always work correctly with Rd2HTML() as of 2018-05.
+\newcommand{\proglang}{\ifelse{latex}{\out{\textsf{#1}}}{#1}}

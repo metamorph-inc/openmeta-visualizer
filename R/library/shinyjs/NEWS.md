@@ -1,3 +1,48 @@
+# shinyjs 1.1
+
+2020-01-12
+
+- **BREAKING CHANGE** The `includeShinyjs` parameter in `runcodeUI()` is now deprecated
+- Fix bug: shinyjs functions used inside a module with a `selector` argument instead of an `id` argument didn't work (#175)
+- Fix bug: shinyjs functions did not work with IDs that had a space in them (#176)
+- Fix bug: non-selectize select inputs could not be disabled (#186)
+- Fix bug: `click()` now works with download buttons (#198)
+- New feature: added `asis` parameter to any function that takes an ID. When `asis=TRUE`, the ID will not be namespaced when inside a module (#118)
+- New feature: added `id` parameter to `runcode()`, allowing it to work inside Shiny modules (#184)
+- New feature: `onevent()` returns the `offsetX` and `offsetY` event properties
+- New feature: `onevent()` accepts a `properties` parameter that allows the user to retrieve additional properties that are not whitelisted by default (#159)
+- New feature: `hide()`/`show()` now only bubble up the DOM tree to the nearest input container if the current element is an input (#153)
+- Documentation: added documentation about `useShinyjs()` side effects and about including `shinyjs` in packages (#182)
+
+
+# shinyjs 1.0
+
+2018-01-08
+
+- **BREAKING CHANGE** shiny version 1.0.0 is now required
+- **BREAKING CHANGE** All `colourInput`-related functions are now defunct because they are now in the `colourpicker` package
+- Added `click()` function that simulates a user clicking on a button
+- Bug fix: `reset()` wasn't working on checkboxes/select inputs that had a comma in the value (#130)
+- Bug fix: using `disabled()` on certain non-standard inputs (such as `shinyFiles`) had strange behaviour (#120)
+- Bug fix: `logjs()`+`showLog()` wasn't working when app first runs
+- Bug fix: `reset()` wasn't working on file inputs with an ID that contained a dot (#140)
+- Moved default values of parameters to the R layer instead of being defined in javascript. This means that RStudio no longer complains of missing arguments and that autocompletion will show default values. (#80)
+- Improve efficiency of `delay()` and `reset()` functions
+- Improve documentation and website (https://deanattali.com/shinyjs)
+
+# shinyjs 0.9
+
+2016-12-26
+
+- added support for shinyAce editor as the input for `runcodeUI()` (#93)
+- `showLog()` no longer needs to be specified in `useShinyjs()`, and it can be used by just calling it in the server code once (#105)
+- fixed bug where `showLog()` would only show the last message if multiple messages were printed in succession (#99)
+- fixed bug where date inputs could not be reset to empty (#100)
+- fixed textArea inputs not getting disabled when disabling a parent element
+- add `showElement()`/`hideElement()`/`toggleElement()` and `addCssClass` etc functions as synonyms for functions that are masked by S4 (compromise for #81)
+- fixed broken `runExample("sandbox")` example
+- added a website for shinyjs: http://deanattali.com/shinyjs
+
 # shinyjs 0.8
 
 2016-11-03

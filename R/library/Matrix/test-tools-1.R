@@ -213,6 +213,22 @@ relErrV <- function(target, current) {
     RE
 }
 
+##' @title Number of correct digits: Based on relErrV(), recoding "Inf" to 'zeroDigs'
+##' @param target  numeric vector of "true" values
+##' @param current numeric vector of "approximate" values
+##' @param zeroDigs how many correct digits should zero error give
+##' @return basically   -log10 (| relErrV(target, current) | )
+##' @author Martin Maechler, Summer 2011 (for 'copula')
+nCorrDigits <- function(target, current, zeroDigs = 16) {
+    stopifnot(zeroDigs >= -log10(.Machine$double.eps))# = 15.65
+    RE <- relErrV(target, current)
+    r <- -log10(abs(RE))
+    r[RE == 0] <- zeroDigs
+    r[is.na(RE) | r < 0] <- 0 # no correct digit, when relErr is NA
+    r
+}
+
+
 ## is.R22 <- (paste(R.version$major, R.version$minor, sep=".") >= "2.2")
 
 pkgRversion <- function(pkgname)
@@ -296,7 +312,9 @@ add.simpleDimnames <- function(m, named=FALSE) {
 
 as.mat <- function(m) {
     ## as(., "matrix")	but with no extraneous empty dimnames
+    d0 <- dim(m)
     m <- as(m, "matrix")
+    if(!length(m) && is.null(d0)) dim(m) <- c(0L, 0L) # rather than (0, 1)
     if(identical(dimnames(m), list(NULL,NULL)))
 	dimnames(m) <- NULL
     m
@@ -320,6 +338,15 @@ assert.EQ.mat <- function(M, m, tol = if(showOnly) 0 else 1e-15,
 assert.EQ.Mat <- function(M, M2, tol = if(showOnly) 0 else 1e-15,
                           showOnly=FALSE, giveRE = FALSE, ...)
     assert.EQ.mat(M, as.mat(M2), tol=tol, showOnly=showOnly, giveRE=giveRE)
+
+if(getRversion() <= "3.6.1" || R.version$`svn rev` < 77410)
+    ## { methods::canCoerce() : use .class1(), not class() }
+    canCoerce <- function(object, Class) {
+        is(object, Class) ||
+        !is.null(selectMethod("coerce", c(methods:::.class1(object), Class),
+                              optional = TRUE,
+                              useInherited = c(from=TRUE, to=FALSE)))
+    }
 
 
 chk.matrix <- function(M) {

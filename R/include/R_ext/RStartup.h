@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2010  The R Core Team
+ *  Copyright (C) 1999-2020  The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,14 @@
 
 #ifndef R_EXT_RSTARTUP_H_
 #define R_EXT_RSTARTUP_H_
+
+#if defined(__cplusplus) && !defined(DO_NOT_USE_CXX_HEADERS)
+# include <cstddef>
+# define R_SIZE_T std::size_t
+#else
+# include <stddef.h> /* for size_t */
+# define R_SIZE_T size_t
+#endif
 
 #include <R_ext/Boolean.h>	/* TRUE/FALSE */
 
@@ -59,7 +67,7 @@ typedef enum {
 typedef struct
 {
     Rboolean R_Quiet;
-    Rboolean R_Slave;
+    Rboolean R_NoEcho;
     Rboolean R_Interactive;
     Rboolean R_Verbose;
     Rboolean LoadSiteFile;
@@ -67,11 +75,11 @@ typedef struct
     Rboolean DebugInitFile;
     SA_TYPE RestoreAction;
     SA_TYPE SaveAction;
-    size_t vsize;
-    size_t nsize;
-    size_t max_vsize;
-    size_t max_nsize;
-    size_t ppsize;
+    R_SIZE_T vsize;
+    R_SIZE_T nsize;
+    R_SIZE_T max_vsize;
+    R_SIZE_T max_nsize;
+    R_SIZE_T ppsize;
     int NoRenviron;
 
 #ifdef Win32
@@ -85,6 +93,12 @@ typedef struct
     blah6 Busy;
     UImode CharacterMode;
     blah7 WriteConsoleEx; /* used only if WriteConsole is NULL */
+    Rboolean EmitEmbeddedUTF8;
+	/* R may embed UTF-8 sections into strings otherwise in current native
+	   encoding, escaped by UTF8in and UTF8out (rgui_UTF8.h). The setting
+	   currently has no effect in Rgui (always enabled) and in Rterm (never
+	   enabled).
+	*/
 #endif
 } structRstart;
 

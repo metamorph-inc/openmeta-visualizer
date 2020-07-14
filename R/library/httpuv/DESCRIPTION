@@ -1,12 +1,24 @@
 Package: httpuv
 Type: Package
+Encoding: UTF-8
 Title: HTTP and WebSocket Server Library
-Version: 1.3.3
-Date: 2015-08-03
-Author: RStudio, Inc.
-Copyright: RStudio, Inc.; Joyent, Inc.; Nginx Inc.; Igor Sysoev; Niels
-        Provos; Internet Systems Consortium, Inc.; Alexander Chemeris
-Maintainer: Joe Cheng <joe@rstudio.com>
+Version: 1.5.4
+Authors@R: c(
+    person("Joe", "Cheng", role = c("aut"), email = "joe@rstudio.com"),
+    person("Winston", "Chang", role = c("aut", "cre"), email = "winston@rstudio.com"),
+    person(family = "RStudio, PBC", role = "cph"),
+    person("Hector", "Corrada Bravo", role = "ctb"),
+    person("Jeroen", "Ooms", role = "ctb")
+    )
+Copyright: RStudio, PBC; Joyent, Inc.; Nginx Inc.; Igor Sysoev; Niels
+        Provos; Internet Systems Consortium, Inc.; Alexander Chemeris;
+        Berkeley Software Design; Google Inc.; Sony Mobile
+        Communications AB; Alexander Peslyak; Free Software Foundation,
+        Inc.; X Consortium; Ben Noordhuis; StrongLoop, Inc.; Saúl
+        Ibarra Corretgé; Bert Belder; Fedor Indutny; libuv project;
+        Refael Ackermann; Kenneth MacKay; Emergya; Diego Pettenò; xine
+        project, The Regents of the University of California, Dariusz
+        Dwornikowski
 Description: Provides low-level socket and protocol support for handling
     HTTP and WebSocket requests directly from within R. It is primarily
     intended as a building block for other packages, rather than making it
@@ -14,15 +26,25 @@ Description: Provides low-level socket and protocol support for handling
     httpuv is built on top of the libuv and http-parser C libraries, both of
     which were developed by Joyent, Inc. (See LICENSE file for libuv and
     http-parser license information.)
-License: GPL-3 | file LICENSE
-Depends: R (>= 2.15.1), methods
-Imports: Rcpp (>= 0.11.0), utils
-LinkingTo: Rcpp
+License: GPL (>= 2) | file LICENSE
+Depends: R (>= 2.15.1)
+Imports: Rcpp (>= 0.11.0), utils, R6, promises, later (>= 0.8.0)
+LinkingTo: Rcpp, BH, later
 URL: https://github.com/rstudio/httpuv
 SystemRequirements: GNU make
+RoxygenNote: 7.1.0
+Suggests: testthat, callr, curl, websocket
+Collate: 'RcppExports.R' 'httpuv.R' 'random_port.R' 'server.R'
+        'static_paths.R' 'utils.R'
 NeedsCompilation: yes
-Packaged: 2015-08-03 18:49:59 UTC; jcheng
+Packaged: 2020-06-05 19:56:39 UTC; winston
+Author: Joe Cheng [aut],
+  Winston Chang [aut, cre],
+  RStudio, PBC [cph],
+  Hector Corrada Bravo [ctb],
+  Jeroen Ooms [ctb]
+Maintainer: Winston Chang <winston@rstudio.com>
 Repository: CRAN
-Date/Publication: 2015-08-04 00:32:50
-Built: R 3.2.4; x86_64-w64-mingw32; 2016-04-11 01:35:35 UTC; windows
+Date/Publication: 2020-06-06 05:00:06 UTC
+Built: R 4.0.2; x86_64-w64-mingw32; 2020-07-10 03:24:10 UTC; windows
 Archs: i386, x64
