@@ -313,6 +313,7 @@ server <- function(input, output, session, data) {
     params <- c(params,
                 list(x = pairs_data,
                      col = PairsData()$color,
+                     col.smooth = "red",
                      pch = as.numeric(input$pairs_plot_marker),
                      cex = as.numeric(input$pairs_plot_marker_size)))
   })
