@@ -290,7 +290,8 @@ server <- function(input, output, session, data) {
   PairsParams <- reactive({
     if(input$pairs_upper_panel) {
       if(input$pairs_trendlines) {
-        params <- list(upper.panel=panel.smooth, lower.panel=panel.smooth)
+        params <- list(upper.panel = function(...) panel.smooth(..., col.smooth="red"),
+                       lower.panel = function(...) panel.smooth(..., col.smooth="red"))
       }
       else {
         params <- list()
@@ -298,7 +299,8 @@ server <- function(input, output, session, data) {
     }
     else {
       if(input$pairs_trendlines) {
-        params <- list(lower.panel = panel.smooth, upper.panel = NULL)
+        params <- list(upper.panel = NULL,
+                       lower.panel = function(...) panel.smooth(..., col.smooth="red"))
       }
       else {
         params <- list(upper.panel = NULL)
@@ -313,7 +315,6 @@ server <- function(input, output, session, data) {
     params <- c(params,
                 list(x = pairs_data,
                      col = PairsData()$color,
-                     col.smooth = "red",
                      pch = as.numeric(input$pairs_plot_marker),
                      cex = as.numeric(input$pairs_plot_marker_size)))
   })
