@@ -340,7 +340,7 @@ namespace DigTest
             Assert.Equal("IN_E11", new ShinySelectInput(driver, "Explore-y_input").GetCurrentSelection());
             
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Markers");
-            Assert.Equal("1", new ShinySelectInput(driver, "Explore-single_plot_marker").GetCurrentSelection()); // "Filled Circle"
+            Assert.Equal("1", new ShinySelectInput(driver, "Explore-single_plot_marker").GetCurrentSelection()); // "Empty Circle"
             Assert.Equal(1.7, new ShinySliderInput(driver, "Explore-single_plot_marker_size").GetValue());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Overlays");
