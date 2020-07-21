@@ -1,4 +1,4 @@
-useDynLib(pcaPP)
+useDynLib(pcaPP, .registration = TRUE)
 
 importFrom(mvtnorm, rmvnorm)
 

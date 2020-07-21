@@ -1,6 +1,7 @@
 JS                      Mark character strings as literal JavaScript
                         code
 createWidget            Create an HTML Widget
+getDependency           Get js and css dependencies for a htmlwidget
 htmlwidgets-package     HTML Widgets for R
 htmlwidgets-shiny       Shiny bindings for HTML widgets
 onRender                Execute custom JavaScript code after rendering

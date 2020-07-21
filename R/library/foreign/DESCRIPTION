@@ -1,10 +1,10 @@
 Package: foreign
 Priority: recommended
-Version: 0.8-66
-Date: 2015-06-28
-Title: Read Data Stored by Minitab, S, SAS, SPSS, Stata, Systat, Weka,
-        dBase, ...
-Depends: R (>= 3.0.0)
+Version: 0.8-80
+Date: 2020-05-13
+Title: Read Data Stored by 'Minitab', 'S', 'SAS', 'SPSS', 'Stata',
+        'Systat', 'Weka', 'dBase', ...
+Depends: R (>= 4.0.0)
 Imports: methods, utils, stats
 Authors@R: c(
    person("R Core Team",
@@ -14,31 +14,38 @@ Authors@R: c(
     person("Saikat", "DebRoy", role = c("ctb", "cph")),
     person("Stephen", "Eglen", role = c("ctb", "cph")),
     person("Rajarshi", "Guha", role = c("ctb", "cph")),
+    person("Swetlana", "Herbrandt", role = "ctb"),
     person("Nicholas", "Lewin-Koh", role = c("ctb", "cph")),
     person("Mark", "Myatt", role = c("ctb", "cph")),
+    person("Michael", "Nelson", role = "ctb"),
     person("Ben", "Pfaff", role = "ctb"),
     person("Brian", "Quistorff", role = "ctb"),
     person("Frank", "Warmerdam", role = c("ctb", "cph")),
     person("Stephen", "Weigand", role = c("ctb", "cph")),
     person("Free Software Foundation, Inc.", role = "cph"))
+Contact: see 'MailingList'
 Copyright: see file COPYRIGHTS
-Description: Functions for reading and writing data stored by some versions of
-	Epi Info, Minitab, S, SAS, SPSS, Stata, Systat and Weka
-	and for reading and writing some dBase files.
+Description: Reading and writing data stored by some versions of
+	'Epi Info', 'Minitab', 'S', 'SAS', 'SPSS', 'Stata', 'Systat', 'Weka',
+	and for reading and writing some 'dBase' files.
 ByteCompile: yes
 Biarch: yes
 License: GPL (>= 2)
-BugReports: http://bugs.r-project.org
+BugReports: https://bugs.r-project.org
+MailingList: R-help@r-project.org
+URL: https://svn.r-project.org/R-packages/trunk/foreign
 NeedsCompilation: yes
-Packaged: 2015-08-18 14:20:43 UTC; luke
+Packaged: 2020-05-13 08:43:51 UTC; maechler
 Author: R Core Team [aut, cph, cre],
   Roger Bivand [ctb, cph],
   Vincent J. Carey [ctb, cph],
   Saikat DebRoy [ctb, cph],
   Stephen Eglen [ctb, cph],
   Rajarshi Guha [ctb, cph],
+  Swetlana Herbrandt [ctb],
   Nicholas Lewin-Koh [ctb, cph],
   Mark Myatt [ctb, cph],
+  Michael Nelson [ctb],
   Ben Pfaff [ctb],
   Brian Quistorff [ctb],
   Frank Warmerdam [ctb, cph],
@@ -46,6 +53,6 @@ Author: R Core Team [aut, cph, cre],
   Free Software Foundation, Inc. [cph]
 Maintainer: R Core Team <R-core@R-project.org>
 Repository: CRAN
-Date/Publication: 2015-08-19 11:34:24
-Built: R 3.2.4; x86_64-w64-mingw32; 2016-03-17 19:04:32 UTC; windows
+Date/Publication: 2020-05-24 00:40:14 UTC
+Built: R 4.0.2; x86_64-w64-mingw32; 2020-06-22 08:51:46 UTC; windows
 Archs: i386, x64

@@ -3,6 +3,14 @@
 
 ### ------- Part III --  "Matrix" (classes) specific ----------------------
 
+## lower.tri() and upper.tri()  -- masking  base definitions
+##	R/src/library/base/R/lower.tri.R
+##	R/src/library/base/R/upper.tri.R
+## but we do __not__ want to coerce to "base R" 'matrix' via as.matrix():
+##
+lower.tri <- function(x, diag = FALSE) if(diag) row(x) >= col(x) else row(x) > col(x)
+upper.tri <- function(x, diag = FALSE) if(diag) row(x) <= col(x) else row(x) < col(x)
+
 lsM <- function(...) {
     for(n in ls(..., envir=parent.frame()))
         if(is((. <- get(n)),"Matrix"))
@@ -31,8 +39,8 @@ Qidentical.DN <- function(dx, dy) {
 
 ##' quasi-identical()  for 'Matrix' matrices
 Qidentical <- function(x,y, strictClass = TRUE) {
-    if(class(x) != class(y)) {
-        if(strictClass || !is(x, class(y)))
+    if(!identical(class(x), cy <- class(y))) {
+        if(strictClass || !is(x, cy))
            return(FALSE)
         ## else try further
     }
@@ -58,8 +66,8 @@ Qidentical <- function(x,y, strictClass = TRUE) {
 
 ##' quasi-identical()  for traditional ('matrix') matrices
 mQidentical <- function(x,y, strictClass = TRUE) {
-    if(class(x) != class(y)) {
-        if(strictClass || !is(x, class(y)))
+    if(!identical(class(x), cy <- class(y))) {
+        if(strictClass || !is(x, cy))
             return(FALSE)
         ## else try further
     }
