@@ -218,11 +218,13 @@ namespace DigTest
             Assert.True(displayunits.GetStartState());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Markers");
+            new ShinySelectInput(driver, "Explore-pairs_plot_marker").SetCurrentSelectionTyped("Circle");
+            pairs_plot.WaitUntilImageRefreshes();
             var initial_count = pairs_plot.ImageStats();
             new ShinySelectInput(driver, "Explore-pairs_plot_marker").SetCurrentSelectionTyped("Plus");
             pairs_plot.WaitUntilImageRefreshes();
             var second_count = pairs_plot.ImageStats();
-            Assert.True(second_count[Color.FromArgb(255, 0, 0, 0)] < initial_count[Color.FromArgb(255, 0, 0, 0)]);
+            Assert.True(second_count[Color.FromArgb(255, 0, 0, 0)] > initial_count[Color.FromArgb(255, 0, 0, 0)]);
             Assert.Equal(1.7, new ShinySliderInput(driver, "Explore-pairs_plot_marker_size").MoveSliderToValue(1.7));
             pairs_plot.WaitUntilImageRefreshes();
             var third_count = pairs_plot.ImageStats();
