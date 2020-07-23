@@ -282,7 +282,7 @@ namespace DigTest
             var master_div = this.driver.FindElement(By.XPath(this.div));
             this.input = this.div + "/div[1]/div[1]/input";
             this.choices = this.div + "/select/following::div[1]/div[2]/div[1]/div";
-            this.selected = choices + "[@class='option selected']";
+            this.selected = this.div + "/div[1]/div[1]/div[@class='item']";
             this.wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(11.0));
             try
             {
@@ -298,9 +298,8 @@ namespace DigTest
             }
             if (this.driver.FindElement(By.XPath(this.choices)).GetAttribute("data-value") == null)
             {
-                var new_base = string.Format("//select[@id='{0}']/following::div[1]/div[2]/div[1]/div/div", id);
-                this.choices = new_base + "[@class='option selected' or @class='option']";
-                this.selected = new_base + "[@class='option selected']";
+                this.choices = string.Format("//select[@id='{0}']/following::div[1]/div[2]/div[1]/div/div[@class='option selected' or @class='option']", id);
+                this.selected = string.Format("//select[@id='{0}']/following::div[1]/div[1]/div[@class='item']", id);
             }
         }
 

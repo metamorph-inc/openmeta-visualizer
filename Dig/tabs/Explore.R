@@ -65,10 +65,10 @@ ui <- function(id) {
                 selectInput(ns("pairs_plot_marker"),
                             "Plot Markers:",
                             plot_markers,
-                            selected=si(ns("pairs_plot_marker"), 1)),
+                            selected=si(ns("pairs_plot_marker"), 16)),
                 sliderInput(ns("pairs_plot_marker_size"), "Marker Size:",
                             min=0.5, max=2.5,
-                            value=si(ns("pairs_plot_marker_size"),1),
+                            value=si(ns("pairs_plot_marker_size"), 1.5),
                             step=0.025)
               ),
               bsCollapsePanel("Export",
@@ -102,9 +102,9 @@ ui <- function(id) {
                 selectInput(ns("single_plot_marker"),
                             "Plot Markers:",
                             plot_markers,
-                            selected = si(ns("single_plot_marker"), 1)),
+                            selected = si(ns("single_plot_marker"), 16)),
                 sliderInput(ns("single_plot_marker_size"), "Marker Size:",
-                            min=0.5, max=2.5, value=si(ns("single_plot_marker_size"), 1), step=0.025),
+                            min=0.5, max=2.5, value=si(ns("single_plot_marker_size"), 1.5), step=0.025),
                 style = "default"),
               # TODO(wknight): Restore this functionality.
               # br(), br(),
@@ -292,7 +292,8 @@ server <- function(input, output, session, data) {
   PairsParams <- reactive({
     if(input$pairs_upper_panel) {
       if(input$pairs_trendlines) {
-        params <- list(upper.panel=panel.smooth, lower.panel=panel.smooth)
+        params <- list(upper.panel = function(...) panel.smooth(..., col.smooth="red"),
+                       lower.panel = function(...) panel.smooth(..., col.smooth="red"))
       }
       else {
         params <- list()
@@ -300,7 +301,8 @@ server <- function(input, output, session, data) {
     }
     else {
       if(input$pairs_trendlines) {
-        params <- list(lower.panel = panel.smooth, upper.panel = NULL)
+        params <- list(upper.panel = NULL,
+                       lower.panel = function(...) panel.smooth(..., col.smooth="red"))
       }
       else {
         params <- list(upper.panel = NULL)

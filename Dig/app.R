@@ -190,11 +190,11 @@ tab_environments <- mapply(function(file_name, id) {
 
 # Read input dataset file
 cat("Reading raw data:\n")
-raw <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
+raw <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, stringsAsFactors=TRUE, encoding="UTF-8")
 if(!is.null(visualizer_config$augmented_data)) {
   augmented_filename <- file.path(launch_dir,
                                   visualizer_config$augmented_data)
-  augmented <- read.csv(augmented_filename, fill=T, encoding="UTF-8")
+  augmented <- read.csv(augmented_filename, fill=T, stringsAsFactor=TRUE, encoding="UTF-8")
   extra <- raw[!(raw$GUID %in% augmented$GUID),]
   if(nrow(extra) > 0) {
     cat(paste0("  Added ", nrow(extra), " points.\n"))

@@ -28,6 +28,7 @@ NLSstRtAsymptote        Horizontal Asymptote on the Right Side
 NegBinomial             The Negative Binomial Distribution
 Normal                  The Normal Distribution
 PP.test                 Phillips-Perron Test for Unit Roots
+Pair                    Construct paired-data object
 Poisson                 The Poisson Distribution
 SSD                     SSD Matrix and Estimated Variance Matrix in
                         Multivariate Models
@@ -187,7 +188,8 @@ mantelhaen.test         Cochran-Mantel-Haenszel Chi-Squared Test for
 mauchly.test            Mauchly's Test of Sphericity
 mcnemar.test            McNemar's Chi-squared Test for Count Data
 median                  Median Value
-medpolish               Median Polish of a Matrix
+medpolish               Median Polish (Robust Twoway Decomposition) of
+                        a Matrix
 model.extract           Extract Components from a Model Frame
 model.frame             Extracting the Model Frame from a Formula or
                         Fit
@@ -201,7 +203,7 @@ na.contiguous           Find Longest Contiguous Stretch of non-NAs
 na.fail                 Handle Missing Values in Objects
 naprint                 Adjust for Missing Values
 naresid                 Adjust for Missing Values
-nextn                   Highly Composite Numbers
+nextn                   Find Highly Composite Numbers
 nlm                     Non-Linear Minimization
 nlminb                  Optimization using PORT routines
 nls                     Nonlinear Least Squares
@@ -286,6 +288,7 @@ se.contrast             Standard Errors for Contrasts in Model Terms
 selfStart               Construct Self-starting Nonlinear Models
 setNames                Set the Names in an Object
 shapiro.test            Shapiro-Wilk Normality Test
+sigma                   Extract Residual Standard Deviation 'Sigma'
 simulate                Simulate Responses
 smooth                  Tukey's (Running Median) Smoothing
 smooth.spline           Fit a Smoothing Spline
@@ -339,5 +342,5 @@ weighted.mean           Weighted Arithmetic Mean
 weighted.residuals      Compute Weighted Residuals
 weights                 Extract Model Weights
 wilcox.test             Wilcoxon Rank Sum and Signed Rank Tests
-window                  Time Windows
+window                  Time (Series) Windows
 xtabs                   Cross Tabulation
