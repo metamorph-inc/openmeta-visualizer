@@ -2,10 +2,14 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2001-11 The R Core Team.
  *
- *  This program is free software; you can redistribute it and/or modify
+ *  This header file is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
  *  the Free Software Foundation; either version 2.1 of the License, or
  *  (at your option) any later version.
+ *
+ *  This file is part of R. R is distributed under the terms of the
+ *  GNU General Public License, either Version 2, June 1991 or Version 3,
+ *  June 2007. See doc/COPYRIGHTS for details of the copyright status of R.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -147,7 +151,8 @@ struct _DevDesc {
     Rboolean canGenMouseMove; /* can the device generate mousemove events */
     Rboolean canGenMouseUp;   /* can the device generate mouseup events */
     Rboolean canGenKeybd;     /* can the device generate keyboard events */
-
+    Rboolean canGenIdle;      /* can the device generate idle events */
+ 
     Rboolean gettingEvent;    /* This is set while getGraphicsEvent
 				 is actively looking for events */
     
@@ -767,6 +772,9 @@ struct _DevDesc {
 #define prevDevice		Rf_prevDevice
 #define selectDevice		Rf_selectDevice
 #define AdobeSymbol2utf8	Rf_AdobeSymbol2utf8
+#define utf8toAdobeSymbol	Rf_utf8toAdobeSymbol
+#define utf8Toutf8NoPUA         Rf_utf8Toutf8NoPUA
+#define utf8ToLatin1AdobeSymbol2utf8 Rf_utf8ToLatin1AdobeSymbol2utf8
 
 /* Properly declared version of devNumber */
 int ndevNumber(pDevDesc );
@@ -820,12 +828,15 @@ typedef enum {meMouseDown = 0,
 
 #define doKeybd			Rf_doKeybd
 #define doMouseEvent		Rf_doMouseEvent
+#define doIdle			Rf_doIdle
+#define doesIdle		Rf_doesIdle
 
 void doMouseEvent(pDevDesc dd, R_MouseEvent event,
                   int buttons, double x, double y);
 void doKeybd(pDevDesc dd, R_KeyName rkey,
 	     const char *keyname);
-
+void doIdle(pDevDesc dd);
+Rboolean doesIdle(pDevDesc dd);
 
 /* For use in third-party devices when setting up a device:
  * duplicates Defn.h which is used internally.
@@ -850,7 +861,11 @@ LibExtern Rboolean mbcslocale;
 #endif
 
 /* Useful for devices: translates Adobe symbol encoding to UTF-8 */
-extern void *AdobeSymbol2utf8(char*out, const char *in, size_t nwork);
+extern void *AdobeSymbol2utf8(char*out, const char *in, size_t nwork,
+                              Rboolean usePUA);
+extern int utf8toAdobeSymbol(char* out, const char *in);
+const char* utf8Toutf8NoPUA(const char *in);
+const char* utf8ToLatin1AdobeSymbol2utf8(const char *in, Rboolean usePUA);
 /* Translates Unicode point to UTF-8 */
 extern size_t Rf_ucstoutf8(char *s, const unsigned int c);
 

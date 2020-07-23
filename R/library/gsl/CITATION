@@ -5,10 +5,9 @@ citEntry(entry = "Article",
              paste("Special functions in R: introducing the gsl package")
 	     },
 	 author = personList(
-         person(first = "Robin",
-		middle = "K. S.",
-		last = "Hankin",
-		email="r.hankin@noc.soton.ac.uk")),
+         person(given = c("Robin", "K. S."),
+		family = "Hankin",
+		email="hankin.robin@gmail.com")),
 	 journal = "R News",
          year = "2006",
 	 month = "October",

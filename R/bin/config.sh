@@ -5,7 +5,7 @@
 ## Usage:
 ##   R CMD config [options] [VAR]
 
-## Copyright (C) 2002-2015 The R Core Team
+## Copyright (C) 2002-2020 The R Core Team
 ##
 ## This document is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -20,11 +20,11 @@
 ## A copy of the GNU General Public License is available at
 ## https://www.R-project.org/Licenses/
 
-revision='$Revision: 69170 $'
+revision='$Revision: 78111 $'
 version=`set - ${revision}; echo ${2}`
 version="R configuration information retrieval script: ${R_VERSION} (r${version})
 
-Copyright (C) 2002-2015 The R Core Team.
+Copyright (C) 2002-2020 The R Core Team.
 This is free software; see the GNU General Public License version 2
 or later for copying conditions.  There is NO warranty."
 
@@ -41,42 +41,58 @@ Options:
 			a C/C++ file using R as a library
       --ldflags         print linker flags needed for linking a front-end
                         against the R library
-      --no-user-files  ignore customization files under ~/.R
-      --no-site-files  ignore site customization files under R_HOME/etc
+      --no-user-files   ignore customization files under ~/.R
+      --no-site-files   ignore site customization files under R_HOME/etc
+      --all             print names and values of all variables below
 
 Variables:
+  AR            command to make static libraries
   BLAS_LIBS     flags needed for linking against external BLAS libraries
   CC            C compiler command
   CFLAGS        C compiler flags
   CPICFLAGS     special flags for compiling C code to be included in a
 		shared library
-  CPP           C preprocessor
   CPPFLAGS      C/C++ preprocessor flags, e.g. -I<dir> if you have
 		headers in a nonstandard directory <dir>
-  CXX           compiler command for C++98 code
-  CXXCPP        C++98 preprocessor
+  CXX           default compiler command for C++ code
+  CXXCPP        C++ preprocessor (deprecated)
   CXXFLAGS      compiler flags for CXX
-  CXXPICFLAGS   special flags for compiling C++98 code to be included in a
+  CXXPICFLAGS   special flags for compiling C++ code to be included in a
 		shared library
-  CXX1X         compiler command for C++11 code
-  CXX1XSTD      flag used with CXX1X to enable C++11 support
-  CXX1XFLAGS    further compiler flags for CXX1X
-  CXX1XPICFLAGS
+  CXX11         compiler command for C++11 code
+  CXX11STD      flag used with CXX11 to enable C++11 support
+  CXX11FLAGS    further compiler flags for CXX11
+  CXX11PICFLAGS
                 special flags for compiling C++11 code to be included in
+                a shared library
+  CXX14         compiler command for C++14 code
+  CXX14STD      flag used with CXX14 to enable C++14 support
+  CXX14FLAGS    further compiler flags for CXX14
+  CXX14PICFLAGS
+                special flags for compiling C++14 code to be included in
+                a shared library
+  CXX17         compiler command for C++17 code
+  CXX17STD      flag used with CXX17 to enable C++17 support
+  CXX17FLAGS    further compiler flags for CXX17
+  CXX17PICFLAGS
+                special flags for compiling C++17 code to be included in
+                a shared library
+  CXX20         compiler command for C++20 code
+  CXX20STD      flag used with CXX20 to enable C++20 support
+  CXX20FLAGS    further compiler flags for CXX20
+  CXX20PICFLAGS
+                special flags for compiling C++20 code to be included in
                 a shared library
   DYLIB_EXT	file extension (including '.') for dynamic libraries
   DYLIB_LD      command for linking dynamic libraries which contain
 		object files from a C or Fortran compiler only
   DYLIB_LDFLAGS
 		special flags used by DYLIB_LD
-  F77           Fortran 77 compiler command
-  FFLAGS        Fortran 77 compiler flags
+  FC            Fortran compiler command
+  FFLAGS        fixed-form Fortran compiler flags
+  FCFLAGS       free-form Fortran 9x compiler flags
   FLIBS         linker flags needed to link Fortran code
   FPICFLAGS     special flags for compiling Fortran code to be turned
-		into a shared library
-  FC            Fortran 9x compiler command
-  FCFLAGS       Fortran 9x compiler flags
-  FCPICFLAGS    special flags for compiling Fortran 9x code to be turned
 		into a shared library
   JAR           Java archive tool command
   JAVA          Java interpreter command
@@ -89,28 +105,40 @@ Variables:
   LIBnn         location for libraries, e.g. 'lib' or 'lib64' on this platform
   LDFLAGS       linker flags, e.g. -L<dir> if you have libraries in a
 		nonstandard directory <dir>
+  MAKE          Make command
   OBJC          Objective C compiler command
   OBJCFLAGS     Objective C compiler flags
-  MAKE          Make command
-  SAFE_FFLAGS   Safe (as conformant as possible) Fortran 77 compiler flags
+  RANLIB        command to index static libraries
+  SAFE_FFLAGS   Safe (as conformant as possible) Fortran compiler flags
   SHLIB_CFLAGS  additional CFLAGS used when building shared objects
+  SHLIB_CXXFLAGS
+                additional CXXFLAGS used when building shared objects
   SHLIB_CXXLD   command for linking shared objects which contain
-		object files from a C++ compiler
+		object files from a C++ compiler (and CXX11 CXX14 CXX17 CXX20)
   SHLIB_CXXLDFLAGS
-		special flags used by SHLIB_CXXLD
+		special flags used by SHLIB_CXXLD (and CXX11 CXX14 CXX17 CXX20)
   SHLIB_EXT	file extension (including '.') for shared objects
   SHLIB_FFLAGS  additional FFLAGS used when building shared objects
   SHLIB_LD      command for linking shared objects which contain
 		object files from a C or Fortran compiler only
   SHLIB_LDFLAGS
 		special flags used by SHLIB_LD
-  SHLIB_FCLD, SHLIB_FCLDFLAGS
-		ditto when using Fortran 9x
   TCLTK_CPPFLAGS
 		flags needed for finding the tcl.h and tk.h headers
   TCLTK_LIBS    flags needed for linking against the Tcl and Tk libraries
+"
 
-Report bugs at bugs.r-project.org ."
+if test "${R_OSTYPE}" = "windows"; then
+  usage="${usage}
+Windows only:
+  COMPILED_BY   name and version of compiler used to build R
+  LOCAL_SOFT    absolute path to '/usr/local' software collection
+  OBJDUMP       command to dump objects"
+fi
+
+usage="${usage}
+  
+Report bugs at <https://bugs.R-project.org>."
 
 ## <NOTE>
 ## The variables are basically the precious configure variables (with
@@ -151,6 +179,7 @@ LIBR=`eval $query VAR=LIBR`
 STATIC_LIBR=`eval $query VAR=STATIC_LIBR`
 MAIN_LDFLAGS=`eval $query VAR=MAIN_LDFLAGS`
 LIBS=`eval $query VAR=LIBS`
+LDFLAGS=`eval $query VAR=LDFLAGS`
 
 
 if test -n "${R_ARCH}"; then
@@ -162,6 +191,7 @@ fi
 var=
 personal="yes"
 site="yes"
+all="no"
 while test -n "${1}"; do
   case "${1}" in
     -h|--help)
@@ -199,6 +229,9 @@ while test -n "${1}"; do
     --no-site-files)
       site="no"
       ;;
+    --all)
+      all="yes"
+      ;;
     *)
       if test -z "${var}"; then
 	var="${1}"
@@ -211,56 +244,84 @@ while test -n "${1}"; do
   shift
 done
 
+## quotes added in R 3.3.2
 if test "${site}" = "yes"; then
 : ${R_MAKEVARS_SITE="${R_HOME}/etc${R_ARCH}/Makevars.site"}
   if test -f "${R_MAKEVARS_SITE}"; then
-    makefiles="${makefiles} -f ${R_MAKEVARS_SITE}"
+    makefiles="${makefiles} -f \"${R_MAKEVARS_SITE}\""
   fi
 fi
 if test "${personal}" = "yes"; then
   if test "${R_OSTYPE}" = "windows"; then
-    if test -n "${R_MAKEVARS_USER}"; then
-      makefiles="${makefiles} -f ${R_MAKEVARS_USER}"
-    elif test ${R_ARCH} = "/x64" -a -f "${HOME}/.R/Makevars.win64"; then
-      makefiles="${makefiles} -f ${HOME}/.R/Makevars.win64"
+    if test -f "${R_MAKEVARS_USER}"; then
+      makefiles="${makefiles} -f \"${R_MAKEVARS_USER}\""
+    elif test ${R_ARCH} = "/x64" && test -f "${HOME}/.R/Makevars.win64"; then
+      makefiles="${makefiles} -f \"${HOME}\"/.R/Makevars.win64"
     elif test -f "${HOME}/.R/Makevars.win"; then
-      makefiles="${makefiles} -f ${HOME}/.R/Makevars.win"
+      makefiles="${makefiles} -f \"${HOME}\"/.R/Makevars.win"
     elif test -f "${HOME}/.R/Makevars"; then
-      makefiles="${makefiles} -f ${HOME}/.R/Makevars"
+      makefiles="${makefiles} -f \"${HOME}\"/.R/Makevars"
     fi
   else
     . ${R_HOME}/etc${R_ARCH}/Renviron
-    if test -n "${R_MAKEVARS_USER}"; then
-      makefiles="${makefiles} -f ${R_MAKEVARS_USER}"
+    if test -f "${R_MAKEVARS_USER}"; then
+      makefiles="${makefiles} -f \"${R_MAKEVARS_USER}\""
     elif test -f "${HOME}/.R/Makevars-${R_PLATFORM}"; then
-      makefiles="${makefiles} -f ${HOME}/.R/Makevars-${R_PLATFORM}"
+      makefiles="${makefiles} -f \"${HOME}\"/.R/Makevars-${R_PLATFORM}"
     elif test -f "${HOME}/.R/Makevars"; then
-      makefiles="${makefiles} -f ${HOME}/.R/Makevars"
+      makefiles="${makefiles} -f \"${HOME}\"/.R/Makevars"
     fi
   fi
 fi
 query="${MAKE} -s ${makefiles} print R_HOME=${R_HOME}"
 
-ok_c_vars="CC CFLAGS CPICFLAGS CPP CPPFLAGS"
-ok_cxx_vars="CXX CXXCPP CXXFLAGS CXXPICFLAGS CXX1X CXX1XSTD CXX1XFLAGS CXX1XPICFLAGS"
+ok_c_vars="CC CFLAGS CPICFLAGS CPPFLAGS"
+ok_cxx_vars="CXX CXXFLAGS CXXPICFLAGS CXX11 CXX11STD CXX11FLAGS CXX11PICFLAGS CXX14 CXX14STD CXX14FLAGS CXX14PICFLAGS CXX17 CXX17STD CXX17FLAGS CXX17PICFLAGS CXX20 CXX20STD CXX20FLAGS CXX20PICFLAGS"
 ok_dylib_vars="DYLIB_EXT DYLIB_LD DYLIB_LDFLAGS"
 ok_objc_vars="OBJC OBJCFLAGS"
 ok_java_vars="JAVA JAVAC JAVAH JAR JAVA_HOME JAVA_LIBS JAVA_CPPFLAGS"
-ok_f77_vars="F77 FFLAGS FPICFLAGS FLIBS SAFE_FFLAGS FC FCFLAGS FCPICFLAGS"
+ok_ftn_vars="FC FFLAGS FPICFLAGS FLIBS FCFLAGS SAFE_FFLAGS"
 ok_ld_vars="LDFLAGS"
-ok_shlib_vars="SHLIB_CFLAGS SHLIB_CXXLD SHLIB_CXXLDFLAGS SHLIB_EXT SHLIB_FFLAGS SHLIB_LD SHLIB_LDFLAGS SHLIB_FCLD SHLIB_FCLDFLAGS"
+ok_shlib_vars="SHLIB_CFLAGS SHLIB_CXXFLAGS SHLIB_CXXLD SHLIB_CXXLDFLAGS SHLIB_CXX11LD SHLIB_CXX11LDFLAGS SHLIB_CXX14LD SHLIB_CXX14LDFLAGS SHLIB_CXX17LD SHLIB_CXX17LDFLAGS SHLIB_CXX20LD SHLIB_CXX20LDFLAGS SHLIB_EXT SHLIB_FFLAGS SHLIB_LD SHLIB_LDFLAGS"
 ok_tcltk_vars="TCLTK_CPPFLAGS TCLTK_LIBS"
-ok_other_vars="BLAS_LIBS LAPACK_LIBS MAKE LIBnn LOCAL_SOFT"
+ok_other_vars="BLAS_LIBS LAPACK_LIBS MAKE LIBnn AR RANLIB"
+deprecated_vars="CPP CXXCPP"
+if test "${R_OSTYPE}" = "windows"; then
+  ok_win_vars="LOCAL_SOFT COMPILED_BY OBJDUMP"
+fi
+
+if test "${all}" = "yes"; then
+  query="${MAKE} -s ${makefiles} print-name-and-value R_HOME=${R_HOME}"
+  for v in ${ok_c_vars} ${ok_cxx_vars} ${ok_dylib_vars} ${ok_ftn_vars} \
+	   ${ok_objc_vars} ${ok_java_vars} \
+	   ${ok_ld_vars} ${ok_shlib_vars} ${ok_tcltk_vars} \
+	   ${ok_other_vars} ${ok_win_vars}; do
+    eval "${query} VAR=${v}"
+  done
+  echo "## The following variables are deprecated"
+  for v in ${deprecated_vars}; do
+    eval "${query} VAR=${v}"
+  done
+  exit 0
+fi
 
 ## Can we do this elegantly using case?
 
 var_ok=no
-for v in ${ok_c_vars} ${ok_cxx_vars} ${ok_dylib_vars} ${ok_f77_vars} \
+for v in ${ok_c_vars} ${ok_cxx_vars} ${ok_dylib_vars} ${ok_ftn_vars} \
 	 ${ok_objc_vars} ${ok_java_vars} \
 	 ${ok_ld_vars} ${ok_shlib_vars} ${ok_tcltk_vars} \
-	 ${ok_other_vars}; do
+	 ${ok_other_vars} ${ok_win_vars}; do
   if test "${var}" = "${v}"; then
     var_ok=yes
+    break
+  fi
+done
+
+for v in ${deprecated_vars}; do
+  if test "${var}" = "${v}"; then
+    var_ok=yes
+    1>&2 echo "'config' variable '${v}' is deprecated"
     break
   fi
 done

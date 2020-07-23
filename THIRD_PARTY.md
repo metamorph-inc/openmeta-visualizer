@@ -1,70 +1,114 @@
 Third-party software used by the OpenMETA Visualizer
 ====================================================
 
-  * `R` - [The R Project for Statistical Computing](https://www.r-project.org/) - GPLv2 *or* GPLv3
+  * `R` - [The R Project for Statistical Computing](https://www.r-project.org/) - GPL-2 *or* GPL-3
   * `node.js` - [Node.js](https://nodejs.org/en/) - MIT Licensed (used at build-time only)
 
 Bundled R packages
 ------------------
 
-  * `ADGofTest` - GPLv2 *or* GPLv3
-  * `base` - Unknown (not in CRAN)
+  * `ADGofTest` - GPL-2 *or* GPL-3
+  * `assertthat` - GPL-3
+  * `backports` - GPL-2 *or* GPL-3
+  * `base` - Part of R 4.0.2
+  * `base64enc` - GPL-2 *or* GPL-3
+  * `BH` - BSL-1.0
   * `boot` - Unlimited
-  * `class` - GPLv2 *or* GPLv3
-  * `cluster` - GPLv2 *or* GPLv3
-  * `codetools` - GPLv2 *or* GPLv3
-  * `colorspace` - BSD License
-  * `colourpicker` - MIT License
-  * `compiler` - Unknown (not in CRAN)
-  * `copula` - GPL (≥ 3)
-  * `datasets` - Unknown (not in CRAN)
-  * `DiceKriging` - GPLv2 *or* GPLv3
-  * `digest` - GPLv2 *or* GPLv3
-  * `DT` - GPLv3 *or*  
-  * `foreign` - GPLv2 *or* GPLv3
-  * `graphics` - Unknown (not in CRAN)
-  * `grDevices` - Unknown (not in CRAN)
-  * `grid` - Unknown (not in CRAN)
-  * `gsl` - GPLv2 *or* GPLv3
-  * `htmltools` - GPLv2 *or* GPLv3
-  * `htmlwidgets` - MIT License
-  * `httpuv` - GPLv3 *or*  
-  * `jpeg` - GPLv2 *or* GPLv3
-  * `jsonlite` - MIT License
+  * `callr` - MIT *and* file LICENSE
+  * `class` - GPL-2 *or* GPL-3
+  * `cli` - MIT *and* file LICENSE
+  * `cluster` - GPL (≥ 2)
+  * `codetools` - GPL-2 *or* GPL-3
+  * `colorspace` - BSD 3-clause *and* file LICENSE
+  * `colourpicker` - MIT *and* file LICENSE
+  * `commonmark` - BSD 2-clause *and* file LICENSE
+  * `compiler` - Part of R 4.0.2
+  * `copula` - GPL (≥ 3) *or* file LICENSE
+  * `crayon` - MIT *and* file LICENSE
+  * `crosstalk` - MIT *and* file LICENSE
+  * `datasets` - Part of R 4.0.2
+  * `desc` - MIT *and* file LICENSE
+  * `DiceKriging` - GPL-2 *or* GPL-3
+  * `digest` - GPL-2 *or* GPL-3
+  * `DT` - GPL-3 *or* file LICENSE
+  * `ellipsis` - GPL-3
+  * `evaluate` - MIT *and* file LICENSE
+  * `fansi` - GPL (≥ 2)
+  * `farver` - MIT *and* file LICENSE
+  * `fastmap` - MIT *and* file LICENSE
+  * `foreign` - GPL (≥ 2)
+  * `ggplot2` - GPL-2 *or* file LICENSE
+  * `glue` - MIT *and* file LICENSE
+  * `graphics` - Part of R 4.0.2
+  * `grDevices` - Part of R 4.0.2
+  * `grid` - Part of R 4.0.2
+  * `gsl` - GPL-3
+  * `gtable` - GPL-2
+  * `htmltools` - GPL (>= 2)
+  * `htmlwidgets` - MIT *and* file LICENSE
+  * `httpuv` - GPL (>= 2) *or* file LICENSE
+  * `isoband` - MIT *and* file LICENSE
+  * `jpeg` - GPL-2 *or* GPL-3
+  * `jsonlite` - MIT *and* file LICENSE
   * `KernSmooth` - Unlimited
-  * `lattice` - GPLv2 *or* GPLv3
-  * `magrittr` - MIT License
-  * `MASS` - GPLv2 *or* GPLv3
-  * `Matrix` - GPLv2 *or* GPLv3
-  * `methods` - Unknown (not in CRAN)
-  * `mime` - GPLv2 *or* GPLv3
-  * `miniUI` - GPLv3
-  * `mvtnorm` - GPLv2
-  * `nnet` - GPLv2 *or* GPLv3
-  * `numDeriv` - GPLv2
-  * `parallel` - Unknown (not in CRAN)
+  * `labeling` - Unlimited
+  * `later` - GPL (>= 2)
+  * `lattice` - GPL (>= 2)
+  * `lazyeval` - GPL-3
+  * `lifecycle` - GPL-3
+  * `magrittr` - MIT *and* file LICENSE
+  * `MASS` - GPL-2 *or* GPL-3
+  * `Matrix` - GPL (>= 2) *or* file LICENCE
+  * `methods` - Part of R 4.0.2
+  * `mime` - GPL-2 *or* GPL-3
+  * `miniUI` - GPL-3
+  * `munsell` - MIT *and* file LICENCE
+  * `mvtnorm` - GPL-2
+  * `nnet` - GPL-2 *or* GPL-3
+  * `numDeriv` - GPL-2
+  * `parallel` - Part of R 4.0.2
   * `pcaPP` - GPL (≥ 3)
-  * `png` - GPLv2 *or* GPLv3
+  * `pillar` - GPL-3
+  * `pkgbuild` - GPL-3
+  * `pkgconfig` - MIT *and* file LICENCE
+  * `pkgload` - GPL-3
+  * `png` - GPL-2 *or* GPL-3
+  * `praise` - MIT *and* file LICENCE
+  * `prettyunits` - MIT *and* file LICENCE
+  * `processx` - MIT *and* file LICENCE
+  * `promises` - MIT *and* file LICENCE
+  * `ps` - BSD 3-clause *and* file LICENCE
   * `pspline` - Unlimited
-  * `R6` - MIT License
-  * `randomForest` - GPLv2 *or* GPLv3
-  * `Rcpp` - GPLv2 *or* GPLv3
-  * `rpart` - GPLv2 *or* GPLv3
-  * `shiny` - GPLv3 *or*  
-  * `shinyBS` - GPLv3
-  * `shinyjs` - AGPLv3
-  * `sourcetools` - MIT License
-  * `spatial` - GPLv2 *or* GPLv3
-  * `splines` - Unknown (not in CRAN)
-  * `stabledist` - GPLv2 *or* GPLv3
-  * `stats` - Unknown (not in CRAN)
-  * `stats4` - Unknown (not in CRAN)
-  * `tcltk` - Unknown (not in CRAN)
-  * `tools` - Unknown (not in CRAN)
-  * `topsis` - GPLv2
-  * `utils` - Unknown (not in CRAN)
-  * `xtable` - GPLv2 *or* GPLv3
-  * `yaml` - BSD License
+  * `R6` - MIT *and* file LICENCE
+  * `randomForest` - GPL (≥ 2)
+  * `RColorBrewer` - Apache License 2.0
+  * `Rcpp` - GPL (≥ 2)
+  * `rlang` - GPL-3
+  * `rpart` - GPL-2 *or* GPL-3
+  * `rpojroot` - GPL-3
+  * `scales` - MIT *and* file LICENSE
+  * `shiny` - GPL-3 *or* file LICENSE
+  * `shinyBS` - GPL-3
+  * `shinyjs` - AGPL-3
+  * `sourcetools` - MIT + file LICENCE
+  * `spatial` - GPL-2 *or* GPL-3
+  * `splines` - Part of R 4.0.2
+  * `stabledist` - GPL (≥ 2)
+  * `stats` - Part of R 4.0.2
+  * `stats4` - Part of R 4.0.2
+  * `tcltk` - Part of R 4.0.2
+  * `testthat` - MIT *and* file LICENCE
+  * `tibble` - MIT *and* file LICENSE
+  * `tools` - Part of R 4.0.2
+  * `topsis` - GPL-2
+  * `translations` - Part of R 4.0.2
+  * `utf8` - Apache License 2.0 *or* file LICENSE
+  * `utils` - Part of R 4.0.2
+  * `vctrs` - GPL-3
+  * `viridisLite` - MIT *and* file LICENSE
+  * `withr` - GPL (≥ 2)
+  * `xtable` - GPL (≥ 2)
+  * `yaml` - BSD 3-clause
 
 Top-level `npm` run-time dependencies
 -------------------------------------

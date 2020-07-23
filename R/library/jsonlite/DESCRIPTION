@@ -1,14 +1,18 @@
 Package: jsonlite
-Version: 0.9.19
+Version: 1.7.0
 Title: A Robust, High Performance JSON Parser and Generator for R
 License: MIT + file LICENSE
 NeedsCompilation: yes
 Depends: methods
-Author: Jeroen Ooms, Duncan Temple Lang, Lloyd Hilaiel
-URL: http://arxiv.org/abs/1403.2805,
-        https://www.opencpu.org/posts/jsonlite-a-smarter-json-encoder
-BugReports: http://github.com/jeroenooms/jsonlite/issues
-Maintainer: Jeroen Ooms <jeroen.ooms@stat.ucla.edu>
+Authors@R: c(
+    person("Jeroen", "Ooms", role = c("aut", "cre"), email = "jeroen@berkeley.edu",
+      comment = c(ORCID = "0000-0002-4035-0289")),
+    person("Duncan", "Temple Lang", role = "ctb"),
+    person("Lloyd", "Hilaiel", role = "cph", comment="author of bundled libyajl"))
+URL: https://arxiv.org/abs/1403.2805 (paper)
+        https://jeroen.cran.dev/jsonlite (docs)
+BugReports: http://github.com/jeroen/jsonlite/issues
+Maintainer: Jeroen Ooms <jeroen@berkeley.edu>
 VignetteBuilder: knitr, R.rsp
 Description: A fast JSON parser and generator optimized for statistical data
     and the web. Started out as a fork of 'RJSONIO', but has been completely
@@ -20,9 +24,14 @@ Description: A fast JSON parser and generator optimized for statistical data
     stream, validate, and prettify JSON data. The unit tests included with the
     package verify that all edge cases are encoded and decoded consistently for
     use with dynamic data in systems and applications.
-Suggests: curl (>= 0.5), plyr, testthat, knitr, rmarkdown, R.rsp
-Packaged: 2015-11-27 20:06:25 UTC; jeroen
+Suggests: httr, curl, plyr, testthat, knitr, rmarkdown, R.rsp, sf, sp
+RoxygenNote: 7.1.0
+Encoding: UTF-8
+Packaged: 2020-06-24 22:21:10 UTC; jeroen
+Author: Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>),
+  Duncan Temple Lang [ctb],
+  Lloyd Hilaiel [cph] (author of bundled libyajl)
 Repository: CRAN
-Date/Publication: 2015-11-28 09:38:27
-Built: R 3.2.4; x86_64-w64-mingw32; 2016-04-11 00:35:39 UTC; windows
+Date/Publication: 2020-06-25 11:50:11 UTC
+Built: R 4.0.2; x86_64-w64-mingw32; 2020-07-09 21:14:20 UTC; windows
 Archs: i386, x64
