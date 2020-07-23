@@ -8,6 +8,14 @@ To build: run `python Dig\tab-src\surrogate-modeling\build.py`
 
 Then, add registry entry to note location of this repository: `add_reg_path.cmd`
 
+## Testing
+
+1. Install Microsoft Visual Studio.
+
+1. Open DigTest/DigTest.sln in Visual Studio.
+
+1. Run Debug > Start Debugging.
+
 ## Release Process:
 
 To create a new release of the Visualizer:
