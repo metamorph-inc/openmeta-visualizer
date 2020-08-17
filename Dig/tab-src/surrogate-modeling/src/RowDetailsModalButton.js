@@ -118,7 +118,7 @@ class RowDetailsModalButton extends Component {
         </Col></Row>
       );
     } else if(this.props.dependentVarData[0][0] === DependentVarState.STALE) {
-      /* eslint-disable jsx-a11y/href-no-hash */
+      /* eslint-disable jsx-a11y/anchor-is-valid */
       varStateHeader = (
         <Row><Col md={12}>
           <Alert bsStyle="warning">
@@ -126,7 +126,7 @@ class RowDetailsModalButton extends Component {
           </Alert>
         </Col></Row>
       );
-      /* eslint-enable jsx-a11y/href-no-hash */
+      /* eslint-enable jsx-a11y/anchor-is-valid */
     } else if(this.props.dependentVarData[0][0] === DependentVarState.COMPUTING) {
       varStateHeader = (
         <Row><Col md={12}>
