@@ -595,6 +595,7 @@ namespace DigTest
         private void ReloadImage()
         {
             IWebElement img_elem = null;
+            ShinyUtilities.ShinyWait(driver);
             wait.Until(d => img_elem = driver.FindElement(By.XPath(this.img_path)));
             img_str = img_elem.GetAttribute("src");
         }

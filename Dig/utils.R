@@ -217,3 +217,5 @@ RemoveDuplicatesBesidesGUID <- function(data) {
   }
   data[-which(duplicated_rows),]
 }
+
+`%notin%` <- Negate(`%in%`)

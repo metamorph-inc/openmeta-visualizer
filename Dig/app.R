@@ -303,7 +303,9 @@ Server <- function(input, output, session) {
   # Data Pre-Processing --------------------------------------------------------
 
   var_class <- reactive({
+    #print(data$raw$df)
     df_class <- sapply(data$raw$df, class)
+    #print(df_class)
     if (any(names(df_class) %in% c("GUID"))) {
       df_class <- df_class[-which(names(df_class) %in% c("GUID"))]
     }
@@ -722,59 +724,71 @@ Server <- function(input, output, session) {
   })
   
   # Data processing ----------------------------------------------------------
-    
+  
   FilteredData <- reactive({
-    # This reactive holds the full dataset that has been filtered using the
-    # values of the sliders.
-    data_filtered <- data$raw$df
-    if(input$remove_missing) {
-      data_filtered <- data_filtered[complete.cases(data_filtered), ]
-    }
-    if(input$remove_outliers) {
-      #Filter out rows by standard deviation
-      for(column in 1:length(data$pre$var_range_nums_and_ints())) {
-        a <- sapply(data_filtered[data$pre$var_range_nums_and_ints()[column]],
-          function(x) {
-            m <- mean(x, na.rm = TRUE)
-            s <- sd(x, na.rm = TRUE)
-            x >= m - input$num_sd*s &
-            x <= m + input$num_sd*s
+    # This reactive holds the full dataset that has been filtered
+    if(input$choose_filter_mode == "Manually Filter") {
+      # Using the values of the sliders
+      data_filtered <- data$raw$df
+      if(input$remove_missing) {
+        data_filtered <- data_filtered[complete.cases(data_filtered), ]
+      }
+      if(input$remove_outliers) {
+        #Filter out rows by standard deviation
+        for(column in 1:length(data$pre$var_range_nums_and_ints())) {
+          a <- sapply(data_filtered[data$pre$var_range_nums_and_ints()[column]],
+                      function(x) {
+                        m <- mean(x, na.rm = TRUE)
+                        s <- sd(x, na.rm = TRUE)
+                        x >= m - input$num_sd*s &
+                          x <= m + input$num_sd*s
+                      }
+          )
+          data_filtered <- subset(data_filtered, a)
+        }
+      }
+      if("CfgID" %in% names(data_filtered)) {
+        data_filtered <- subset(data_filtered, data_filtered$CfgID %in% SelectedDesignConfigs())
+      }
+      for(index in 1:length(pre$var_names())) {
+        name <- pre$var_names()[index]
+        input_name <- paste("filter_", name, sep="")
+        selection <- input[[input_name]]
+        if(length(selection) != 0) {
+          if(name %in% pre$var_nums_and_ints()) {
+            isolate({
+              above <- (data_filtered[[name]] >= selection[1])
+              below <- (data_filtered[[name]] <= selection[2])
+              in_range <- above & below
+            })
           }
-        )
-        data_filtered <- subset(data_filtered, a)
-      }
-    }
-    if("CfgID" %in% names(data_filtered)) {
-      data_filtered <- subset(data_filtered, data_filtered$CfgID %in% SelectedDesignConfigs())
-    }
-    for(index in 1:length(pre$var_names())) {
-      name <- pre$var_names()[index]
-      input_name <- paste("filter_", name, sep="")
-      selection <- input[[input_name]]
-      if(length(selection) != 0) {
-        if(name %in% pre$var_nums_and_ints()) {
-          isolate({
-            above <- (data_filtered[[name]] >= selection[1])
-            below <- (data_filtered[[name]] <= selection[2])
-            in_range <- above & below
-          })
-        }
-        else if (name %in% pre$var_facs()) {
+          else if (name %in% pre$var_facs()) {
             selection <- unlist(lapply(selection, function(factor){
-                                                    RemoveItemNumber(factor)
-                                                  }))
+              RemoveItemNumber(factor)
+            }))
             in_range <- (data_filtered[[name]] %in% selection)
+          }
+          
+          # Don't filter based on missing values.
+          in_range <- in_range | is.na(data_filtered[[name]])
+          
+          data_filtered <- subset(data_filtered, in_range)
         }
-        
-        # Don't filter based on missing values.
-        in_range <- in_range | is.na(data_filtered[[name]])
-        
-        data_filtered <- subset(data_filtered, in_range)
+        # print(nrow(data_filtered))
       }
-      # print(nrow(data_filtered))
+      
+    } else {
+      # Using the set selection
+      data_filtered <- data$raw$df
+      data_filtered <- subset(data_filtered, data_filtered$GUID %in% SelectedSetGUIDs())
     }
-    # cat("Data Filtered.\n")
+    
     data_filtered
+  })
+  
+  SelectedSetGUIDs <- reactive({
+    selected_set <- input$choose_set_to_display
+    data$meta$sets[[selected_set]]
   })
   
   observe({
@@ -1308,9 +1322,47 @@ Server <- function(input, output, session) {
   # Blank or saved data
   if(is.null(visualizer_config$sets)) {
     sets <- list()
+    sets$Favorites <- vector()
   } else {
     sets <- visualizer_config$sets
+    if (!exists("Favorites", where=sets)) {
+      sets$Favorites <- vector()
+    }
   }
+  
+  observe({
+    isolate({
+      selected <- input$choose_set_to_display
+    })
+    new_choices <- names(data$meta$sets)
+    updateSelectInput(session,
+                      "choose_set_to_display",
+                      choices = new_choices,
+                      selected = selected)
+  })
+  
+  observeEvent(input$create_set, {
+    isolate({
+      name <- input$create_set_new_name
+      if (!(name %in% c("", names(data$meta$sets)))) {
+        if (input$create_set_copy_selected_set_points) {
+          selected_set_name <- input$choose_set_to_display
+          data$meta$sets[[name]] <- c(data$meta$sets[[selected_set_name]])
+        } else {
+          data$meta$sets[[name]] <- vector()
+        }
+      }
+    })
+  })
+
+  observeEvent(input$delete_set, {
+    isolate({
+      selected_set_name <- input$choose_set_to_display
+      if (!(selected_set_name %in% c("", "Favorites"))) {  # Don't let user delete Favorites set
+        data$meta$sets <- data$meta$sets[names(data$meta$sets) != selected_set_name]
+      }
+    })
+  })
   
   # Classifications table
   output$no_classifications <- renderText(NoClassifications())
@@ -1489,27 +1541,58 @@ ui <- fluidPage(
     hr(),
     bsCollapse(id = "footer_collapse", open = "Filters",  # COMMENT(tthomas): Filters need to open to initialize properly, observe() in server covers saved input.
       bsCollapsePanel("Filters", 
-        # tags$div(title = "Activate to show filters for all dataset variables.",
-        #          checkboxInput("viewAllFilters", "View All Filters", value = TRUE)),
-        tags$div(title = "Return visible sliders to default state.",
-                 style="display: inline-block", 
-                 actionButton("reset_sliders", "Reset Visible Filters")),
-        tags$div(style="display: inline-block; padding: 7px 30px 7px 30px", textOutput("filters_stats")),
+        tags$div(title="Choose between different filtering options.",
+                 style="display: inline-block",
+                 radioButtons(inputId = "choose_filter_mode",
+                              label = "Mode", 
+                              choices = c("Manually Filter", "View Subsets"),
+                              inline = TRUE)
+                 ),
         hr(),
-        
-        if(design_tree_present) {
-          fluidRow(
-            column(3, tags$label("Design Configuration Tree"), tags$div(id="design_configurations")),
-            column(9, tags$div(id="filters_div"))
-          )
-        } else {
-          fluidRow(
-            column(12, tags$div(id="filters_div"))
-          )
-        },
-        conditionalPanel("output.constants_present",
-          h3("Constants:"),
-          uiOutput("constants")
+        # Manually Filter
+        conditionalPanel(
+          condition = "input.choose_filter_mode == 'Manually Filter'",
+          tags$div(title = "Return visible sliders to default state.",
+                   style="display: inline-block", 
+                   actionButton("reset_sliders", "Reset Visible Filters")),
+          tags$div(style="display: inline-block; padding: 7px 30px 7px 30px", textOutput("filters_stats")),
+          hr(),
+          if(design_tree_present) {
+            fluidRow(
+              column(3, tags$label("Design Configuration Tree"), tags$div(id="design_configurations")),
+              column(9, tags$div(id="filters_div"))
+            )
+          } else {
+            fluidRow(
+              column(12, tags$div(id="filters_div"))
+            )
+          },
+          conditionalPanel("output.constants_present",
+            h3("Constants:"),
+            uiOutput("constants")
+          ),
+          style = "default"
+        ),
+        # View Subsets
+        conditionalPanel(
+          condition = "input.choose_filter_mode == 'View Subsets'",
+          column(3,
+            h4("View"),
+            selectInput("choose_set_to_display", "Select Set", choices = c("Favorites"))
+          ),
+          column(1),
+          column(3,
+            h4("Delete"),
+            actionButton("delete_set", "Delete Selected Set"),
+          ),
+          column(1),
+          column(3,
+            h4("Create"),
+            textInput("create_set_new_name", "New Set Name", si("create_set_new_name", "")),
+            checkboxInput("create_set_copy_selected_set_points", label="Copy Selected Set's Points"),
+            actionButton("create_set", "Create New Set")
+          ),
+          style = "default"
         ),
         style = "default"
       ),
@@ -1591,7 +1674,7 @@ ui <- fluidPage(
             p(strong("Version:"), "v2.5.0"),
             p(strong("Date:"), "7/23/2020"),
             p(strong("Developer:"), "Metamorph Inc."),
-			p(strong("Website:"), "https://www.metamorphsoftware.com/"),
+            p(strong("Website:"), "https://www.metamorphsoftware.com/"),
             p(strong("Support:"), "jcoombe@metamorphsoftware.com")
           )
         ),
