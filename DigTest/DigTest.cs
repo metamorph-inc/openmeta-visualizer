@@ -353,6 +353,7 @@ namespace DigTest
 
             //Test Single Point Details
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Point Details");
+            ShinyUtilities.ShinyWait(driver);
             Assert.Equal(new ShinySelectInput(driver, "Explore-details_guid").GetCurrentSelection(), "51f002f8-7a1e-4ad4-a908-e9d3e33bac62");
             var expected_details = "                                               \r\nCfgID                                \"32-20\"   \r\nIN_E11                               \"29818.92\"\r\nIN_E22                               \"39034.45\"\r\nIN_ElemCount                         \"39\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"80.96063\"\r\nIN_Tip_AvgCapMaterialThickness (mm)  \"22.50856\"\r\nOUT_Blade_Cost_Total (USD)           \"148154.8\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2526.65\" ";
             Assert.Equal(expected_details, ShinyUtilities.ReadVerbatimText(driver, "Explore-point_details"));
