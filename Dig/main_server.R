@@ -304,7 +304,8 @@ cat("Initial Setup Complete.\n\n")
 
 # Server ---------------------------------------------------------------------
 
-Server <- function(input, output, session) {
+server <- function(input, output, session) {
+# Server <- function(input, output, session) {
   # Handles the processing of all UI interactions.
   #
   # Args:
@@ -541,6 +542,7 @@ Server <- function(input, output, session) {
   names(footer_preferences) <- lapply(tab_environments,
                                       function(tab_env) {tab_env$title})
   output$display_footer <- reactive({
+    req(input$master_tabset)
     display <- (footer_preferences[[input$master_tabset]])
   })
   outputOptions(output, "display_footer", suspendWhenHidden=FALSE)
@@ -918,7 +920,10 @@ Server <- function(input, output, session) {
   }
   
   ColoredData <- reactive({
+    print("Getting ColoredData")
     data_colored <- FilteredData()
+
+    # print(data_colored)
     data_colored$color <- character(nrow(data_colored))
     if(nrow(data_colored) > 0) {
       data_colored$color <- "black"  #input$normColor
@@ -929,6 +934,7 @@ Server <- function(input, output, session) {
         else {
           type <- data$meta$colorings[[input$coloring_source]]$type
         }
+        req(type)
 
         current <- list()
         current$name <- input$coloring_source
@@ -1078,6 +1084,8 @@ Server <- function(input, output, session) {
     # cat("Data Colored.\n")
     # TODO(tthomas): Move adding units code out into the Explore.R tab.
     # names(data_colored) <- lapply(names(data_colored), AddUnits)
+    # print("Finalized Colored Data")
+    # print(data_colored)
     data_colored
   })
   
@@ -1102,33 +1110,65 @@ Server <- function(input, output, session) {
     table <- data.frame(Names=names, Descriptions=descriptions)
   })
   
-  observeEvent(input$live_coloring_add_classification, {
+  overwrite <- FALSE
+  observeEvent(input$overwrite_live_coloring_add_classification, {
+    req(input$overwrite_live_coloring_add_classification)
+    overwrite <<- TRUE
+  })
+  observeEvent(c(input$live_coloring_add_classification, input$overwrite_live_coloring_add_classification), {
     isolate({
-      name <- input$live_coloring_name
-      if (!(name %in% c(names(data$meta$colorings), "", "current"))) {
-        switch(input$live_coloring_type,
-          "Max/Min"={
-            data$meta$colorings[[name]] <- list()
-            data$meta$colorings[[name]]$name <- name
-            data$meta$colorings[[name]]$type <- "Max/Min"
-            data$meta$colorings[[name]]$var <- input$live_coloring_variable_numeric
-            data$meta$colorings[[name]]$goal <- input$live_coloring_max_min
-            data$meta$colorings[[name]]$slider <- input$col_slider
-          },
-          "Discrete"={
-            data$meta$colorings[[name]] <- list()
-            data$meta$colorings[[name]]$name <- name
-            data$meta$colorings[[name]]$type <- "Discrete"
-            data$meta$colorings[[name]]$var <- input$live_color_variable_factor
-            data$meta$colorings[[name]]$palette <- input$live_color_palette
-            data$meta$colorings[[name]]$rainbow_s <- input$live_color_rainbow_s
-            data$meta$colorings[[name]]$rainbow_v <- input$live_color_rainbow_v
-            data$meta$colorings[[name]]$custom_colors <- data$colorings$custom$colors
-          }
-        )
-        updateTextInput(session, "live_coloring_name", value = "")
+      req(!is.null(input$live_coloring_add_classification))
+      req(is.null(input$overwrite_live_coloring_add_classification) || input$overwrite_live_coloring_add_classification)
+      if (input$live_coloring_add_classification) {
+        name <- input$live_coloring_name
+        if ((!(name %in% names(data$meta$colorings)) || overwrite) && !(name %in% c("", "current"))) {
+          removeModal()
+          switch(input$live_coloring_type,
+            "Max/Min"={
+              data$meta$colorings[[name]] <- list()
+              data$meta$colorings[[name]]$name <- name
+              data$meta$colorings[[name]]$type <- "Max/Min"
+              data$meta$colorings[[name]]$var <- input$live_coloring_variable_numeric
+              data$meta$colorings[[name]]$goal <- input$live_coloring_max_min
+              data$meta$colorings[[name]]$slider <- input$col_slider
+            },
+            "Discrete"={
+              data$meta$colorings[[name]] <- list()
+              data$meta$colorings[[name]]$name <- name
+              data$meta$colorings[[name]]$type <- "Discrete"
+              data$meta$colorings[[name]]$var <- input$live_color_variable_factor
+              data$meta$colorings[[name]]$palette <- input$live_color_palette
+              data$meta$colorings[[name]]$rainbow_s <- input$live_color_rainbow_s
+              data$meta$colorings[[name]]$rainbow_v <- input$live_color_rainbow_v
+              data$meta$colorings[[name]]$custom_colors <- data$colorings$custom$colors
+            }
+          )
+          updateTextInput(session, "live_coloring_name", value = "")
+        } else if (name %in% names(data$meta$colorings)) {
+          # print("create modal")
+          showModal(modalDialog(
+            title = "Overwrite Coloring Scheme",
+            paste0("Do you wish to overwrite the coloring scheme: ", name),
+            footer = tagList(
+              modalButton("No"),
+              actionButton("overwrite_live_coloring_add_classification", "Yes")
+            )
+          ))
+        }
+        # print("Set overwrite to false")
+        overwrite <<- FALSE
       }
     })
+  })
+
+  observeEvent(input$remove_coloring_classification, {
+    req(input$remove_coloring_classification)
+    req(input$live_coloring_name)
+
+    if (input$live_coloring_name %in% names(data$meta$colorings)) {
+      updateSelectInput(session, "coloring_source", selected="None")
+      data$meta$colorings[[input$live_coloring_name]] <- NULL
+    }
   })
 
   convertHTMLBackgroundRGBColorToHex <- function(color) {
@@ -1171,8 +1211,8 @@ Server <- function(input, output, session) {
     ))
     raw_html <- paste0(
       raw_html,
-      tags$button(HTML("&#43;"), class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_add', (new Date()).getTime()); this.blur()"),
-      tags$button(HTML("&#128465;"), class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_trash', (new Date()).getTime()); this.blur()")
+      tags$button(HTML("&#43;"), title="Insert Before Seclected", class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_add', (new Date()).getTime()); this.blur()"),
+      tags$button(HTML("&#128465;"), title="Remove Selected", class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_trash', (new Date()).getTime()); this.blur()")
     )
     for (index in 1:length(data$colorings$custom$colors)) {
       classlist <- paste0("list-group-item", if(data$colorings$custom$selected == index) { " active" } else { "" })
@@ -1189,7 +1229,7 @@ Server <- function(input, output, session) {
 
     raw_html <- paste0(
       raw_html,
-      tags$button(HTML("&#43;"), class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_add_end', (new Date()).getTime()); this.blur()")
+      tags$button(HTML("&#43;"), title="Insert at End", class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_add_end', (new Date()).getTime()); this.blur()")
     )
 
     updateColourInput(session=session, inputId="live_color_custom_color_picker", value=data$colorings$custom$colors[data$colorings$custom$selected])
@@ -1309,6 +1349,9 @@ Server <- function(input, output, session) {
     if (!is.null(si_read("coloring_source")) &&
         si_read("coloring_source") %in% new_choices) {
       selected <- si("coloring_source", NULL)
+    }
+    if (!(selected %in% new_choices)) {
+      selected <- "None"
     }
     updateSelectInput(session,
                       "coloring_source",
@@ -1555,7 +1598,10 @@ ui <- fluidPage(
       bsCollapsePanel("Coloring",
         column(3,
           h4("Coloring Source"),
-          selectInput("coloring_source", "Source", choices = c("None", "Live"), selected=default_inputs$Footer$Coloring$Source),  #, selected = si("coloring_source", "None")),
+          selectInput("coloring_source", "Source", choices = c("None", "Live"), selected={
+            print(default_inputs$Footer$Coloring$Source)
+            default_inputs$Footer$Coloring$Source
+          }),  #, selected = si("coloring_source", "None")),
           checkboxInput("keep_coloring_while_filtering", label="Keep Coloring While Filtering"),
           htmlOutput("coloring_legend")
         ),
@@ -1601,6 +1647,7 @@ ui <- fluidPage(
           h4("Saved"),
           textInput("live_coloring_name", "Name", si("live_coloring_name", "")),
           actionButton("live_coloring_add_classification", "Add Current 'Live' Coloring"),
+          actionButton("remove_coloring_classification", "Remove Specified Coloring Scheme"),
           br(), tableOutput("coloring_table")
         ),
         style = "default"
@@ -1640,4 +1687,4 @@ ui <- fluidPage(
 )
 
 # Start the Shiny app.
-shinyApp(ui = ui, server = Server)
+# shinyApp(ui = ui, server = Server)
