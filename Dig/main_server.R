@@ -157,8 +157,6 @@ if (!identical(default_inputs, user_default_inputs)) {
   )
 }
 
-
-
 # Saved Input Functions ------------------------------------------------------
 
 si <- function(id, default) {
@@ -234,11 +232,11 @@ tab_environments <- mapply(function(file_name, id) {
 
 # Read input dataset file
 cat("Reading raw data:\n")
-raw <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
+raw <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, stringsAsFactors=TRUE, encoding="UTF-8")
 if(!is.null(visualizer_config$augmented_data)) {
   augmented_filename <- file.path(launch_dir,
                                   visualizer_config$augmented_data)
-  augmented <- read.csv(augmented_filename, fill=T, encoding="UTF-8")
+  augmented <- read.csv(augmented_filename, fill=T, stringsAsFactor=TRUE, encoding="UTF-8")
   extra <- raw[!(raw$GUID %in% augmented$GUID),]
   if(nrow(extra) > 0) {
     cat(paste0("  Added ", nrow(extra), " points.\n"))
@@ -920,10 +918,7 @@ server <- function(input, output, session) {
   }
   
   ColoredData <- reactive({
-    print("Getting ColoredData")
     data_colored <- FilteredData()
-
-    # print(data_colored)
     data_colored$color <- character(nrow(data_colored))
     if(nrow(data_colored) > 0) {
       data_colored$color <- "black"  #input$normColor
@@ -1084,8 +1079,6 @@ server <- function(input, output, session) {
     # cat("Data Colored.\n")
     # TODO(tthomas): Move adding units code out into the Explore.R tab.
     # names(data_colored) <- lapply(names(data_colored), AddUnits)
-    # print("Finalized Colored Data")
-    # print(data_colored)
     data_colored
   })
   
@@ -1561,7 +1554,13 @@ ui <- fluidPage(
   tags$script(src = "d3.v3.min.js"),
   tags$script(src = "design_config_selector.js"),
   
-  titlePanel("Visualizer"),
+  titlePanel(
+    title=div(
+              div("Visualizer"), 
+              div(a(href="https://www.metamorphsoftware.com/", target="_blank", img(src="metamorph_logo.png", height="64px", width="210px", align="right", style="padding: 10px")))
+          ),
+	  windowTitle="Visualizer"
+  ),
   
   # Generates the master tabset from the user-defined tabs provided.
   do.call(tabsetPanel, tabset_arguments),
@@ -1674,10 +1673,11 @@ ui <- fluidPage(
           ),
           column(3,
             h4("About"),
-            p(strong("Version:"), "v2.3.0"),
-            p(strong("Date:"), "5/18/2020"),
-            p(strong("Developer:"), "Metamorph Software"),
-            p(strong("Support:"), "tthomas@metamorphsoftware.com")
+            p(strong("Version:"), "v2.5.0"),
+            p(strong("Date:"), "7/23/2020"),
+            p(strong("Developer:"), "Metamorph Inc."),
+			p(strong("Website:"), "https://www.metamorphsoftware.com/"),
+            p(strong("Support:"), "jcoombe@metamorphsoftware.com")
           )
         ),
         style = "default"

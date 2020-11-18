@@ -2,10 +2,14 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1998-2014    The R Core Team
  *
- *  This program is free software; you can redistribute it and/or modify
+ *  This header file is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
  *  the Free Software Foundation; either version 2.1 of the License, or
  *  (at your option) any later version.
+ *
+ *  This file is part of R. R is distributed under the terms of the
+ *  GNU General Public License, either Version 2, June 1991 or Version 3,
+ *  June 2007. See doc/COPYRIGHTS for details of the copyright status of R.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,6 +30,9 @@
 #include <Rinternals.h> // for R_xlen_t
 #include <R_ext/Complex.h>
 
+// for backcompatibility but not to stay (MM) :
+#define formatComplex_USING_signif
+
 #define formatLogical      Rf_formatLogical
 #define formatInteger      Rf_formatInteger
 #define formatReal         Rf_formatReal
@@ -45,10 +52,14 @@ extern "C" {
 #endif
 
 /* Computation of printing formats */
-void formatLogical(int *, R_xlen_t, int *);
-void formatInteger(int *, R_xlen_t, int *);
-void formatReal(double *, R_xlen_t, int *, int *, int *, int);
-void formatComplex(Rcomplex *, R_xlen_t, int *, int *, int *, int *, int *, int *, int);
+void formatLogical(const int *, R_xlen_t, int *);
+void formatInteger(const int *, R_xlen_t, int *);
+void formatReal(const double *, R_xlen_t, int *, int *, int *, int);
+void formatComplex(const Rcomplex *, R_xlen_t, int *, int *, int *, int *, int *, int *, int);
+void formatLogicalS(SEXP, R_xlen_t, int *);
+void formatIntegerS(SEXP, R_xlen_t, int *);
+void formatRealS(SEXP, R_xlen_t, int *, int *, int *, int);
+void formatComplexS(SEXP, R_xlen_t, int *, int *, int *, int *, int *, int *, int);
 
 /* Formating of values */
 const char *EncodeLogical(int, int);
@@ -65,9 +76,12 @@ int	IndexWidth(R_xlen_t);
 void VectorIndex(R_xlen_t, int);
 
 //void printLogicalVector(int *, R_xlen_t, int);
-void printIntegerVector(int *, R_xlen_t, int);
-void printRealVector   (double *, R_xlen_t, int);
-void printComplexVector(Rcomplex *, R_xlen_t, int);
+void printIntegerVector(const int *, R_xlen_t, int);
+void printRealVector   (const double *, R_xlen_t, int);
+void printComplexVector(const Rcomplex *, R_xlen_t, int);
+void printIntegerVectorS(SEXP, R_xlen_t, int);
+void printRealVectorS   (SEXP, R_xlen_t, int);
+void printComplexVectorS(SEXP, R_xlen_t, int);
 
 #ifdef  __cplusplus
 }

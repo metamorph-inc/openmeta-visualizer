@@ -224,12 +224,14 @@ namespace DigTest
             Assert.True(displayunits.GetStartState());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Markers");
+            new ShinySelectInput(driver, "Explore-pairs_plot_marker").SetCurrentSelectionTyped("Circle");
+            pairs_plot.WaitUntilImageRefreshes();
             var initial_count = pairs_plot.ImageStats();
             new ShinySelectInput(driver, "Explore-pairs_plot_marker").SetCurrentSelectionTyped("Plus");
             pairs_plot.WaitUntilImageRefreshes();
             var second_count = pairs_plot.ImageStats();
             Assert.True(second_count[Color.FromArgb(255, 0, 0, 0)] > initial_count[Color.FromArgb(255, 0, 0, 0)]);
-            Assert.Equal(1.5, new ShinySliderInput(driver, "Explore-pairs_plot_marker_size").MoveSliderToValue(1.5));
+            Assert.Equal(1.7, new ShinySliderInput(driver, "Explore-pairs_plot_marker_size").MoveSliderToValue(1.7));
             pairs_plot.WaitUntilImageRefreshes();
             var third_count = pairs_plot.ImageStats();
             Assert.True(third_count[Color.FromArgb(255, 0, 0, 0)] > second_count[Color.FromArgb(255, 0, 0, 0)]);
@@ -262,10 +264,10 @@ namespace DigTest
             Assert.True(single_plot.ImageHasChanged());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Markers");
-            new ShinySelectInput(driver, "Explore-single_plot_marker").SetCurrentSelectionClicked("16"); // "Filled Circle"
+            new ShinySelectInput(driver, "Explore-single_plot_marker").SetCurrentSelectionClicked("1"); // "Empty Circle"
             var marker_size_single = new ShinySliderInput(driver, "Explore-single_plot_marker_size");
-            Assert.Equal(1.0, marker_size_single.GetValue());
-            Assert.Equal(1.5, marker_size_single.MoveSliderToValue(1.5));
+            Assert.Equal(1.5, marker_size_single.GetValue());
+            Assert.Equal(1.7, marker_size_single.MoveSliderToValue(1.7));
             single_plot.WaitUntilImageRefreshes();
             Assert.True(single_plot.ImageHasChanged());
 
@@ -327,7 +329,7 @@ namespace DigTest
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Markers");
             Assert.Equal("3", new ShinySelectInput(driver, "Explore-pairs_plot_marker").GetCurrentSelection());
-            Assert.Equal(1.5, new ShinySliderInput(driver, "Explore-pairs_plot_marker_size").GetValue());
+            Assert.Equal(1.7, new ShinySliderInput(driver, "Explore-pairs_plot_marker_size").GetValue());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Export");
             var downloads = new DirectoryInfo(session.download_directory);
@@ -347,8 +349,8 @@ namespace DigTest
             Assert.Equal("IN_E11", new ShinySelectInput(driver, "Explore-y_input").GetCurrentSelection());
             
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Markers");
-            Assert.Equal("16", new ShinySelectInput(driver, "Explore-single_plot_marker").GetCurrentSelection()); // "Filled Circle"
-            Assert.Equal(1.5, new ShinySliderInput(driver, "Explore-single_plot_marker_size").GetValue());
+            Assert.Equal("1", new ShinySelectInput(driver, "Explore-single_plot_marker").GetCurrentSelection()); // "Empty Circle"
+            Assert.Equal(1.7, new ShinySliderInput(driver, "Explore-single_plot_marker_size").GetValue());
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Overlays");
             Assert.True(new ShinyCheckboxInput(driver, "Explore-add_regression").GetStartState());

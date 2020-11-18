@@ -27,6 +27,7 @@ Synchrotron             Synchrotron functions
 Transport               Transport functions
 Trig                    Trig functions
 Zeta                    Zeta functions
+gsl-deprecated          gsl-deprecated
 gsl-package             Wrappers for the Gnu Scientific Library
 multimin                Function minimization
 pow_int                 Power functions

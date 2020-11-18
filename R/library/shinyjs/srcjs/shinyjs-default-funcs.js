@@ -1,4 +1,4 @@
-// shinyjs 0.8 by Dean Attali
+// shinyjs 1.0.1.9000 by Dean Attali
 // Perform common JavaScript operations in Shiny apps using plain R code
 
 shinyjs = function() {
@@ -20,7 +20,7 @@ shinyjs = function() {
   // get an element by id using JQuery (escape chars that have special
   // selector meaning)
   var _jqid = function(id) {
-    return $("#" + id.replace( /(:|\.|\[|\]|,)/g, "\\$1" ));
+    return $("#" + id.replace( /(:|\.|\[|\]|,|\s)/g, "\\$1" ));
   };
 
   // listen to DOM changes and whenever there are new nodes added, let all
@@ -48,9 +48,11 @@ shinyjs = function() {
   var _getContainer = function(els) {
     return $.map(els, function(el) {
       el = $(el);
-      var inputContainer = el.closest(".shiny-input-container");
-      if (inputContainer.length > 0) {
-        el = inputContainer;
+      if (el.hasClass("shiny-bound-input")) {
+        var inputContainer = el.closest(".shiny-input-container");
+        if (inputContainer.length > 0) {
+          el = inputContainer;
+        }
       }
       return el;
     });
@@ -233,7 +235,7 @@ shinyjs = function() {
 
       // enable/disable the container as well as all individual inputs inside
       // (this is needed for grouped inputs such as radio and checkbox groups)
-      var toadd = $el.find("input, button");
+      var toadd = $el.find("input, button, textarea, select");
       $el = $($el.toArray().concat(toadd.toArray()));
       $el.attr('disabled', (method == "disable"));
       $el.prop('disabled', (method == "disable"));
@@ -262,9 +264,12 @@ shinyjs = function() {
   // helper function to get the initial date from a bootstrap date element
   // if there is no initial date, return the current date
   var _getInputDate = function(el) {
-    if (el[0].hasAttribute('data-initial-date') &&
-        el.attr('data-initial-date') != "") {
-      return el.attr('data-initial-date');
+    if (el[0].hasAttribute('data-initial-date')) {
+      if (el.attr('data-initial-date') === "") {
+        return 'NA';
+      } else {
+        return el.attr('data-initial-date');
+      }
     }
     var today = new Date();
     var yyyy = today.getFullYear().toString();
@@ -306,7 +311,7 @@ shinyjs = function() {
           selectedEls.each(function() {
             selected.push($(this).val());
           });
-          inputValue = selected.join(",");
+          inputValue = JSON.stringify(selected);
         }
         // radioButtons
         else if (input.hasClass("shiny-input-radiogroup")) {
@@ -329,9 +334,8 @@ shinyjs = function() {
           inputValue = input.val();
           if (inputValue === null) {
             inputValue = "";
-          } else if (inputValue instanceof Array) {
-            inputValue = inputValue.join(",");
           }
+          inputValue = JSON.stringify(inputValue);
         }
         // colourInput
         else if (input.children("input.shiny-colour-input").length > 0) {
@@ -400,28 +404,34 @@ shinyjs = function() {
     // just created. If so, find out what events were registered to it and the
     // shiny event handlers for it, and attach them
     _mutationSubscribers.push(function(node) {
-      $node = $(node);
-      $.each(_oneventData, function(id) {
-        var elementData = null;
-        if ($node.attr("id") == id) {
-          elementData = _oneventData[id];
-        } else if ($node.find("#" + id).length > 0) {
-          elementData = _oneventData[id];
-        }
-        if (elementData !== null) {
-          $.each(elementData, function(event, eventData) {
-            $.each(eventData, function(idx, shinyInputId) {
-              _oneventAttach({
-                event : event,
-                id : id,
-                shinyInputId : shinyInputId,
-                add : true
-              });
-            });
-          });
-        }
+      // check the top node
+      var $node = $(node);
+      var id = $node.attr("id");
+      _eventsAttachById(id);
+      // check all descendants
+      $node.find("*").each(function() {
+        var id = $(this).attr("id");
+        _eventsAttachById(id);
       });
     });
+  };
+
+  // Attach all events registered for a given id (if any)
+  var _eventsAttachById = function(id) {
+    var elementData = _oneventData[id];
+    if (elementData !== null) {
+      $.each(elementData, function(event, eventDatas) {
+        $.each(eventDatas, function(idx, eventData) {
+          _oneventAttach({
+            event        : event,
+            id           : id,
+            shinyInputId : eventData.shinyInputId,
+            add          : true,
+            customProps  : eventData.customProps
+          });
+        });
+      });
+    }
   };
 
   // attach an event listener to a DOM element that will trigger a call to Shiny
@@ -443,9 +453,10 @@ shinyjs = function() {
 
       el[params.event](function(event) {
         // Store a subset of the event properties (many are non-serializeable)
-        var props = ['altKey', 'button', 'buttons', 'clientX', 'clienty',
+        var props = ['altKey', 'button', 'buttons', 'clientX', 'clientY',
           'ctrlKey', 'pageX', 'pageY', 'screenX', 'screenY', 'shiftKey',
-          'which', 'charCode', 'key', 'keyCode'];
+          'which', 'charCode', 'key', 'keyCode', 'offsetX', 'offsetY'];
+        props = props.concat(params.customProps);
         var eventSimple = {};
         $.each(props, function(idx, prop) {
           if (prop in event) {
@@ -696,7 +707,8 @@ shinyjs = function() {
         event        : null,
         id           : null,
         shinyInputId : null,
-        add          : false
+        add          : false,
+        customProps  : []
       }
       params = shinyjs.getParams(params, defaultParams);
 
@@ -712,7 +724,10 @@ shinyjs = function() {
         if (!(params.event in elementData) || !params.add) {
           elementData[params.event] = [];
         }
-        elementData[params.event].push(params.shinyInputId);
+        elementData[params.event].push({
+          "shinyInputId" : params.shinyInputId,
+          "customProps"  : params.customProps
+        });
       }
       // if the element does exist, add the event handler
       else {
@@ -752,11 +767,10 @@ shinyjs = function() {
           // file inputs need to be reset manually since shiny doesn't have an
           // update function for them
           if (type == "File") {
-            id = "#" + id;
-            $(id).val('');
-            $(id + "_progress").css("visibility", "hidden");
-            $(id + "_progress").find(".progress-bar").css("width", "0");
-            $(id).closest(".input-group").find("input[type='text']").val('');
+            _jqid(id).val('');
+            _jqid(id + "_progress").css("visibility", "hidden");
+            _jqid(id + "_progress").find(".progress-bar").css("width", "0");
+            _jqid(id).closest(".input-group").find("input[type='text']").val('');
           } else {
             messages[id] = { 'type' : type, 'value' : value };
           }
@@ -767,8 +781,8 @@ shinyjs = function() {
       Shiny.onInputChange(params.shinyInputId, messages);
     },
 
-   // run an R function after an asynchronous delay
-   delay : function(params) {
+    // run an R function after an asynchronous delay
+    delay : function(params) {
       var defaultParams = {
         ms : null,
         shinyInputId : null
@@ -779,9 +793,52 @@ shinyjs = function() {
       setTimeout(function() {
         Shiny.onInputChange(params.shinyInputId, params.ms);
       }, params.ms);
-   }
+    },
+
+    // click on a button
+    click : function(params) {
+      var defaultParams = {
+        id : null
+      };
+      params = shinyjs.getParams(params, defaultParams);
+
+      var $el = _getElements(params);
+      if ($el === null) return;
+      $el[0].click();
+    }
   };
 }();
 
 // Initialize shinyjs on the JS side
 $(function() { shinyjs.initShinyjs(); });
+
+// ShinySenderQueue code taken from Joe Cheng
+// https://github.com/rstudio/shiny/issues/1476
+function ShinySenderQueue() {
+  this.readyToSend = true;
+  this.queue = [];
+  this.timer = null;
+}
+ShinySenderQueue.prototype.send = function(name, value) {
+  var self = this;
+  function go() {
+    self.timer = null;
+    if (self.queue.length) {
+      var msg = self.queue.shift();
+      Shiny.onInputChange(msg.name, msg.value);
+      self.timer = setTimeout(go, 0);
+    } else {
+      self.readyToSend = true;
+    }
+  }
+  if (this.readyToSend) {
+    this.readyToSend = false;
+    Shiny.onInputChange(name, value);
+    this.timer = setTimeout(go, 0);
+  } else {
+    this.queue.push({name: name, value: value});
+    if (!this.timer) {
+      this.timer = setTimeout(go, 0);
+    }
+  }
+};

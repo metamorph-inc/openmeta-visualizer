@@ -2,9 +2,244 @@
 %  news(db = tools:::.build_news_db_from_package_NEWS_Rd("~/R/Pkgs/copula/inst/NEWS.Rd"))
 \name{NEWS}
 \title{News for \R Package \pkg{copula}}% MM: look into ../svn-log-from.all
-\newcommand{\CRANpkg}{\href{http://CRAN.R-project.org/package=#1}{\pkg{#1}}}
+\newcommand{\CRANpkg}{\href{https://CRAN.R-project.org/package=#1}{\pkg{#1}}}
 
-\section{Changes in version 0.999-15 (2016-05-21, svn r1435)}{
+\section{Changes in version 1.0-0 (2020-05-19, svn r1839)}{
+  \subsection{New Features}{
+    \itemize{
+      \item \code{mixCopula()} objects can now be fit (by
+      \code{fitCopula()}) more generally, as the weights no longer need to
+      be kept fixed, thanks to Maechler's \code{clr1()} parametrization,
+      and Rebecca Morger's B.Sc thesis. % -> % norMmix pkg
+
+      \item When no \code{start} parameter vector is specified in
+      \code{fitCopula()}, the new (generic) function \code{getIniParam()} is
+      used now; it notably has a method for \code{"mixCopula"} copulas.
+
+      \item In the \code{fitCopula*()} functions, the \code{traceOpt}
+      option now can be a positive integer (instead of just \code{TRUE} and
+      \code{FALSE}) to print trace info only every \code{traceOpt}
+      objective function evaluation.
+    }
+  }
+  \subsection{Bug Fixes}{
+    \itemize{
+      \item corrected thinko in \code{`freeParam<-`(<mixcopula>, v)}.
+
+      \item more tweaks on fixed / free parameter settings for "mixCopula".
+    }
+  }
+}
+
+\section{Changes in version 0.999-20 (2020-02-03, svn r1833)}{
+  \subsection{New Features}{
+    \itemize{
+      \item \code{evTestA()} got new options \code{trace.lev} and
+      \code{report.err} for reporting numerical intergration problems.
+
+      \item \code{gofT2stat()} implements the two-sample test statistic
+      of R\enc{é}{e}millard and Scaillet (2009).
+    }
+  }
+  \subsection{Bug Fixes}{
+    \itemize{
+      \item \code{rCopula()} of an \code{empCopula} object failed
+      because sampling was done without \code{replace = TRUE}.
+
+      \item \code{cCopula()} now should work for \code{indepCopula()} and
+      \code{"moCopula"} objects (via internal \code{rosenblatt()}.
+
+      \item fix \file{src/empcop.h} and \file{man/fgmCopula.Rd}
+      inconsistencies, found by latest checks on CRAN.
+    }
+  }
+}
+
+\section{Changes in version 0.999-19 (2018-12-19, svn r1808)}{
+  \subsection{New Features}{
+    \itemize{
+      \item \code{exchTest()} gets new argument \code{ties.method}.
+
+      \item a new vignette \file{HAXC} on Hierarchical Archimax Copulas.
+
+      \item New simple classes and constructor \code{fhCopula()} for
+      lower and upper Frechet--Hoeffding bounds (\eqn{W} and \eqn{M}),
+      see \code{?fhCopula}.
+
+      \item Empirical copulas now get an explicit class and constructor
+      \code{empCopula()}.
+
+      \item Marshall-Olkin copulas for the bivariate case (\eqn{d = 2})
+      get a class representation and are constructed via \code{moCopula()}.
+
+      \item In the case where \code{loglikCopula(start, u=u,
+	copula=copula)} is \code{+Inf}, as e.g., in the case of data with
+      duplicate columns (perfect correlation), the internal
+      \code{fitCopStart()} and hence \code{fitCopula()} tries harder to
+      work with the iTau()-generated \code{start} values.
+
+      \item The \code{plot()} method for copula objects uses a somewhat
+      experimental smart default for the \code{main} title.
+
+      \item The \code{"copula"} class now gets its \code{dimension} slot
+      from the new virtual class \code{"dimCopula"} which contains all
+      copulas with an explicit \code{dimension} slot.
+
+      \item the \code{"indepCopula"} now extends only \code{"dimCopula"}
+      and \code{"parCopula"} and hence no longer has unuseful slots such
+      as \code{parameter}.
+
+      \item contributors now are all mentioned in \file{DESCRIPTION};
+      and all are listed including their ORCID's.
+
+      \item \code{gofCopula()} gets new argument \code{test.method}.
+
+      \item \code{cCopula()} now works for \code{rotCopula} objects
+      and bivariate \code{mixCopula} objects.
+    }
+  }
+  \subsection{Bug Fixes}{
+    \itemize{
+      \item Bugfix in \code{dCopula()} method of
+      \code{empCopula(*, smoothing = "beta")}.
+      \item Better error messages when copula parameters are \code{NA}
+      (and hence, e.g. \code{pCopula()} gives an error).
+      \item Bugfix in \code{rCopula(, copula = mixCopula())} if the
+      weights are unit vectors.
+      \item \code{mvdc(<rotCopula>, *)} now works, too.
+      \item fixed thinko in internal \code{chkFun()} called e.g., by \code{perspMvdc()}.
+    }
+  }
+}
+
+\section{Changes in version 0.999-18 (2017-08-31, svn r1681)}{
+  \subsection{New Features}{
+    \itemize{
+      \item \code{contourplot2()} now gets argument \code{pretty}, to be
+      passed on, with a better (but not back-compatible) default (\code{!labels}).
+
+      \item new \code{margCopula()} constructor of marginal copulas,
+      currently for normal-, t-, and Archimedean copulas only.
+    }
+  }
+  \subsection{Bug Fixes}{
+    \itemize{
+      \item \code{cCopula(*, inverse=TRUE)} now also works for
+      non-Clayton Archmedean copulas.
+    }
+  }
+}
+
+\section{Changes in version 0.999-17 (2017-06-17, svn r1661)}{
+  \subsection{New Features}{
+    \itemize{
+      \item \code{C.n()} and several tests now get an optional
+      argument (\code{ties.method} or similar) to specify what happens
+      with ties.
+
+      \item \code{setTheta(cop, val)} now also works for a partially
+      fixed parameter elliptical copula.
+
+      \item Export the (formerly hidden) utilities \code{isFree()},
+      \code{isFreeP()}, and \code{nParam()}.
+
+      \item New \code{rLatinHypercube()} and \code{rAntitheticVariates()} utilities.
+
+      \item \code{dCopula(u, copula, *)} now signals an error if
+      \code{ncol(u)} and \code{dim(copula)} differ.
+
+      \item \code{corKendall()} now checks for \code{NA}'s by default
+      and then works pairwisely.  It is now documented and exported.
+      As a consequence, \code{etau(U, *)} now also works in the case
+      \code{U} has missing values.
+    }
+  }
+  \subsection{Bug Fixes}{
+    \itemize{
+      \item In the case of \emph{ties}, several GOF tests now use a
+      better default method for dealing with ties in their calls to
+      \code{pobs()}.
+
+      \item \code{pobs(<zoo>, .)} continues working.
+
+      \item \code{setTheta(<tCopula>, ..)} now works correctly with
+      free/non-free parts of the parameters.
+
+      \item \code{fgmCopula()} fixed to work with \code{rotCopula()}.
+
+      \item \code{iTau()} fixed for \code{joeCopula()}.
+
+      \item Improved warning messages in \code{iTau()} and \code{iRho()}.
+
+      \item \code{rCopula(<frankCopula>)} now also works for the case of
+      large tau and \eqn{d > 2} (via re-parametrized log series distribution).
+    }
+  }
+}
+
+\section{Changes in version 0.999-16 (2017-01-07, svn r1611)}{
+  \subsection{Bug Fixes}{
+    \itemize{
+      \item \code{pK(u, log.p=TRUE)} now correctly checks \code{u}.
+      \item \code{rotCopula(cop)} now \emph{does} rotate in the default
+      case.
+      \item \code{vcov(fitCopula(*, "mpl"))} now works (returning a
+      matrix of \code{NA}s).
+      \item \code{fitCopula(joeCopula(), *, method = "itau")} gave an
+      error instead of warning.
+      \item \code{setTheta(<rotCopula>, <par>)} now works.
+      \item \code{xvCopula(<rotCopula>, <data>)} now works.
+
+      \item \code{fitMvdc()} now works again for a \dQuote{df.fixed-tCopula}.
+
+      \item \code{"mvdc"} methods for \code{contour()}, \code{persp()}
+      and \code{wireframe2()} now use \code{ylim} correctly.
+
+      \item \code{cCopula(<archmCopula>)} failed for 2-dimensional AMH,
+      Clayton, and Frank in the \emph{negative}-\eqn{\tau} case.
+
+      Also, \code{cCopula()} sometimes returned a vector instead of an
+      \eqn{n \times k}{n * k} matrix (which \code{?cCopula} has promised
+      always).
+
+      \item \code{pCopula()} was wrong (but gave a warning) for some
+      (unbalanced) nested archimedean copulas.
+    }
+  }
+  \subsection{New Features}{
+    \itemize{
+      \item Adding an abstraction level, using (currently hidden) "setr"
+      and "getr" methods, allows to simplify class definition for
+      \code{"khoudrajiCopula"} and \code{fitCopula()} now to also work
+      e.g. for \code{rotCopula(khoudrajiCopula(.), ..)}.
+
+      \item The \code{coef()} method for \code{fitCopula()} or
+      \code{fitMvdc()} results can get the matrix of parameters
+      \emph{and} their standard errors by the new option \code{SE = TRUE}.
+
+      \item \code{summary(fitCopula(*))} and \code{summary(fitMvdc(*))}
+      have a nicer \code{print()} method and print \emph{more} than just
+      printing the fitted objects.  Note that
+      \item printing \code{fitCopula(*)} or  \code{fitMvdc(*)} no longer
+      computes and prints standard errors (\code{"Std. Error"}), but
+      printing \code{summary(fit..(*))} does (see above).
+
+      \item improved documentation about \code{pK()} and \code{qK()}.
+
+      \item \code{mixCopula()} and \code{"mixCopula"} class for
+      arbitrary finite mixtures of copulas.
+      %% FIXME: fitCopula() is *NOT* ok [sum(w) == 1] -- need reparametrization
+
+      \item \code{splom2()} now works when a single \dQuote{global}
+      color is specified.
+
+      %% TODO \item qK() gets a more accurate (still quite fast) default
+      %% method
+    }
+  }
+}
+
+\section{Changes in version 0.999-15 (2016-07-24, svn r1438)}{
   \itemize{
     \item \code{C.n(u, X, *)} now has \code{X} as second argument,
     calls \code{pobs(X)} and then \code{F.n(*,*)}; previously,
@@ -65,7 +300,9 @@
     should work with \code{cCopula()} instead.
 
     \item Various improvements in data visualization tools such as
-    \code{pairs2()}, \code{splom2()}, etc.
+    \code{contour()}, \code{persp()}, \code{contourplot2()},
+    \code{pairs2()}, \code{wireframe2()}, \code{cloud2()} and
+    \code{splom2()}.
 
     \item \code{qK()} gets \code{log.p} option.
   }
@@ -251,4 +488,3 @@
     for "nacopula".
   }
 }
-
