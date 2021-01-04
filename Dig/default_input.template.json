@@ -14,17 +14,17 @@
 				},
 				"Markers": {
 					"__comment__Plot Markers__": "Acceptable Values: [Square, Circle, Triangle Point Up, Plus, Cross, Diamond, Triangle Point Down, Square Cross, Star, Diamond Plus, Circle Plus, Triangles Up And Down, Square Plus, Circle Cross, Square And Triangle Down, Filled Square, Filled Circle, Filled Triangle Point Up, Filled Diamond, Solid Circle, Bullet (Smaller Circle)",
-					"Plot Markers": "Circle",
+					"Plot Markers": "Filled Circle",
 					"__comment__Marker Size__": "Acceptable Values: 0.5 to 2.5 by steps of 0.1",
-					"Marker Size": 1
+					"Marker Size": 1.5
 				}
 			},
 			"Single Plot": {
 				"Markers": {
 					"__comment__Plot Markers__": "Acceptable Values: [Square, Circle, Triangle Point Up, Plus, Cross, Diamond, Triangle Point Down, Square Cross, Star, Diamond Plus, Circle Plus, Triangles Up And Down, Square Plus, Circle Cross, Square And Triangle Down, Filled Square, Filled Circle, Filled Triangle Point Up, Filled Diamond, Solid Circle, Bullet (Smaller Circle)",
-					"Plot Markers": "Circle",
+					"Plot Markers": "Filled Circle",
 					"__comment__Marker Size__": "Acceptable Values: 0.5 to 2.5 by steps of 0.1",
-					"Marker Size": 1
+					"Marker Size": 1.5
 				},
 				"Overlays": {
 					"Add Regression": false,
