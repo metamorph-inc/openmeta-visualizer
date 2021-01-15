@@ -118,6 +118,8 @@ ui <- function(id) {
                 checkboxInput(ns("add_contour"), "Add Contour Plot", si(ns("add_contour"), FALSE)),
                 selectInput(ns("contour_var"), "Contour Variable", c(), selected=NULL),
                 checkboxInput(ns("add_pareto"), "Add Pareto Plot", si(ns("add_pareto"), FALSE)),
+                selectInput(ns("pareto_x"), "X-Axis", c("Minimize", "Maximize"), selected=si(ns("pareto_x"), "Minimize")),
+                selectInput(ns("pareto_y"), "Y-Axis", c("Minimize", "Maximize"), selected=si(ns("pareto_y"), "Minimize")),
                 style = "default")
             )
           ),
@@ -513,8 +515,19 @@ server <- function(input, output, session, data) {
       do.call(plot, params)
       
       if(input$add_pareto) {
-        # lines()
-        print("Added Pareto")
+        d = data.frame(x=data$Filtered()[[paste(input$x_input)]],
+                       y=data$Filtered()[[paste(input$y_input)]])
+        if(is.null(input$pareto_x) || input$pareto_x == "Maximize") {
+          D = d[order(-d$x,d$y,decreasing=FALSE),]
+        } else {
+          D = d[order(d$x,d$y,decreasing=FALSE),]
+        }
+        if(is.null(input$pareto_y) || input$pareto_y ==  "Maximize") {
+          front = D[which(!duplicated(cummax(D$y))),]
+        } else {
+          front = D[which(!duplicated(cummin(D$y))),]
+        }
+        lines(front, lty="twodash", lwd=1.5, col="darkgreen")
       }
       if(input$add_regression) {
         fit_data <- data$Filtered()
@@ -523,7 +536,7 @@ server <- function(input, output, session, data) {
             print("Added Linear Regression")
             fit <- lm(formula = paste(input$y_input, "~", input$x_input), data=fit_data)
             print(cor(fit_data[[input$x_input]], fit_data[[input$y_input]]))
-            abline(fit, col="darkblue")
+            abline(fit, col="darkred", lwd=1.5)
             function_text <- paste0(input$y_input, " = ",
                                     format(fit$coefficients[[input$x_input]], digits=4), "*", input$x_input,
                                     " + ", format(fit$coefficients[["(Intercept)"]], digits=4))
@@ -537,7 +550,7 @@ server <- function(input, output, session, data) {
             predict_input[[input$x_input]] <- x_vals
             predict_input[["Square"]] <- x_vals^2
             y_vals <- predict(fit, predict_input)
-            lines(x_vals, y_vals, col="darkblue")
+            lines(x_vals, y_vals, col="darkred", lwd=1.5)
             function_text <- paste0(input$y_input, " = ",
                                     format(fit$coefficients[["Square"]], digits=4), "*", input$x_input, "^2", " + ",
                                     format(fit$coefficients[[input$x_input]], digits=4), "*", input$x_input, " + ",
@@ -551,7 +564,7 @@ server <- function(input, output, session, data) {
             predict_input <- list()
             predict_input[[input$x_input]] <- x_vals
             y_vals <- exp(predict(fit, predict_input))
-            lines(x_vals, y_vals, col="darkblue")
+            lines(x_vals, y_vals, col="darkred", lwd=1.5)
             function_text <- paste0(input$y_input, " = e^(",
                                     format(fit$coefficients[[input$x_input]], digits=4), "*", input$x_input, " + ",
                                     format(fit$coefficients[["(Intercept)"]], digits=4), ")")

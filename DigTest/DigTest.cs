@@ -271,13 +271,14 @@ namespace DigTest
 
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Overlays");
             Assert.Equal("false", driver.FindElement(By.Id("Explore-add_regression")).GetAttribute("data-shinyjs-resettable-value"));
-            //Assert.False(single_plot.ImageHasChanged()); // Faster Method
-            Assert.False(single_plot.ImageIncludesColor(Color.FromArgb(255, 0, 0, 139)));
-
+            Assert.False(single_plot.ImageIncludesColor(Color.FromArgb(255, 139, 0, 0)));
             driver.FindElement(By.Id("Explore-add_regression")).Click();
             single_plot.WaitUntilImageRefreshes();
-            //Assert.True(single_plot.ImageHasChanged()); // Faster Method
-            Assert.True(single_plot.ImageIncludesColor(Color.FromArgb(255, 0, 0, 139)));
+            Assert.True(single_plot.ImageIncludesColor(Color.FromArgb(255, 139, 0, 0)));
+            Assert.False(single_plot.ImageIncludesColor(Color.FromArgb(255, 0, 100, 0)));
+            driver.FindElement(By.Id("Explore-add_pareto")).Click();
+            single_plot.WaitUntilImageRefreshes();
+            Assert.True(single_plot.ImageIncludesColor(Color.FromArgb(255, 0, 100, 0)));
 
             //Test Single Point Details
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Point Details");
@@ -348,7 +349,7 @@ namespace DigTest
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Overlays");
             Assert.True(new ShinyCheckboxInput(driver, "Explore-add_regression").GetStartState());
             Assert.False(new ShinyCheckboxInput(driver, "Explore-add_contour").GetStartState());
-            Assert.False(new ShinyCheckboxInput(driver, "Explore-add_pareto").GetStartState());
+            Assert.True(new ShinyCheckboxInput(driver, "Explore-add_pareto").GetStartState());
 
             //Test Single Point Details
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Point Details");
