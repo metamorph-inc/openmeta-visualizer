@@ -173,6 +173,33 @@ ui <- function(id) {
           )
         ),
         conditionalPanel(
+          condition = paste0('output["', ns('found_csv'), '"] == true'),
+          hr(),
+          fluidRow(
+            column(12,
+              extendShinyjs(functions=c("openCSVWindow"), text=
+                '
+                shinyjs.openCSVWindow = function(params) {
+                  // use a separate function to open the window so it opens quick enough to not be considered a pop-up
+                  params = shinyjs.getParams(params, { filename: null });
+
+                  if (params.filename === null) {
+                    console.log("Error: no filename");
+                    return null;
+                  }
+
+                  console.log(params);
+                  console.log("Open a new Window for the CSV Viewer");
+                  window.open(String.prototype.concat("/?server=csv_artifact&csv_file=", encodeURIComponent(params.filename)));
+                }
+                '
+              ),
+              selectInput(ns("csv_files"), label="CSV Files", choices = c(), NULL),
+              actionButton(ns("view_csv"), "View CSV")
+            )
+          )
+        ),
+        conditionalPanel(
           condition = paste0('output["', ns('found_images'), '"] == true'),
           hr(),
           fluidRow(
@@ -816,7 +843,6 @@ server <- function(input, output, session, data) {
     print("In observeEvent(input$view_cad)")
     print(paste0("input$view_cad: ", input$view_cad))
     req(input$view_cad, input$details_guid, input$cad_files)
-    shinyjs::logjs("Loading CAD File Bytes")
 
     single_point <- data$raw$df[data$raw$df$GUID == input$details_guid, ]
     row.names(single_point) <- ""
@@ -831,5 +857,38 @@ server <- function(input, output, session, data) {
     shinyjs::logjs("Opening CAD File in new tab")
     js$openCADWindow(filename=path, point_details=single_point)
     print("Done in observeEvent(input$view_cad)")
+  })
+
+  output$found_csv <- reactive({
+    guid_folder <- guid_folders[[input$details_guid]]
+
+    if (!is.null(guid_folder)) {
+      archived_files <- list.files(guid_folder)
+      if(any(grepl("^.*\\.csv$", archived_files))) {
+        shinyjs::logjs("CSV File Exists")
+        csv_file_indicies <- grep("^.*\\.csv$", archived_files)
+        updateSelectInput(session, "csv_files", choices=lapply(csv_file_indicies, function(index) { archived_files[index] }))
+        
+        TRUE
+      } else {
+        FALSE
+      }
+    } else {
+      FALSE
+    }
+  })
+  outputOptions(output, "found_csv", suspendWhenHidden=FALSE)
+
+  observeEvent(input$view_csv, {
+    print("In observeEvent(input$view_csv)")
+    print(paste0("input$view_csv: ", input$view_csv))
+    req(input$view_csv, input$details_guid, input$csv_files)
+
+    guid_folder <- guid_folders[[input$details_guid]]
+    path <- file.path(guid_folder, input$csv_files)
+
+    shinyjs::logjs("Opening CSV File in new tab")
+    js$openCSVWindow(filename=path)
+    print("Done in observeEvent(input$view_csv)")
   })
 }
