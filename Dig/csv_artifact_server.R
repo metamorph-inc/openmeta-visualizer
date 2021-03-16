@@ -72,7 +72,7 @@ server <- function(input, output, session) {
   query <- isolate({ parseQueryString(session$clientData$url_search) })
 
   # if (is.null(loaded_files[[query$csv_file]])) {
-  print(paste0("Loading CAD File: ", query$csv_file))
+  print(paste0("Loading CSV File: ", query$csv_file))
   path <- file.path(query$csv_file)
   csvfile <- file(path, "r")
   # loaded_files[[query$csv_file]] <<- read.csv(csvfile, fill=T, stringsAsFactors=TRUE, encoding="UTF-8")
