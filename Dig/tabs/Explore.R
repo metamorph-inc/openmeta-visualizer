@@ -194,8 +194,8 @@ ui <- function(id) {
                 }
                 '
               ),
-              selectInput(ns("csv_files"), label="CSV Files", choices = c(), NULL),
-              actionButton(ns("view_csv"), "View CSV")
+              selectInput(ns("csv_files"), label="CSV Artifact Files", choices = c(), NULL),
+              actionButton(ns("view_csv"), "View/Plot CSV")
             )
           )
         ),

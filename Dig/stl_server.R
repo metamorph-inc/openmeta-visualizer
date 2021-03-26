@@ -15,7 +15,7 @@ ui <- fluidPage(
     extendShinyjs(functions=c("createCADFileObject"), text='
         shinyjs.createCADFileObject = function (params) {
             console.log("In shinyjs.createCADFileObject");
-            params = shinyjs.getParams(params, { cad_file_bytes: null, point_details: null });
+            params = shinyjs.getParams(params, { cad_file_bytes: null, point_details: null, filename: "STL.stl" });
 
             if (params.cad_file_bytes === null || params.point_details === null) {
                 console.log("No cad_file_bytes or point_details");
@@ -32,7 +32,7 @@ ui <- fluidPage(
             if (typeof File === "object") {
                 temp.cad_file = new Blob([temp.cad_file_array_buffer], { type: "" });
             } else if (typeof File === "function") {
-                temp.cad_file = new File([temp.cad_file_array_buffer], "STL.stl");
+                temp.cad_file = new File([temp.cad_file_array_buffer], params.filename);
             }
 
             window.cad_file = temp.cad_file;
@@ -365,7 +365,7 @@ server <- function(input, output, session) {
 
     output$model_volumne <- renderText({
         req(model_info())
-        print(model_info())
+        # print(model_info())
         model_info()$volume()
     })
 
@@ -391,8 +391,7 @@ server <- function(input, output, session) {
     )
 
     print("Send CAD File Information To Browser")
-    # js$createCADFileObject(cad_file_bytes=loaded_files[[query$cad_file]], point_details=query$point_details)
-    js$createCADFileObject(cad_file_bytes=loaded_stl_file, point_details=query$point_details)
+    js$createCADFileObject(cad_file_bytes=loaded_stl_file, point_details=query$point_details, filename=basename(file.path(query$cad_file)))
 
     ################### Plot Controls ##################
     ################# Model Positioning ################
@@ -430,7 +429,7 @@ server <- function(input, output, session) {
             list(x=-round(pi/2, digits=2),y=0,z=0)
         }
     )
-    print(model_orientations)
+    # print(model_orientations)
 
     observeEvent(c(input$model_x_rotation, input$model_y_rotation, input$model_z_rotation), {
         req(!is.null(input$model_x_rotation))

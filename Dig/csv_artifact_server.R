@@ -41,19 +41,24 @@ ui <- fluidPage(
       fluidRow(
         column(3,
           br(),
+          tags$style("
+.selectize-dropdown {
+  min-width: fit-content;
+  min-width: -moz-fit-content;
+}
+/*.selectize-dropdown-content {
+  overflow: auto;
+}
+.selectize-dropdown [data-selectable] {
+  overflow: visible;
+}*/"),
           uiOutput("plot_controls"),
-          actionButton("add_plot", "Add Plot") # ,
-          # hr(),
-          # h4("Info"),
-          # verbatimTextOutput("pairs_stats")
+          actionButton("add_plot", "Add Plot")
         ),
         column(9,
           br(),
           uiOutput("plots")
-        ),
-        # column(12,
-        #   verbatimTextOutput("multi_plot_info")
-        # )
+        )
       )
     ),
     tabPanel("Data Table",
@@ -100,8 +105,24 @@ server <- function(input, output, session) {
     number_of_plots(number_of_plots() + 1)
   })
 
+  valueChooser <- function(id, default, choices=NULL) {
+    if (!is.null(input[[id]]) && input[[id]] != "" && (is.null(choices) || input[[id]] %in% choices)) {
+      input[[id]]
+    } else {
+      default
+    }
+  }
+
+  idGenerator <- function(...) {
+    id <- do.call("paste0", list(unlist(list("plot_", ...), use.names=FALSE), collapse=""))
+    id <- gsub(" ", "_", id)
+    id
+  }
+
   chart_types <- list(
+    default="Time Series",
     "Distribution"=list(
+      default="Histogram",
       plots=list(
         "Violin Plot"=list(
           aes_settings=list(
@@ -116,15 +137,20 @@ server <- function(input, output, session) {
           funcs=list(
             geom_density=list(
               settings=list(
-                colourInputs=list(fill="Fill", color="Color"))))),
+                colourInputs=list(
+                  fill=list(name="Fill", default="#000000"), 
+                  color=list(name="Color", default="#000000")))))),
         "Histogram"=list(
           aes_settings=list(
             x=list(name="X", properties=list(x=NULL))),
           funcs=list(
             geom_histogram=list(
               settings=list(
-                colourInputs=list(fill="Fill", color="Color"),
-                numericInputs=list(binwidth="Bin Width"))))),
+                colourInputs=list(
+                  fill=list(name="Fill", default="#000000"), 
+                  color=list(name="Color", default="#FFFFFF")),
+                numericInputs=list(
+                  binwidth=list(name="Bin Width", default=30, step=0.001)))))),
         "Boxplot"=list(
           aes_settings=list(
             x=list(name="X", properties=list(x=NULL)), 
@@ -132,16 +158,12 @@ server <- function(input, output, session) {
           funcs=list(
             geom_boxplot=list(
               settings=list(
-                colourInputs=list(fill="Fill", color="Color"))))) # ,
-        # "Ridgeline Plot"=list(
-        #   aes_settings=list(x="X", y="Y", fill="Fill"),
-        #   funcs=list(
-        #     geom_density_ridges=list(
-        #       params=list()),
-        #     theme_ridges=list(
-        #       params=list())))
+                colourInputs=list(
+                  fill=list(name="Fill", default="#000000"), 
+                  color=list(name="Color", default="#000000"))))))
     )),
     "Correlation"=list(
+      default="Scatter",
       plots=list(
         "Scatter"=list(
           aes_settings=list(
@@ -175,6 +197,7 @@ server <- function(input, output, session) {
               params=list(mapping=aes(fill=..level..), geom="polygon", colour="white"))))
     )),
     "Ranking"=list(
+      default="Barplot",
       plots=list(
         "Barplot"=list(
           aes_settings=list(
@@ -182,7 +205,9 @@ server <- function(input, output, session) {
           funcs=list(
             geom_bar=list(
               settings=list(
-                colourInputs=list(fill="Fill", color="Color"))))),
+                colourInputs=list(
+                  fill=list(name="Fill", default="#000000"), 
+                  color=list(name="Color", default="#FFFFFF")))))),
         "Lollipop"=list(
           aes_settings=list(
             x=list(name="X", properties=list(x=NULL, xend=NULL)), 
@@ -193,6 +218,7 @@ server <- function(input, output, session) {
               params=list(mapping=aes(y=0)))))
     )),
     "Part of a Whole"=list(
+      default="Percentage Stacked Barchart",
       plots=list(
         "Grouped Barchart"=list(
           aes_settings=list(
@@ -279,50 +305,34 @@ server <- function(input, output, session) {
             coord_polar=list(
               params=list(theta="y"))))
     )),
-    "Evolution"=list(
+    "Time Series"=list(
+      default="Line Chart - Single",
       plots=list(
-        "Line Chart - Single-Line"=list(
+        "Line Chart - Single"=list(
           aes_settings=list(
-            x=list(name="X", properties=list(x=NULL)), 
+            x=list(name="X", default="Time", properties=list(x=NULL)), 
             y=list(name="Y", properties=list(y=NULL))),
           funcs=list(
             geom_line=list(
               params=list(linetype=1),
               settings=list(
-                colourInputs=list(color="Color"),
-                numericInputs=list(size="Size", alpha="Alpha"))))),
-        "Line Chart - Multi-Line"=list(
+                colourInputs=list(
+                  color=list(name="Color", default="#000000")),
+                numericInputs=list(
+                  size=list(name="Size", default=1, step=1, min=0), 
+                  alpha=list(name="Alpha", default=1, step=.01, min=0, max=1)))))),
+        "Line Chart - Category"=list(
           aes_settings=list(
-            x=list(name="X", properties=list(x=NULL)), 
+            x=list(name="X", default="Time", properties=list(x=NULL)), 
             y=list(name="Y", properties=list(y=NULL)),
             colour=list(name="Category", properties=list(group=NULL, colour=NULL))),
           funcs=list(
             geom_line=list(
               params=list(linetype=1),
               settings=list(
-                numericInputs=list(size="Size", alpha="Alpha"))))),
-        "Area Chart"=list(
-          aes_settings=list(
-            x=list(name="X", properties=list(x=NULL)), 
-            y=list(name="Y")),
-          funcs=list(
-            aes=list(
-              settings=list(
-                evals=list(
-                  y="{ abs(cumsum(loaded_csv_file[[input[[paste0('plot_', i, 'y')]]]])) }"))),
-            geom_area=list(
-              params=list(alpha=0.4),
-              settings=list(
-                colourInputs=list(fill="Color"))),
-            geom_line=list(
-              params=list(size=1, alpha=0.7),
-              settings=list(
-                evals=list(color="{ input[[paste0('plot_', i, 'fill')]] }"))),
-            geom_point=list(
-              params=list(size=2),
-              settings=list(
-                evals=list(
-                  color="{ input[[paste0('plot_', i, 'fill')]] }")))))
+                numericInputs=list(
+                  size=list(name="Size", default=1, step=1, min=0), 
+                  alpha=list(name="Alpha", default=1, step=.01, min=0, max=1))))))
     ))
   )
 
@@ -331,74 +341,84 @@ server <- function(input, output, session) {
     for (i in 1:number_of_plots()) {
       local({
         i <- i
-        charttypes_id <- paste0("plot_", i, "charttype")
+        charttypes_id <- idGenerator(i, "charttype") # paste0("plot_", i, "charttype")
+        choices <- names(chart_types)
+        choices <- append(c("Choose"=""), choices[choices != 'default'])
         charttypes <- selectizeInput(charttypes_id, "Chart Type:", 
-          choices=append(c("Choose"=""), names(chart_types)),
-          selected=isolate({ input[[charttypes_id]] }),
+          choices=choices,
+          selected=isolate({ valueChooser(charttypes_id, chart_types$default) }),
           multiple=FALSE)
 
-        plottypes_output_id <- paste0("plot_", i, "plottypeoutput")
-        plottypes_id <- paste0("plot_", i, "plottype")
+        plottypes_output_id <- idGenerator(i, "plottypeoutput") # paste0("plot_", i, "plottypeoutput")
+        plottypes_id <- idGenerator(i, "plottype") # paste0("plot_", i, "plottype")
         output[[plottypes_output_id]] <- renderUI({
+          choices <- names(chart_types[[input[[charttypes_id]]]]$plots)
+          choices <- append(c("Choose"=""), choices)
           plottypes <- selectizeInput(plottypes_id, "Plot Type:", 
-            choices=append(c("Choose"=""), names(chart_types[[input[[charttypes_id]]]]$plots)),
-            selected=isolate({ input[[plottypes_id]] }),
-            multiple=FALSE)
+            choices=choices,
+            selected=isolate({ valueChooser(plottypes_id, chart_types[[input[[charttypes_id]]]]$default, choices) }),
+            multiple=FALSE, width="100%")
 
           plottypes
         })
         
-        plotsettings_output_id <- paste0("plot_", i, "plotinputs")
+        plotsettings_output_id <- idGenerator(i, "plotinputs") # paste0("plot_", i, "plotinputs")
         output[[plotsettings_output_id]] <- renderUI({
           chart <- chart_types[[input[[charttypes_id]]]]
           plot <- chart$plots[[input[[plottypes_id]]]]
+          id_base <- paste0(i, input[[charttypes_id]], input[[plottypes_id]])
 
           aes_settings <- list()
           for (name in names(plot$aes_settings)) {
             local({
-              input_id <- paste0("plot_", i, name)
+              input_id <- idGenerator(id_base, name) # paste0("plot_", i, name)
+              choices <- append(c("Choose"=""), names(loaded_csv_file))
               aes_settings <<- append(aes_settings, list(
                 selectizeInput(
                   input_id, paste0(plot$aes_settings[[name]]$name, ":"),
-                  choices=append(c("Choose"=""), names(loaded_csv_file)),
-                  selected=isolate({ input[[input_id]] }))
+                  choices=choices,
+                  selected=isolate({ valueChooser(input_id, plot$aes_settings[[name]]$default) }))
               ))
             })
           }
 
-          input_settings <- list()
+          input_controls <- list()
           for (func in names(plot$funcs)) {
             for (input_type in names(plot$funcs[[func]]$settings)) {
               for (name in names(plot$funcs[[func]]$settings[[input_type]])) {
                 local({
-                  input_id <- paste0("plot_", i, name)
+                  input_id <- idGenerator(id_base, name) # paste0("plot_", i, name)
+                  input_settings <- plot$funcs[[func]]$settings[[input_type]][[name]]
                   new_input <- NULL
                   if (input_type == "colourInputs") {
                     new_input <- colourInput(
-                      input_id, paste0(plot$funcs[[func]]$settings[[input_type]][[name]], ":"),
-                      value=isolate({ input[[input_id]] }))
+                      input_id, paste0(input_settings$name, ":"),
+                      value=isolate({ valueChooser(input_id, input_settings$default) }))
                   }
                   if (input_type == "numericInputs") {
+                    min <- if (is.numeric(input_settings$min)) { input_settings$min } else { NA }
+                    max <- if (is.numeric(input_settings$max)) { input_settings$max } else { NA }
                     new_input <- numericInput(
-                      input_id, paste0(plot$funcs[[func]]$settings[[input_type]][[name]], ":"),
-                      value=isolate({ input[[input_id]] }))
+                      input_id, paste0(input_settings$name, ":"),
+                      value=isolate({ valueChooser(input_id, input_settings$default) }),
+                      step=input_settings$step, min=min, max=max)
                   }
                   
-                  input_settings <<- append(input_settings, list(new_input))
+                  input_controls <<- append(input_controls, list(new_input))
                 })
               }
             }
           }
 
-          input_settings <- append(aes_settings, input_settings)
+          input_controls <- append(aes_settings, input_controls)
 
-          coordflip_id <- paste0("plot_", i, "coordflip")
-          input_settings <- append(input_settings, list(
+          coordflip_id <- idGenerator(i, "coordflip") # paste0("plot_", i, "coordflip")
+          input_controls <- append(input_controls, list(
             checkboxInput(coordflip_id, "Flip Coordinates",
               value=isolate({ input[[coordflip_id]] }))
           ))
 
-          do.call("tagList", input_settings)
+          do.call("tagList", input_controls)
         })
 
         panels <<- append(panels, list(bsCollapsePanel(paste0("Plot ", i),
@@ -423,16 +443,16 @@ server <- function(input, output, session) {
         i <- i
         plotOutputs <<- append(plotOutputs, list(
           plotOutput(
-            paste0("plot_", i), 
-            dblclick=paste0("plot_", i, "dblclick"), 
+            idGenerator(i), # paste0("plot_", i), 
+            dblclick=idGenerator(i, "dbclick"), # paste0("plot_", i, "dblclick"), 
             brush=brushOpts(
-              id=paste0("plot_", i, "brush"), 
+              id=idGenerator(i, "brush"), # paste0("plot_", i, "brush"), 
               resetOnNew=TRUE))
         ))
         
         zoom_settings[[paste0(i)]] <<- list(xlim=NULL, ylim=NULL, expand=TRUE)
-        dblclickObservers[[i]] <<- observeEvent(input[[paste0("plot_", i, "dblclick")]], {
-          brush <- input[[paste0("plot_", i, "brush")]]
+        dblclickObservers[[i]] <<- observeEvent(input[[idGenerator(i, "dbclick")]], {
+          brush <- input[[idGenerator(i, "brush")]]
           if (!is.null(brush)) {
             zoom_settings[[paste0(i)]] <<- list(
               xlim=c(brush$xmin, brush$xmax), 
@@ -443,7 +463,7 @@ server <- function(input, output, session) {
             zoom_settings[[paste0(i)]] <<- list(xlim=NULL, ylim=NULL, expand=TRUE)
           }
 
-          input_check <- input[[paste0("plot_", i, "coordflip")]]
+          input_check <- input[[idGenerator(i, "coordflip")]]
           if (!is.null(input_check) && input_check) {
             xlim <- zoom_settings[[paste0(i)]]$xlim
             zoom_settings[[paste0(i)]]$xlim <<- zoom_settings[[paste0(i)]]$ylim
@@ -458,20 +478,21 @@ server <- function(input, output, session) {
         i <- i
         
         options(warn=-1)
-        output[[paste0("plot_", i)]] <- renderPlot({ 
+        output[[idGenerator(i)]] <- renderPlot({ 
           # options(warn=-1)
           # options(warning.expression={})
-          chart_type <- input[[paste0("plot_", i, "charttype")]]
-          plot_type <- input[[paste0("plot_", i, "plottype")]]
+          chart_type <- input[[idGenerator(i, "charttype")]]
+          plot_type <- input[[idGenerator(i, "plottype")]]
+          id_base <- paste0(i, chart_type, plot_type)
 
           aes_settings <- list()
           labels <- list()
           for (name in names(chart_types[[chart_type]]$plots[[plot_type]]$aes_settings)) {
-            input_check <- input[[paste0("plot_", i, name)]]
+            input_check <- input[[idGenerator(id_base, name)]]
             if (!is.null(input_check) && input_check != "") {
               for (property in names(chart_types[[chart_type]]$plots[[plot_type]]$aes_settings[[name]]$properties)) {
                 aes_settings[[property]] <- loaded_csv_file[[input_check]]
-                labels[[property]] <- input[[paste0("plot_", i, name)]]
+                labels[[property]] <- input[[idGenerator(i, name)]]
               }
             }
           }
@@ -481,7 +502,7 @@ server <- function(input, output, session) {
             do.call("labs", append(labels, list(title=paste0("Plot ", i)))) +
             theme_bw()
 
-          input_check <- input[[paste0("plot_", i, "coordflip")]]
+          input_check <- input[[idGenerator(i, "coord_flip")]]
           coord_func <- NULL
           if (!is.null(input_check) && input_check) {
             coord_func <- "coord_flip"
@@ -503,7 +524,7 @@ server <- function(input, output, session) {
                     if (input_type == "evals") {
                       params[[input_name]] <- eval(parse(text=plot$funcs[[name]]$settings[[input_type]][[input_name]]))
                     } else {
-                      params[[input_name]] <- input[[paste0("plot_", i, input_name)]]
+                      params[[input_name]] <- input[[idGenerator(id_base, input_name)]]
                     }
                   }
                 }
