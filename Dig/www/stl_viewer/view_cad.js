@@ -8,12 +8,13 @@ function Initialize_STL_VIEW() {
 
 function sleep(miliseconds, call, until) {
     return new Promise(function (resolve) {
-        var interval = setInterval(function () {
+        let interval = setInterval(function () {
             if (typeof call === "function") {
                 call();
             }
             if (until()) {
                 resolve();
+                clearInterval(interval);
             }
         }, miliseconds);
     });
@@ -40,14 +41,15 @@ function AddModel() {
             document.title = `${filename}`
         }).finally(() => {
             console.log("Create Model Loaded Callback");
-            stl_viewer.model_loaded_callback = function () {
+            stl_viewer.model_loaded_callback = function() {
                 console.log("Finished Adding Model. Removing Loading Spinner");
-                var loading_spinner = document.getElementById("loading_spinner");
+                Shiny.onInputChange("model_loaded", true);
+                
+                let loading_spinner = document.getElementById("loading_spinner");
                 loading_spinner.parentElement.removeChild(loading_spinner);
 
-                var model_info = stl_viewer.get_model_info(stl_model_id);
-
-                Shiny.onInputChange("model_info", model_info)
+                let model_info = stl_viewer.get_model_info(stl_model_id);
+                Shiny.onInputChange("model_info", model_info);
                 console.log(stl_viewer.get_model_info(stl_model_id));
             }
 

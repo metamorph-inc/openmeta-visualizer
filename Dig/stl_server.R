@@ -218,22 +218,6 @@ ui <- fluidPage(
                                     selectizeInput("camera_pan_units", label=NULL, choices=c("m", "mm", "in"), selected="mm"),
                                     actionButton("camera_pan_left_right", label="Pan Left-Right"),
                                     actionButton("camera_pan_up_down", label="Pan Up-Down")
-                                    # sliderInput("camera_pan_left_right", label="Pan Left-Right", step=1, min=-1000, max=1000, value=0),
-                                    # tags$script('
-                                    #     $("#camera_pan_left_right").on("change", function() {
-                                    #         shinyjs.setCamera_PanLeftRight({
-                                    #             distance: $("#camera_pan_left_right").val()
-                                    #         });
-                                    #     });
-                                    # '),
-                                    # sliderInput("camera_pan_up_down", label="Pan Up-Down", step=1, min=-1000, max=1000, value=0),
-                                    # tags$script('
-                                    #     $("#camera_pan_up_down").on("change", function() {
-                                    #         shinyjs.setCamera_PanUpDown({
-                                    #             distance: $("#camera_pan_up_down").val()
-                                    #         });
-                                    #     });
-                                    # ')
                                 ),
                                 bsCollapsePanel("Camera Rotation",
                                     radioButtons("auto_rotate", label="Auto Rotate", choices=c("Yes"="true", "No"="false"), selected="false", inline=TRUE),
@@ -248,7 +232,7 @@ ui <- fluidPage(
                         bsCollapsePanel("Options",
                             radioButtons("shading", inline=TRUE, label="Shading", choices=c("Flat"="flat", "Smooth"="smooth", "Wireframe"="wireframe")),
                             colourInput("model_color", label="Model color", value="#909090"),
-                            colourInput("background_color", label="Background color", allowTransparent=TRUE, value="transparent"),
+                            colourInput("background_color", label="Background color", value="#000000"),
                             radioButtons("edges", inline=TRUE, label="Edges", choices=c("Yes"="true", "No"="false"), selected="false")
                         )
                     )
@@ -365,7 +349,6 @@ server <- function(input, output, session) {
 
     output$model_volumne <- renderText({
         req(model_info())
-        # print(model_info())
         model_info()$volume()
     })
 
@@ -404,8 +387,10 @@ server <- function(input, output, session) {
         updateSliderInput(session, "model_z_range", value=0)
     })
 
-    observeEvent(input$auto_rotate, {
+    observeEvent(c(input$auto_rotate, input$model_loaded), {
         req(!is.null(input$auto_rotate))
+        req(input$model_loaded)
+
         js$setModel_AutoRotation(auto_rotate=fromJSON(input$auto_rotate))
     })
 
@@ -429,12 +414,12 @@ server <- function(input, output, session) {
             list(x=-round(pi/2, digits=2),y=0,z=0)
         }
     )
-    # print(model_orientations)
 
     observeEvent(c(input$model_x_rotation, input$model_y_rotation, input$model_z_rotation), {
         req(!is.null(input$model_x_rotation))
         req(!is.null(input$model_y_rotation))
         req(!is.null(input$model_z_rotation))
+        req(input$model_loaded)
         
         rotation <- list(
             x=input$model_x_rotation,
@@ -454,6 +439,7 @@ server <- function(input, output, session) {
 
     observeEvent(input$model_orientation, {
         req(!is.null(input$model_orientation))
+        req(input$model_loaded)
 
         args <- c(EXPR=input$model_orientation, model_orientations)
         rotation <- do.call(switch, args)
@@ -522,23 +508,31 @@ server <- function(input, output, session) {
     })
 
     ################# Options ################
-    observeEvent(input$shading, {
+    observeEvent(c(input$shading, input$model_loaded), {
         req(!is.null(input$shading))
+        req(input$model_loaded)
+
         js$setModel_Shading(shading=input$shading)
     })
 
-    observeEvent(input$model_color, {
+    observeEvent(c(input$model_color, input$model_loaded), {
         req(!is.null(input$model_color))
+        req(input$model_loaded)
+
         js$setModel_Color(color=input$model_color)
     })
 
-    observeEvent(input$background_color, {
+    observeEvent(c(input$background_color, input$model_loaded), {
         req(!is.null(input$background_color))
+        req(input$model_loaded)
+
         js$setBackground_Color(color=input$background_color)
     })
 
-    observeEvent(input$edges, {
+    observeEvent(c(input$edges, input$model_loaded), {
         req(!is.null(input$edges))
+        req(input$model_loaded)
+
         js$setModel_Edges(edges=fromJSON(input$edges))
     })
 }

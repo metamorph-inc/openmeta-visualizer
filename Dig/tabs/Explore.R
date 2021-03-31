@@ -167,7 +167,7 @@ ui <- function(id) {
                 }
                 '
               ),
-              selectInput(ns("cad_files"), label="CAD Files", choices = c(), NULL),
+              selectInput(ns("cad_files"), label="CAD Artifact Files", choices = c(), NULL),
               actionButton(ns("view_cad"), "View CAD")
             )
           )

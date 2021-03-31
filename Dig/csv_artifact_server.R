@@ -114,7 +114,7 @@ server <- function(input, output, session) {
   }
 
   idGenerator <- function(...) {
-    id <- do.call("paste0", list(unlist(list("plot_", ...), use.names=FALSE), collapse=""))
+    id <- do.call("paste", list(unlist(list("plot_", ...), use.names=FALSE), sep="-", collapse=""))
     id <- gsub(" ", "_", id)
     id
   }
@@ -127,10 +127,13 @@ server <- function(input, output, session) {
         "Violin Plot"=list(
           aes_settings=list(
             x=list(name="X", properties=list(x=NULL)), 
-            y=list(name="Y", properties=list(y=NULL)),
-            fill=list(name="Fill", properties=list(fill=NULL))),
+            y=list(name="Y", properties=list(y=NULL))),
           funcs=list(
-            geom_violin=NULL)),
+            geom_violin=list(
+              settings=list(
+                colourInputs=list(
+                  fill=list(name="Fill", default="#000000"), 
+                  color=list(name="Color", default="#000000")))))),
         "Density Plot"=list(
           aes_settings=list(
             x=list(name="X", properties=list(x=NULL))),
@@ -206,8 +209,8 @@ server <- function(input, output, session) {
             geom_bar=list(
               settings=list(
                 colourInputs=list(
-                  fill=list(name="Fill", default="#000000"), 
-                  color=list(name="Color", default="#FFFFFF")))))),
+                  fill=list(name="Fill", default="#FFFFFF"), 
+                  color=list(name="Color", default="#000000")))))),
         "Lollipop"=list(
           aes_settings=list(
             x=list(name="X", properties=list(x=NULL, xend=NULL)), 
@@ -252,7 +255,7 @@ server <- function(input, output, session) {
               settings=list(
                 evals=list(
                   data="{
-                    input_check <- input[[paste0('plot_', i, 'category')]]
+                    input_check <- input[[idGenerator(i, 'Part of a Whole', 'Donut Chart', 'category')]]
                     categories <- as.factor(sort(unique(loaded_csv_file[[input_check]])))
 
                     count <- NULL
@@ -283,7 +286,7 @@ server <- function(input, output, session) {
               settings=list(
                 evals=list(
                   data="{
-                    input_check <- input[[paste0('plot_', i, 'category')]]
+                    input_check <- input[[idGenerator(i, 'Part of a Whole', 'Pie Chart', 'category')]]
                     categories <- as.factor(sort(unique(loaded_csv_file[[input_check]])))
 
                     count <- NULL
@@ -325,7 +328,7 @@ server <- function(input, output, session) {
           aes_settings=list(
             x=list(name="X", default="Time", properties=list(x=NULL)), 
             y=list(name="Y", properties=list(y=NULL)),
-            colour=list(name="Category", properties=list(group=NULL, colour=NULL))),
+            colour=list(name="Category", properties=list(colour=NULL))),
           funcs=list(
             geom_line=list(
               params=list(linetype=1),
@@ -341,7 +344,7 @@ server <- function(input, output, session) {
     for (i in 1:number_of_plots()) {
       local({
         i <- i
-        charttypes_id <- idGenerator(i, "charttype") # paste0("plot_", i, "charttype")
+        charttypes_id <- idGenerator(i, "charttype")
         choices <- names(chart_types)
         choices <- append(c("Choose"=""), choices[choices != 'default'])
         charttypes <- selectizeInput(charttypes_id, "Chart Type:", 
@@ -349,8 +352,8 @@ server <- function(input, output, session) {
           selected=isolate({ valueChooser(charttypes_id, chart_types$default) }),
           multiple=FALSE)
 
-        plottypes_output_id <- idGenerator(i, "plottypeoutput") # paste0("plot_", i, "plottypeoutput")
-        plottypes_id <- idGenerator(i, "plottype") # paste0("plot_", i, "plottype")
+        plottypes_output_id <- idGenerator(i, "plottypeoutput")
+        plottypes_id <- idGenerator(i, "plottype")
         output[[plottypes_output_id]] <- renderUI({
           choices <- names(chart_types[[input[[charttypes_id]]]]$plots)
           choices <- append(c("Choose"=""), choices)
@@ -362,7 +365,7 @@ server <- function(input, output, session) {
           plottypes
         })
         
-        plotsettings_output_id <- idGenerator(i, "plotinputs") # paste0("plot_", i, "plotinputs")
+        plotsettings_output_id <- idGenerator(i, "plotinputs")
         output[[plotsettings_output_id]] <- renderUI({
           chart <- chart_types[[input[[charttypes_id]]]]
           plot <- chart$plots[[input[[plottypes_id]]]]
@@ -371,7 +374,7 @@ server <- function(input, output, session) {
           aes_settings <- list()
           for (name in names(plot$aes_settings)) {
             local({
-              input_id <- idGenerator(id_base, name) # paste0("plot_", i, name)
+              input_id <- idGenerator(id_base, name)
               choices <- append(c("Choose"=""), names(loaded_csv_file))
               aes_settings <<- append(aes_settings, list(
                 selectizeInput(
@@ -387,7 +390,7 @@ server <- function(input, output, session) {
             for (input_type in names(plot$funcs[[func]]$settings)) {
               for (name in names(plot$funcs[[func]]$settings[[input_type]])) {
                 local({
-                  input_id <- idGenerator(id_base, name) # paste0("plot_", i, name)
+                  input_id <- idGenerator(id_base, name)
                   input_settings <- plot$funcs[[func]]$settings[[input_type]][[name]]
                   new_input <- NULL
                   if (input_type == "colourInputs") {
@@ -412,7 +415,7 @@ server <- function(input, output, session) {
 
           input_controls <- append(aes_settings, input_controls)
 
-          coordflip_id <- idGenerator(i, "coordflip") # paste0("plot_", i, "coordflip")
+          coordflip_id <- idGenerator(i, "coordflip")
           input_controls <- append(input_controls, list(
             checkboxInput(coordflip_id, "Flip Coordinates",
               value=isolate({ input[[coordflip_id]] }))
@@ -443,10 +446,10 @@ server <- function(input, output, session) {
         i <- i
         plotOutputs <<- append(plotOutputs, list(
           plotOutput(
-            idGenerator(i), # paste0("plot_", i), 
-            dblclick=idGenerator(i, "dbclick"), # paste0("plot_", i, "dblclick"), 
+            idGenerator(i),
+            dblclick=idGenerator(i, "dbclick"),
             brush=brushOpts(
-              id=idGenerator(i, "brush"), # paste0("plot_", i, "brush"), 
+              id=idGenerator(i, "brush"),
               resetOnNew=TRUE))
         ))
         
@@ -477,10 +480,7 @@ server <- function(input, output, session) {
       local({
         i <- i
         
-        options(warn=-1)
-        output[[idGenerator(i)]] <- renderPlot({ 
-          # options(warn=-1)
-          # options(warning.expression={})
+        output[[idGenerator(i)]] <- renderPlot({
           chart_type <- input[[idGenerator(i, "charttype")]]
           plot_type <- input[[idGenerator(i, "plottype")]]
           id_base <- paste0(i, chart_type, plot_type)
@@ -492,12 +492,10 @@ server <- function(input, output, session) {
             if (!is.null(input_check) && input_check != "") {
               for (property in names(chart_types[[chart_type]]$plots[[plot_type]]$aes_settings[[name]]$properties)) {
                 aes_settings[[property]] <- loaded_csv_file[[input_check]]
-                labels[[property]] <- input[[idGenerator(i, name)]]
+                labels[[property]] <- input[[idGenerator(id_base, name)]]
               }
             }
           }
-
-          # plot_output <- NULL
           plot_output <- ggplot(data=loaded_csv_file, mapping=do.call("aes", aes_settings)) +
             do.call("labs", append(labels, list(title=paste0("Plot ", i)))) +
             theme_bw()
@@ -532,10 +530,7 @@ server <- function(input, output, session) {
                 plot_output <- plot_output + do.call(name, params)
               }
           }
-
-          # plot_output <- do.call("labs", append(labels, list(title=paste0("Plot ", i)))) +
-          #   theme_bw()
-          # options(warn=0)
+          
           plot_output
         })
       })
