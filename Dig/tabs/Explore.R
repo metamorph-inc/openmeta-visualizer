@@ -53,22 +53,22 @@ ui <- function(id) {
               ),
               bsCollapsePanel("Plot Options",
                 checkboxInput(ns("auto_render"), "Render Automatically",
-                              value = si(ns("auto_render"), TRUE)),
+                              value = si(ns("auto_render"), default_inputs$Tabs$Explore$`Pairs Plot`$`Plot Options`$`Render Automatically`)),
                 checkboxInput(ns("pairs_upper_panel"), "Display Upper Panel",
-                              value = si(ns("pairs_upper_panel"), FALSE)),
+                              value = si(ns("pairs_upper_panel"), default_inputs$Tabs$Explore$`Pairs Plot`$`Plot Options`$`Display Upper Panel`)),
                 checkboxInput(ns("pairs_trendlines"), "Add Trendlines",
-                              value = si(ns("pairs_trendlines"), FALSE)),
+                              value = si(ns("pairs_trendlines"), default_inputs$Tabs$Explore$`Pairs Plot`$`Plot Options`$`Add Trendlines`)),
                 checkboxInput(ns("pairs_units"), "Display Units",
-                              value = si(ns("pairs_units"), TRUE))
+                              value = si(ns("pairs_units"), default_inputs$Tabs$Explore$`Pairs Plot`$`Plot Options`$`Display Units`))
               ),
               bsCollapsePanel("Markers",
                 selectInput(ns("pairs_plot_marker"),
                             "Plot Markers:",
                             plot_markers,
-                            selected=si(ns("pairs_plot_marker"), 16)),
+                            selected=si(ns("pairs_plot_marker"), plot_markers[[default_inputs$Tabs$Explore$`Pairs Plot`$Markers$`Plot Markers`]])),
                 sliderInput(ns("pairs_plot_marker_size"), "Marker Size:",
                             min=0.5, max=2.5,
-                            value=si(ns("pairs_plot_marker_size"), 1.5),
+                            value=si(ns("pairs_plot_marker_size"), default_inputs$Tabs$Explore$`Pairs Plot`$Markers$`Marker Size`),
                             step=0.025)
               ),
               bsCollapsePanel("Export",
@@ -83,7 +83,10 @@ ui <- function(id) {
           column(9,
               htmlOutput(ns("pairs_display_error")),   
               htmlOutput(ns("pairs_filter_error")), 
-              plotOutput(ns("pairs_plot"), dblclick = ns("pairs_click"), height = 700)
+              plotOutput(ns("pairs_plot"), dblclick = ns("pairs_click"), click = ns("multi_plot_click"), height = 700)
+          ),
+          column(12,
+            verbatimTextOutput(ns("multi_plot_info"))
           )
         )
       ), 
@@ -102,9 +105,9 @@ ui <- function(id) {
                 selectInput(ns("single_plot_marker"),
                             "Plot Markers:",
                             plot_markers,
-                            selected = si(ns("single_plot_marker"), 16)),
+                            selected = si(ns("single_plot_marker"), plot_markers[[default_inputs$Tabs$Explore$`Single Plot`$`Markers`$`Plot Markers`]])),
                 sliderInput(ns("single_plot_marker_size"), "Marker Size:",
-                            min=0.5, max=2.5, value=si(ns("single_plot_marker_size"), 1.5), step=0.025),
+                            min=0.5, max=2.5, value=si(ns("single_plot_marker_size"), default_inputs$Tabs$Explore$`Single Plot`$`Markers`$`Marker Size`), step=0.025),
                 style = "default"),
               # TODO(wknight): Restore this functionality.
               # br(), br(),
@@ -113,11 +116,11 @@ ui <- function(id) {
               #   actionButton(ns("highlightData"), "Highlight Selection", class = "btn btn-primary")
               # )
               bsCollapsePanel("Overlays",
-                checkboxInput(ns("add_regression"), "Add Regression", si(ns("add_regression"), FALSE)),
-                selectInput(ns("regression_type"), "Regression Type", c("Linear", "Quadratic", "Exponential"), selected=si(ns("regression_type"), "Linear")),
-                checkboxInput(ns("add_contour"), "Add Contour Plot", si(ns("add_contour"), FALSE)),
+                checkboxInput(ns("add_regression"), "Add Regression", si(ns("add_regression"), default_inputs$Tabs$Explore$`Single Plot`$`Overlays`$`Add Regression`)),
+                selectInput(ns("regression_type"), "Regression Type", c("Linear", "Quadratic", "Exponential"), selected=si(ns("regression_type"), default_inputs$Tabs$Explore$`Single Plot`$`Overlays`$`Regression Type`)),
+                checkboxInput(ns("add_contour"), "Add Contour Plot", si(ns("add_contour"), default_inputs$Tabs$Explore$`Single Plot`$`Overlays`$`Add Contour Plot`)),
                 selectInput(ns("contour_var"), "Contour Variable", c(), selected=NULL),
-                checkboxInput(ns("add_pareto"), "Add Pareto Plot", si(ns("add_pareto"), FALSE)),
+                checkboxInput(ns("add_pareto"), "Add Pareto Plot", si(ns("add_pareto"), default_inputs$Tabs$Explore$`Single Plot`$`Overlays`$`Add Pareto Plot`)),
                 style = "default")
             )
           ),
@@ -147,24 +150,52 @@ ui <- function(id) {
           hr(),
           fluidRow(
             column(12,
-              extendShinyjs(functions=c("viewCADFiles", "openCADWindow"), text=
+              extendShinyjs(functions=c("openCADWindow"), text=
                 '
-                shinyjs.viewCADFiles = async function(params) {
-                  params = shinyjs.getParams(params, {cad_file_bytes:null, point_details:null})
-                  if (!params.cad_file_bytes || !params.point_details) {
-                    return null
+                shinyjs.openCADWindow = function(params) {
+                  // use a separate function to open the window so it opens quick enough to not be considered a pop-up
+                  params = shinyjs.getParams(params, { filename: null, point_details: null });
+
+                  if (params.filename === null || params.point_details === null) {
+                    console.log("Error: no filename or point_details");
+                    return null;
                   }
-                  var w = shinyjs.viewCADFiles.window
-                  w.cad_file_bytes = params.cad_file_bytes
-                  w.point_details = params.point_details
-                }
-                shinyjs.openCADWindow = function() {
-                  shinyjs.viewCADFiles.window = window.open("/stl_viewer/view_cad.html")
+
+                  console.log(params);
+                  console.log("Open a new Window for the CAD Viewer");
+                  window.open(String.prototype.concat("/?server=stl&cad_file=", encodeURIComponent(params.filename), "&point_details=", encodeURIComponent(JSON.stringify(params.point_details))));
                 }
                 '
               ),
-              selectInput(ns("cad_files"), label="CAD Files", choices = c(), NULL),
+              selectInput(ns("cad_files"), label="CAD Artifact Files", choices = c(), NULL),
               actionButton(ns("view_cad"), "View CAD")
+            )
+          )
+        ),
+        conditionalPanel(
+          condition = paste0('output["', ns('found_csv'), '"] == true'),
+          hr(),
+          fluidRow(
+            column(12,
+              extendShinyjs(functions=c("openCSVWindow"), text=
+                '
+                shinyjs.openCSVWindow = function(params) {
+                  // use a separate function to open the window so it opens quick enough to not be considered a pop-up
+                  params = shinyjs.getParams(params, { filename: null });
+
+                  if (params.filename === null) {
+                    console.log("Error: no filename");
+                    return null;
+                  }
+
+                  console.log(params);
+                  console.log("Open a new Window for the CSV Viewer");
+                  window.open(String.prototype.concat("/?server=csv_artifact&csv_file=", encodeURIComponent(params.filename)));
+                }
+                '
+              ),
+              selectInput(ns("csv_files"), label="CSV Artifact Files", choices = c(), NULL),
+              actionButton(ns("view_csv"), "View/Plot CSV")
             )
           )
         ),
@@ -206,13 +237,13 @@ server <- function(input, output, session, data) {
   observe({
     selected <- isolate(input$display)
     if(is.null(selected)) {
-      selected <- data$pre$var_range()[c(1,2)]
+      selected <- data$pre$var_range()[1:default_inputs$Tabs$Explore$`Pairs Plot`$`Variables`$`Display Variables`]
     }
     saved <- si_read(ns("display"))
     if (is.empty(saved)) {
       si_clear(ns("display"))
     } else if (all(saved %in% c(data$pre$var_range(), ""))) {
-      selected <- si(ns("display"), NULL)
+      selected <- si(ns("display"), selected)
     }
     updateSelectInput(session,
                       "display",
@@ -264,8 +295,13 @@ server <- function(input, output, session, data) {
   })
   
   output$pairs_plot <- renderPlot({
+    print("Render Pairs Plot")
+    # print(PairsVars())
+    # print(PairsData())
     req(PairsVars())
     req(PairsData())
+
+    print("Requirements met")
     
     if (length(PairsVars()) >= 2 & nrow(PairsData()) > 0) {
       # Clear the error messages, if any.
@@ -371,15 +407,21 @@ server <- function(input, output, session, data) {
       ylimits <- c(-2.5, -1.4)
     }
     
-    
-    for(i in 1:(num_vars-1)){
+    row <- 0
+    col <- 0
+    for(i in 1:num_vars){
       if(findInterval(x_pos, xlimits) == 1){
         x_var <- input$display[i]
+        col <- i
       }
       if(findInterval(y_pos, ylimits) == 1){
         y_var <- rev(input$display)[i]
+        row <- i
       }
       if(!is.null(x_var) & !is.null(y_var)){
+        if ((!input$pairs_upper_panel && row > num_vars - col) ||  (x_var == y_var)) {
+          break
+        } 
         updateSelectInput(session, "x_input", selected = x_var)
         updateSelectInput(session, "y_input", selected = y_var)
         updateTabsetPanel(session, "tabset", selected = "Single Plot")
@@ -593,6 +635,17 @@ server <- function(input, output, session, data) {
       function(name) {data$meta$variables[[name]]$name_with_units})
     t(near_points)
   })
+
+  output$multi_plot_info <- renderPrint({
+    near_points <- nearPoints(data$Filtered(),
+                              input$multi_plot_click,
+                              xvar = input$x_input,
+                              yvar = input$y_input,
+                              maxpoints = 8)
+    names(near_points) <- sapply(names(near_points),
+      function(name) {data$meta$variables[[name]]$name_with_units})
+    t(near_points)
+  })
   
   # Point Details -----------------------------------------------------
 
@@ -768,15 +821,18 @@ server <- function(input, output, session, data) {
 
   output$found_cad <- reactive({
     guid_folder <- guid_folders[[input$details_guid]]
-    archived_files <- list.files(guid_folder)
 
-    if (!is.null(guid_folder) 
-    && any(grepl("^.*\\.stl$", archived_files))) {
-      shinyjs::logjs("CAD File Exists")
-      stl_file_indicies <- grep("^.*\\.stl$", archived_files)
-      updateSelectInput(session, "cad_files", choices=lapply(stl_file_indicies, function(index) { archived_files[index] }))
-      
-      TRUE
+    if (!is.null(guid_folder)) {
+      archived_files <- list.files(guid_folder)
+      if(any(grepl("^.*\\.stl$", archived_files))) {
+        shinyjs::logjs("CAD File Exists")
+        stl_file_indicies <- grep("^.*\\.stl$", archived_files)
+        updateSelectInput(session, "cad_files", choices=lapply(stl_file_indicies, function(index) { archived_files[index] }))
+        
+        TRUE
+      } else {
+        FALSE
+      }
     } else {
       FALSE
     }
@@ -784,19 +840,55 @@ server <- function(input, output, session, data) {
   outputOptions(output, "found_cad", suspendWhenHidden=FALSE)
 
   observeEvent(input$view_cad, {
+    print("In observeEvent(input$view_cad)")
+    print(paste0("input$view_cad: ", input$view_cad))
     req(input$view_cad, input$details_guid, input$cad_files)
-    shinyjs::logjs("Loading CAD File Bytes")
 
     single_point <- data$raw$df[data$raw$df$GUID == input$details_guid, ]
+    row.names(single_point) <- ""
+    names(single_point) <- sapply(names(single_point), function(name) {
+      data$meta$variables[[name]]$name_with_units
+    })
+
+    guid_folder <- guid_folders[[input$details_guid]]
+    path <- file.path(guid_folder, input$cad_files)
+
+    print(single_point)
+    shinyjs::logjs("Opening CAD File in new tab")
+    js$openCADWindow(filename=path, point_details=single_point)
+    print("Done in observeEvent(input$view_cad)")
+  })
+
+  output$found_csv <- reactive({
     guid_folder <- guid_folders[[input$details_guid]]
 
-    path <- file.path(guid_folder, input$cad_files)
-    bytes_to_read <- file.size(path)
-    stlfile <- file(path, "rb")
-    cad_file_bytes <- readBin(stlfile, integer(), size=1, n=bytes_to_read)
+    if (!is.null(guid_folder)) {
+      archived_files <- list.files(guid_folder)
+      if(any(grepl("^.*\\.csv$", archived_files))) {
+        shinyjs::logjs("CSV File Exists")
+        csv_file_indicies <- grep("^.*\\.csv$", archived_files)
+        updateSelectInput(session, "csv_files", choices=lapply(csv_file_indicies, function(index) { archived_files[index] }))
+        
+        TRUE
+      } else {
+        FALSE
+      }
+    } else {
+      FALSE
+    }
+  })
+  outputOptions(output, "found_csv", suspendWhenHidden=FALSE)
 
-    shinyjs::logjs("Opening CAD File in new tab")
-    js$openCADWindow()
-    js$viewCADFiles(cad_file_bytes=cad_file_bytes, point_details=single_point)
+  observeEvent(input$view_csv, {
+    print("In observeEvent(input$view_csv)")
+    print(paste0("input$view_csv: ", input$view_csv))
+    req(input$view_csv, input$details_guid, input$csv_files)
+
+    guid_folder <- guid_folders[[input$details_guid]]
+    path <- file.path(guid_folder, input$csv_files)
+
+    shinyjs::logjs("Opening CSV File in new tab")
+    js$openCSVWindow(filename=path)
+    print("Done in observeEvent(input$view_csv)")
   })
 }

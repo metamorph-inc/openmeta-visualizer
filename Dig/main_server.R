@@ -1,0 +1,1691 @@
+# Copyright (c) 2016-2020, MetaMorph Software
+# 
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+# 
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# Script: app.R
+#
+# Author: Timothy Thomas [aut, cre],
+#         Will Knight [aut]
+#
+# Maintainer: Timothy Thomas <tthomas@metamorphsoftware.com>
+#
+# Description: OpenMETA Visualizer
+#
+#   This framework allows for the assembly of selected tabs into a single
+#   Visualizer session. This allows for the tabs to interact and share
+#   selection sets, classification variables, and filter settings. It
+#   also manages the persistence of the design data generated during
+#   exploration.
+#
+# URL: www.metamorphsoftware.com/openmeta
+
+library(shiny)
+library(shinyjs)
+library(shinyBS)
+library(jsonlite)
+library(topsis)
+library(colourpicker)
+source("utils.R")
+
+# Defined Constants ----------------------------------------------------------
+
+ABBREVIATION_LENGTH <- 25
+SAVE_DIG_INPUT_CSV <- TRUE
+FILTER_WIDTH_IN_COLUMNS <- 2
+
+# Resolve Dataset Configuration ----------------------------------------------
+
+pet_config_present <- FALSE
+design_tree_present <- FALSE
+saved_inputs <- NULL
+filter_divs <- list()
+visualizer_config <- NULL
+design_tree <- NULL
+first_raw_poll <- TRUE
+
+dig_input_csv <- Sys.getenv('DIG_INPUT_CSV')
+dig_dataset_config <- Sys.getenv('DIG_DATASET_CONFIG')
+if (dig_dataset_config == "") {
+  if(dig_input_csv == "") {
+    # Setup one of the test datasets if no input dataset
+    config_filename=file.path('datasets',
+                              'WindTurbineForOptimization',
+                              'visualizer_config.json',
+                              fsep = "\\\\")
+    # config_filename=file.path('datasets',
+    #                           'boxpacking',
+    #                           'visualizer_config.json',
+    #                           fsep = "\\\\")
+  } else {
+    # Visualizer legacy launch format
+    csv_dir <- dirname(dig_input_csv)
+    config_filename <- file.path(csv_dir,
+                                 sub("\\.csv$",
+                                     "_viz_config.json",
+                                     basename(dig_input_csv)),
+                                 fsep = "\\\\")
+  }
+} else {
+  config_filename <- gsub("\\\\", "/", dig_dataset_config)
+}
+
+if(file.exists(config_filename)) {
+  visualizer_config <- fromJSON(file(config_filename, encoding="UTF-8"), simplifyDataFrame=FALSE)
+} else {
+  visualizer_config <- list()
+  visualizer_config$raw_data <- basename(dig_input_csv)
+  visualizer_config$pet_config <- "pet_config.json"
+  visualizer_config$tabs <- c("Explore.R",
+                              "DataTable.R",
+                              "Histogram.R",
+                              "UncertaintyQuantification.R")
+}
+
+tab_requests <- visualizer_config$tabs
+saved_inputs <- visualizer_config$inputs
+launch_dir <- dirname(config_filename)
+
+pet_config_filename <- visualizer_config$pet_config
+if (!is.null(pet_config_filename) && pet_config_filename != "") {
+  pet_config_filename <- file.path(launch_dir, pet_config_filename)
+  if (file.exists(pet_config_filename)) {
+    pet_config_present <- TRUE
+  }
+}
+
+design_tree_filename <- file.path(launch_dir, "design_tree.json")
+if (file.exists(design_tree_filename)) {
+  design_tree_present <- TRUE
+}
+
+user_default_input_file_directory <- file.path(Sys.getenv("APPDATA"), "\\OpenMETA\\Visualizer")
+if (!dir.exists(user_default_input_file_directory)) {
+  dir.create(user_default_input_file_directory, showWarnings=TRUE, recursive=TRUE)
+}
+user_default_input_filename <- file.path(user_default_input_file_directory, "\\default_input.json")
+if (file.exists(user_default_input_filename)) {
+  user_default_inputs <- fromJSON(file(user_default_input_filename, encoding="UTF-8"), simplifyDataFrame=FALSE)
+} else {
+  user_default_inputs <- list()
+}
+
+default_input_template_filename <- file.path("./default_input.template.json")
+default_inputs <- fromJSON(file(default_input_template_filename, encoding="UTF-8"), simplifyDataFrame=FALSE)
+
+merge_lists <- function(default, ..., KEEP.FIRST.TYPE=TRUE) {
+  lists_to_merge <- list(...)
+  result <- default
+  for (list_to_merge in lists_to_merge) {
+    for (name in names(list_to_merge)) {
+      if (is.list(list_to_merge[[name]]) && (is.list(result[[name]]) || is.null(result[[name]]))) {
+        result[[name]] <- merge_lists(result[[name]], list_to_merge[[name]])
+      } else if (typeof(list_to_merge[[name]]) != typeof(result[[name]]) && !all(c(typeof(list_to_merge[[name]]), typeof(result[[name]])) %in% c("integer", "double"))) {
+        if (!KEEP.FIRST.TYPE) {
+          result[[name]] <- list_to_merge[[names]]
+        }
+      } else {
+        result[[name]][1:length(list_to_merge[[name]])] <- list_to_merge[[name]]
+        result[[name]] <- result[[name]][-(1+length(list_to_merge[[name]])):-(1+length(result[[name]]))]
+      }
+    }
+  }
+  result
+}
+default_inputs <- merge_lists(default_inputs, user_default_inputs)
+
+if (!identical(default_inputs, user_default_inputs)) {
+  tryCatch(
+    write(toJSON(default_inputs, pretty=TRUE, auto_unbox=TRUE), user_default_input_filename),
+    error=function(e) { print(e) }
+  )
+}
+
+# Saved Input Functions ------------------------------------------------------
+
+si <- function(id, default) {
+  # Retrieves saved input state from the previous session for a UI element
+  # with a given id. This function will most often be called in a 'ui(id)'
+  # definition when creating a UI input element.
+  # 
+  # This function deletes the saved value after it is accessed, so each tab
+  # should take care to persist the value through any regeneration of UI
+  # elements.
+  #
+  # Args:
+  #   id: the 'id' to look up in the saved_inputs list
+  #   default: the value to return if the 'id' isn't found
+
+  if(!is.null(saved_inputs) && !is.null(saved_inputs[[id]])) {
+    value <- saved_inputs[[id]]
+    saved_inputs[[id]] <<- NULL
+    value
+  } else {
+    default
+  }
+}
+
+si_read <- function(id) {
+  # Retrieves saved input state from the previous session for a UI element
+  # with a given id but does not consider it 'applied.'
+  saved_inputs[[id]]
+}
+
+si_clear <- function(id) {
+  # Clears the saved input state from the previous session for a UI element
+  # with a given id.
+  if(!is.null(saved_inputs[[id]])) {
+    saved_inputs[[id]] <<- NULL
+  }
+}
+
+# Load Tabs and Data ---------------------------------------------------------
+
+# Locate tab files
+tab_files <- list()
+tab_ids <- list()
+for (i in 1:length(tab_requests)) {
+  request <- tab_requests[i]
+  if (file.exists(file.path(launch_dir, request))) {
+    tab_files <- c(tab_files, file.path(launch_dir, request))
+    tab_ids <- c(tab_ids, sub("\\.R$", "", request))
+  } else if (file.exists(file.path('tabs', request))) {
+    tab_files <- c(tab_files, file.path('tabs', request))
+    tab_ids <- c(tab_ids, sub("\\.R$", "", request))
+  }
+}
+
+# Source tab files
+cat("Sourcing Tabs:\n")
+tab_environments <- mapply(function(file_name, id) {
+    env <- new.env()
+    if(!is.null(visualizer_config$tab_data)) {
+      env$tab_data <- visualizer_config$tab_data[[id]]
+    } else {
+      env$tab_data <- NULL
+    }
+    source(file_name, local = env)
+    # debugSource(file_name, local = env)
+    cat(paste0("  ", env$title, " (", file_name, ")\n"))
+    env
+  },
+  file_name=tab_files,
+  id=tab_ids,
+  SIMPLIFY = FALSE
+)
+
+# Read input dataset file
+cat("Reading raw data:\n")
+raw <- read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, stringsAsFactors=TRUE, encoding="UTF-8")
+if(!is.null(visualizer_config$augmented_data)) {
+  augmented_filename <- file.path(launch_dir,
+                                  visualizer_config$augmented_data)
+  augmented <- read.csv(augmented_filename, fill=T, stringsAsFactor=TRUE, encoding="UTF-8")
+  extra <- raw[!(raw$GUID %in% augmented$GUID),]
+  if(nrow(extra) > 0) {
+    cat(paste0("  Added ", nrow(extra), " points.\n"))
+  }
+  raw <- rbind(augmented, extra)
+}
+cat("  Done.\n")
+
+# Locate Artifacts
+cat("Locating Artifacts:\n")
+guid_folders <- NULL
+if(file.exists(file.path(launch_dir, 'metadata.json'))) {
+  config_folders <- GetConfigFolders(launch_dir)
+  cat(paste0("  Config Folders: ", length(config_folders), "\n"))
+  results_dir <- file.path(launch_dir,"..","..","results")
+  guid_folders <- FindGUIDFolders(results_dir, config_folders)
+  cat(paste0("  GUID Folders: ", length(guid_folders), "\n"))
+} else if(file.exists(file.path(launch_dir, 'exported_metadata.json')) ||
+  file.exists(file.path(launch_dir, 'artifacts'))) {
+  config_folders <- list(".")
+  cat(paste0("  Config Folders: ", length(config_folders), "\n"))
+  results_dir <- launch_dir
+  guid_folders <- FindGUIDFolders(launch_dir, config_folders)
+  cat(paste0("  GUID Folders: ", length(guid_folders), "\n"))
+} else {
+  cat("  No Artifacts Found.\n")
+}
+
+cat("Processing Files:\n")
+# Process PET Configuration File ('pet_config.json') -------------------------
+
+cat("  'pet_config.json'\n")
+pet <- NULL
+if (!is.null(visualizer_config[["pet"]])) {
+  pet <- visualizer_config$pet
+} else if(pet_config_present) {
+  pet <- BuildPet(pet_config_filename)
+}
+
+# Process Design Tree ('design_tree.json') -------------------------
+
+cat("  'design_tree.json'\n")
+if (design_tree_present) {
+  design_tree <- fromJSON(design_tree_filename, simplifyDataFrame = FALSE)
+  if (is.empty(design_tree)) {
+    design_tree <- NULL
+    design_tree_present <- FALSE
+  } else {
+    FILTER_WIDTH_IN_COLUMNS <- 3
+  }
+}
+
+# Process Variables ----------------------------------------------------------
+
+cat("Processing variables...\n")
+variables <- NULL
+if (!is.null(visualizer_config[["variables"]])) {
+  variables <- visualizer_config$variables
+} else {
+  variables <- BuildVariables(pet, names(raw))
+}
+
+cat("Initial Setup Complete.\n\n")
+
+# Server ---------------------------------------------------------------------
+
+server <- function(input, output, session) {
+# Server <- function(input, output, session) {
+  # Handles the processing of all UI interactions.
+  #
+  # Args:
+  #   input: the Shiny list of all the UI input elements.
+  #   output: the Shiny list of all the UI output elements.
+  #   session: a handle for the Shiny session.
+  
+  observe({
+    # Read input dataset file
+    raw <- raw_poll()
+    if(first_raw_poll) {
+      first_raw_poll <<- FALSE
+    } else {
+      cat("Re-reading raw data... ")
+      current <- isolate(data$raw$df)
+      extra <- raw[!(raw$GUID %in% current$GUID),]
+      if(nrow(extra) > 0) {
+        cat(paste("Adding", nrow(extra), "points.\n"))
+        data$raw$df <- rbind(current, extra)
+      } else {
+        cat("No new points added.\n")
+      }
+    }
+  })
+  
+  raw_poll <- reactivePoll(1000, session,
+    # This function returns the time that raw data file was last modified
+    checkFunc = function() {
+      if (file.exists(file.path(launch_dir, visualizer_config$raw_data)))
+        file.info(file.path(launch_dir, visualizer_config$raw_data))$mtime[1]
+      else
+        ""
+    },
+    # This function returns the content of log_file
+    valueFunc = function () {
+      read.csv(file.path(launch_dir, visualizer_config$raw_data), fill=T, encoding="UTF-8")
+    }
+  )
+  
+  # Data Pre-Processing --------------------------------------------------------
+
+  var_class <- reactive({
+    df_class <- sapply(data$raw$df, class)
+    if (any(names(df_class) %in% c("GUID"))) {
+      df_class <- df_class[-which(names(df_class) %in% c("GUID"))]
+    }
+    df_class
+  })
+  var_names <- reactive({names(var_class())})
+  var_facs <- reactive({
+    if (any(var_class() == "factor")) {
+      var_names()[var_class() == "factor"]
+    } else {
+      NULL
+    }
+  })
+  var_ints <- reactive({
+    if (any(var_class() == "integer")) {
+      var_names()[var_class() == "integer"]
+    } else {
+      NULL
+    }
+  })
+  var_nums <- reactive({
+    if (any(var_class() == "numeric")) {
+      var_names()[var_class() == "numeric"]
+    } else {
+      NULL
+    }
+  })
+  var_nums_and_ints <- reactive({
+    selected <- var_class() == "integer" | var_class() == "numeric"
+    if (any(selected)) {
+      var_names()[selected]
+    } else {
+      NULL
+    }
+  })
+  abs_max <- reactive({
+    if (is.null(var_nums_and_ints())) {
+      NULL
+    } else {
+      apply(data$raw$df[var_nums_and_ints()], 2, max, na.rm=TRUE)
+    }
+  })
+  abs_min <- reactive({
+    if (is.null(var_nums_and_ints())) {
+      NULL
+    } else {
+      apply(data$raw$df[var_nums_and_ints()], 2, min, na.rm=TRUE)
+    }
+  })
+  var_range_nums_and_ints <- reactive({
+    if (is.null(var_nums_and_ints()) ||
+        is.null(abs_min()) ||
+        is.null(abs_max())) {
+      NULL
+    } else {
+      tentative_vars <- var_nums_and_ints()[(abs_min() != abs_max()) &
+                                            (abs_min() != Inf)]
+      if (length(tentative_vars) == 0) {
+        NULL
+      } else {
+        tentative_vars
+      }
+    }
+  })
+  var_range_facs <- reactive({
+    if(is.null(var_facs())) {
+      NULL
+    } else {
+      tentative_vars <- var_facs()[apply(data$raw$df[var_facs()], 2,
+                                         function(var_fac) {
+                                           length(names(table(var_fac))) > 1
+                                         })]
+      if (length(tentative_vars) == 0) {
+        NULL
+      } else {
+        tentative_vars
+      }
+    }
+  })
+  var_range_facs_filters <- reactive({
+    # This is used by the Filters observe to populate the selects
+    # The 'CfgID' variable is removed if we have a design tree present
+    if(is.null(var_range_facs())) {
+      NULL
+    } else {
+      tentative_vars <- var_range_facs()
+      if(design_tree_present && "CfgID" %in% tentative_vars) {
+        tentative_vars <- tentative_vars[-which(tentative_vars %in% c("CfgID"))]
+      }
+      if (length(tentative_vars) == 0) {
+        NULL
+      } else {
+        tentative_vars
+      }
+    }
+  })
+  var_range <- reactive({c(var_range_facs(), var_range_nums_and_ints())})
+  var_range_nums_and_ints_list <- reactive({
+    if (is.null(var_range_nums_and_ints())) {
+      NULL
+    } else {
+      AddCategories(data$meta$variables[var_range_nums_and_ints()])
+    }
+  })
+  var_range_facs_list <- reactive({
+    if (is.null(var_range_facs())) {
+      NULL
+    } else {
+      AddCategories(data$meta$variables[var_range_facs()])
+    }
+  })
+  var_range_list <- reactive({
+    if (is.null(var_range())) {
+      NULL
+    } else {
+      AddCategories(data$meta$variables[var_range()])
+    }
+  })
+  var_constants <- reactive({
+    if(is.null(var_range())) {
+      var_names()
+    } else {
+      subset(var_names(), !(var_names() %in% var_range()))
+    }
+  })
+  
+  pre <- list(var_names=var_names,
+              var_class=var_class,
+              var_facs=var_facs,
+              var_ints=var_ints,
+              var_nums=var_nums,
+              var_nums_and_ints=var_nums_and_ints,
+              abs_min=abs_min,
+              abs_max=abs_max,
+              var_range_nums_and_ints=var_range_nums_and_ints,
+              var_range_facs=var_range_facs,
+              var_range_facs_filters=var_range_facs_filters,
+              var_range=var_range,
+              var_range_nums_and_ints_list=var_range_nums_and_ints_list,
+              var_range_facs_list=var_range_facs_list,
+              var_range_list=var_range_list,
+              var_constants=var_constants)
+  
+  # Design Configs for Filters -----------------------------------------------
+  
+  observe({
+    if(design_tree_present) {
+      if(is.empty(visualizer_config$config_tree)) {
+        config_tree <- SelectAllComponents(design_tree[[names(design_tree)[1]]])
+      } else {
+        config_tree <- visualizer_config$config_tree
+      }
+      session$sendCustomMessage(type = "setup_design_configurations", config_tree)
+    }
+  })
+  
+  # observe({print(paste("SDC:",paste(SelectedDesignConfigs(),collapse=",")))})
+
+  SelectedDesignConfigs <- reactive({
+    # print(input$filter_design_config_tree)
+    if(!is.null(input$filter_design_config_tree)) {
+      names <- names(design_tree)
+      passing <- sapply(names, function(name) {
+        filter_tree <- input$filter_design_config_tree
+        current_tree <- design_tree[[name]]
+        compare_node(current_tree, filter_tree)
+      })
+      if(any(passing)) {
+        names[passing]
+      } else {
+        NULL
+      }
+    } else {
+      if ("CfgID" %in% names(data$raw$df) && is.null(design_tree)) {
+        if(pet_config_present) {
+          pet$selected_configurations
+        } else {
+          unique(data$raw$df[['CfgID']])
+        }
+      } else {
+        NULL
+      }
+    }
+  })
+  
+  # Filters (Enumerations, Sliders) and Constants ----------------------------
+  
+  # Lets the UI know if a tab has requested the 'Filters' footer.  
+  footer_preferences <- lapply(tab_environments,
+                               function(tab_env) {tab_env$footer})
+  names(footer_preferences) <- lapply(tab_environments,
+                                      function(tab_env) {tab_env$title})
+  output$display_footer <- reactive({
+    req(input$master_tabset)
+    display <- (footer_preferences[[input$master_tabset]])
+  })
+  outputOptions(output, "display_footer", suspendWhenHidden=FALSE)
+  
+  # Special observe to cover 'footer_collapse'
+  observe({
+    if(!is.null(si_read("footer_collapse"))) {
+      open <- si("footer_collapse")
+      if(is.empty(open)) {
+        updateCollapse(session, "footer_collapse", close = "Filters")
+      } else {
+        updateCollapse(session, "footer_collapse", open = open)
+      }
+    }
+  })
+  
+  observe({
+    cat("Updating Filter UI:\n")
+    
+    update_select_filter <- function(name) {
+      id <- paste0("filter_div_",name)
+      filter_name <- paste0('filter_', name)
+      
+      items <- names(table(data$raw$df[[name]]))
+      for(i in 1:length(items)){
+        items[i] <- paste0(i, '. ', items[i])
+      }
+      
+      if (id %in% filter_divs)
+      {
+        updateSelectInput(session = session,
+                          inputId = filter_name,
+                          choices = items)
+        cat(paste0("Updated Select Filter: ", name, "\n"))
+      }
+      else
+      {
+        selection <- si(paste0('filter_', name), items)
+        
+        filter_divs <<- c(filter_divs, id)
+        insertUI(selector = "#filters_div", ui = 
+                   tags$div(
+                     column(FILTER_WIDTH_IN_COLUMNS,
+                            selectInput(inputId = paste0('filter_', name),
+                                        label = name,
+                                        multiple = TRUE,
+                                        selectize = FALSE,
+                                        choices = items,
+                                        selected = selection)
+                     ),
+                     id = id))
+        cat(paste0("Created Select Filter '", name, "'\n"))
+      }
+    }
+    lapply(data$pre$var_range_facs_filters(), update_select_filter)
+    
+    update_slider_filter <- function(name) {
+      id <- paste0("filter_div_",name)
+      filter_name <- paste0('filter_', name)
+      
+      # Determine the valid range
+      if(name %in% pre$var_nums()){
+        min <- as.numeric(pre$abs_min()[name])
+        max <- as.numeric(pre$abs_max()[name])
+        step <- signif(max((max-min)*0.01, abs(min)*0.001, abs(max)*0.001),
+                       digits = 4)
+        slider_min <- signif((min - step*10), digits = 4)
+        slider_max <- signif((max + step*10), digits = 4)
+      }
+      else{
+        slider_min <- as.numeric(pre$abs_min()[name])
+        slider_max <- as.numeric(pre$abs_max()[name])
+      }
+      
+      # Does the slider exist already?
+      if (id %in% filter_divs)
+      {
+        # Slider exists; just update the range.
+        updateSliderInput(session = session,
+                          inputId = filter_name,
+                          min = slider_min,
+                          max = slider_max)
+        cat(paste0("Updated Slider Filter: ", name, "\n"))
+      }
+      else
+      {
+        # Slider doesn't exist; let's create it.
+        selection <- si(filter_name, c(slider_min, slider_max))
+        filter_divs <<- c(filter_divs, id)
+        insertUI(selector = "#filters_div", ui = 
+                   tags$div(
+                     column(FILTER_WIDTH_IN_COLUMNS,
+                            # Hidden well panel for slider tooltip
+                            wellPanel(id = paste0("slider_tooltip_", name),
+                                      style = "position: absolute; z-index: 65; box-shadow: 10px 10px 15px grey; width: 20vw; left: 1vw; top: -275%; display: none;",
+                                      h4(data$meta$variables[[name]]$name_with_units),
+                                      textInput(paste0("tooltip_min_", name), "Min:"),
+                                      textInput(paste0("tooltip_max_", name), "Max:"),
+                                      actionButton(paste0("submit_", name), "Apply","success")
+                            ),
+                            # The slider itself
+                            sliderInput(inputId = filter_name,
+                                        label = AbbreviateLabel(name),
+                                        min = slider_min,
+                                        max = slider_max,
+                                        value = selection)),
+                     id = id))
+        cat(paste0("Created Slider Filter '", name, "'\n"))
+      }
+    }
+    lapply(data$pre$var_nums_and_ints(), update_slider_filter)
+  })
+  
+  # Slider abbreviation function based off slider_width
+  abbreviation_length <- ABBREVIATION_LENGTH
+  AbbreviateLabel <- function(name) {
+    if(!is.null(input$slider_width)){
+      abbreviation_length <<- input$slider_width/8
+    }
+    abbreviate(name, abbreviation_length)
+  }
+  
+  # Process slider pixel width when opening filters
+  observeEvent(input$footer_collapse, {
+    session$onFlushed(function() {
+      session$sendCustomMessage("update_widths", message = 1);
+    })
+  })
+  
+  # Custom action button for exact entry. This makes a green button
+  # and can also be accessed to produced different themed buttons
+  actionButton <- function(inputId, label, btn.style = "" , css.class = "") {
+    if ( btn.style %in% c("primary","info","success","warning","danger","inverse","link"))
+      btn.css.class <- paste("btn",btn.style,sep="-")
+    else btn.css.class = ""
+    tags$button(id=inputId, type="button", class=paste("btn action-button",btn.css.class,css.class,collapse=" "), label)
+  }
+  
+  openSliderToolTip <- function(current) {
+    # This function calls hide on all slider exact entry windows on a
+    # 'double click' and then calls 'show' on the opened one.
+    for(i in 1:length(pre$var_range_nums_and_ints())) {
+      hide(paste0("slider_tooltip_", pre$var_range_nums_and_ints()[i]))
+    }
+    shinyjs::show(paste0("slider_tooltip_", current))
+  }
+  
+  observe({
+    lapply(pre$var_range_nums_and_ints(), function(current) {
+      # This handles the processing of exact entry back into the slider.
+      # It reacts to either the submit button OR the enter key
+      input[[paste0("submit_", current)]]
+      input$last_key_pressed
+      
+      isolate({
+        slider_value = input[[paste0('filter_', current)]]
+        new_min = input[[paste0("tooltip_min_", current)]]
+        new_max = input[[paste0("tooltip_max_", current)]]
+        updateTextInput(session, paste0("tooltip_min_", current), value = "")
+        updateTextInput(session, paste0("tooltip_max_", current), value = "")
+        suppressWarnings({ #Suppress warnings from non-numeric inputs
+          if(!is.null(new_min) && new_min != "" && !is.na(as.numeric(new_min)))
+            slider_value = as.numeric(c(new_min, slider_value[2]))
+          if(!is.null(new_max) && new_max != "" && !is.na(as.numeric(new_max)))
+            slider_value = as.numeric(c(slider_value[1], new_max))
+        })
+        updateSliderInput(session, paste0('filter_', current), value = slider_value)
+        hide(paste0("slider_tooltip_", current))
+      })
+    })
+  })
+  
+  # This function adds a double click handler to each slider
+  observe({
+    lapply(pre$var_range_nums_and_ints(), function(current) {
+      onevent("dblclick", paste0("filter_", current), openSliderToolTip(current))
+      inlineCSS(list(.style = "overflow: hidden"))
+    })
+  })
+  
+  output$constants <- renderUI({
+    fluidRow(
+      lapply(pre$var_constants(), function(var_constant) {
+        column(2,
+          p(strong(paste0(var_constant,":")), unname(raw[1,var_constant]))
+        )
+      })
+    )
+  })
+  
+  output$constants_present <- reactive({
+    length(pre$var_constants()) > 0
+  })
+  
+  outputOptions(output, "constants_present", suspendWhenHidden=FALSE)
+  
+  observeEvent(input$reset_sliders, {
+    session$sendCustomMessage(type = "select_all_design_configurations", "")
+    for(column in 1:length(pre$var_names())){
+      name <- pre$var_names()[column]
+      switch(pre$var_class()[column],
+        "numeric" =
+        {
+          max <- as.numeric(unname(data$pre$abs_max()[pre$var_names()[column]]))
+          min <- as.numeric(unname(data$pre$abs_min()[pre$var_names()[column]]))
+          diff <- (max-min)
+          if (diff != 0) {
+            step <- max(diff*0.01, abs(min)*0.001, abs(max)*0.001)
+            updateSliderInput(session, paste0('filter_', name), value = c(signif(min-step*10, digits = 4), signif(max+step*10, digits = 4)))
+          }
+        },
+        "integer" =
+        {
+          max <- as.integer(unname(data$pre$abs_max()[pre$var_names()[column]]))
+          min <- as.integer(unname(data$pre$abs_min()[pre$var_names()[column]]))
+          if(min != max) {
+            updateSliderInput(session, paste0('filter_', name), value = c(min, max))
+          }
+        },
+        "factor"  = updateSelectInput(session, paste0('filter_', name), selected = names(table(data$raw$df[pre$var_names()[column]])))
+      )
+    }
+  })
+  
+  # Data processing ----------------------------------------------------------
+    
+  FilteredData <- reactive({
+    # This reactive holds the full dataset that has been filtered using the
+    # values of the sliders.
+    data_filtered <- data$raw$df
+    if(input$remove_missing) {
+      data_filtered <- data_filtered[complete.cases(data_filtered), ]
+    }
+    if(input$remove_outliers) {
+      #Filter out rows by standard deviation
+      for(column in 1:length(data$pre$var_range_nums_and_ints())) {
+        a <- sapply(data_filtered[data$pre$var_range_nums_and_ints()[column]],
+          function(x) {
+            m <- mean(x, na.rm = TRUE)
+            s <- sd(x, na.rm = TRUE)
+            x >= m - input$num_sd*s &
+            x <= m + input$num_sd*s
+          }
+        )
+        data_filtered <- subset(data_filtered, a)
+      }
+    }
+    if("CfgID" %in% names(data_filtered)) {
+      data_filtered <- subset(data_filtered, data_filtered$CfgID %in% SelectedDesignConfigs())
+    }
+    for(index in 1:length(pre$var_names())) {
+      name <- pre$var_names()[index]
+      input_name <- paste("filter_", name, sep="")
+      selection <- input[[input_name]]
+      if(length(selection) != 0) {
+        if(name %in% pre$var_nums_and_ints()) {
+          isolate({
+            above <- (data_filtered[[name]] >= selection[1])
+            below <- (data_filtered[[name]] <= selection[2])
+            in_range <- above & below
+          })
+        }
+        else if (name %in% pre$var_facs()) {
+            selection <- unlist(lapply(selection, function(factor){
+                                                    RemoveItemNumber(factor)
+                                                  }))
+            in_range <- (data_filtered[[name]] %in% selection)
+        }
+        
+        # Don't filter based on missing values.
+        in_range <- in_range | is.na(data_filtered[[name]])
+        
+        data_filtered <- subset(data_filtered, in_range)
+      }
+      # print(nrow(data_filtered))
+    }
+    # cat("Data Filtered.\n")
+    data_filtered
+  })
+  
+  observe({
+    output$filters_stats <- renderText(
+      paste0("Current Points: ",nrow(FilteredData()), " / ", nrow(data$raw$df),
+             "  ( ", round(100*nrow(FilteredData())/nrow(data$raw$df), digits = 2),
+             "% )"))
+  })
+  
+  Filters <- reactive({
+    # This reactive returns a list of all the filter values so a tab can use
+    # the information for filtering the raw dataset itself.
+    #
+    # Each of the variables will have a "type" that is simply the 
+    # pre$var_class() for that variable and either "selection" or "min" and
+    # "max", e.g.:
+    # > Filters()$Engine$type
+    #   "factor"
+    # > Filters()$Engine$selection
+    #   "V6" "V8"
+    # > Filters()$TopSpeed$type
+    #   "numeric"
+    # > Filters()$TopSpeed$min
+    #   130
+    # > Filters()$TopSpeed$max
+    #   210
+    
+    filters <- list()
+    for(index in 1:length(pre$var_names())) {
+      name <- pre$var_names()[index]
+      input_name <- paste("filter_", name, sep="")
+      selection <- input[[input_name]]
+      filters[[name]] <- list()
+      filters[[name]]$type <- pre$var_class()[[name]]
+      if(pre$var_class()[[name]] == "factor") {
+        filters[[name]]$selection <- unname(sapply(selection,
+                                                   RemoveItemNumber))
+      }
+      else {
+        filters[[name]]$min <- selection[1]
+        filters[[name]]$max <- selection[2]
+      }
+    }
+    filters
+  })
+  
+  getFilter <- function(name) {
+    # This funciton can be used by the tabs to get the selection value for a
+    # given variable filter. This method offers the same functionality as using
+    # the data$Filters() reactive.
+    # 
+    # Args:
+    #   name: The name of the variable to get. Don't include "filter_" in the
+    #         name; this will be appending in the function.
+    # 
+    # Returns:
+    #   A vector of the selected items if the variable class is "factor" and a
+    #   vector c(min, max) with the min and max value of the filter if it is
+    #   numeric.
+    input[[paste0("filter_", name)]]
+  }
+  
+  setFilter <- function(name, selection) {
+    # This funciton can be used by the tabs to get the selection value for a
+    # given variable filter. This method offers the same functionality as using
+    # the data$Filters() reactive.
+    # 
+    # Args:
+    #   name: The name of the variable to set. Don't include "filter_" in the
+    #         name.
+    #   selection: The value to set in the Filter. This should be a character
+    #              vector for variables of class "factor" and a vector
+    #              c(min, max) for variables of class "numeric."
+    # 
+    # Returns:
+    #   A the selection if the operation is successful, and NULL otherwise.
+    if (name %in% data$pre$var_range())
+    {
+      filter_name <- paste0("filter_", name)
+      if (name %in% data$pre$var_range_nums_and_ints()) {
+        updateSliderInput(session = session,
+                          inputId = filter_name,
+                          value = selection)
+      }
+      else
+      {
+        updateSelectInput(session,
+                          filter_name,
+                          value = selection)
+      }
+      selection
+    }
+    else
+    {
+      NULL
+    }
+  }
+  
+  ColoredData <- reactive({
+    data_colored <- FilteredData()
+    data_colored$color <- character(nrow(data_colored))
+    if(nrow(data_colored) > 0) {
+      data_colored$color <- "black"  #input$normColor
+      if (input$coloring_source != "None") {
+        if (input$coloring_source == "Live") {
+          type <- input$live_coloring_type
+        }
+        else {
+          type <- data$meta$colorings[[input$coloring_source]]$type
+        }
+        req(type)
+
+        current <- list()
+        current$name <- input$coloring_source
+        current$type <- type
+        
+        switch(type,
+          "Max/Min" = 
+          {
+            if (input$coloring_source == "Live") {
+              var <- input$live_coloring_variable_numeric
+              goal <- input$live_coloring_max_min
+            }
+            else {
+              scheme <- data$meta$colorings[[input$coloring_source]]
+              var <- scheme$var
+              goal <- scheme$goal
+            }
+            bins <- 30
+            req(var)
+            minimum <- min(FilteredData()[[var]])
+            maximum <- max(FilteredData()[[var]])
+            divisor <- (maximum - minimum) / bins
+            cols <- rainbow(bins, 1, 0.875, start = 0, end = 0.325)
+            if (goal == "Maximize") {
+              Bin <- function(value) {max(1, ceiling((value - minimum) / divisor))}
+            } else {
+              Bin <- function(value) {max(1, ceiling((maximum - value) / divisor))}
+            }
+            data_colored$color <- unlist(sapply(data_colored[[var]], function(value) {
+              if(is.na(value)) {
+                "grey"
+              } else {
+                cols[Bin(value)]
+              }
+            }))
+            
+            current$var <- var
+            current$goal <- goal
+            current$colors <- cols
+            current$max <- maximum
+            current$min <- minimum
+
+            isolate({
+              data$colorings$current <- current
+            })
+          },
+          "Discrete" = 
+          {
+            if (input$coloring_source == "Live") {
+              var <- input$live_color_variable_factor
+              palette_selection <- input$live_color_palette
+              if (palette_selection == "Rainbow") {
+                s_value <- input$live_color_rainbow_s
+                v_value <- input$live_color_rainbow_v
+              }
+              if (palette_selection == "Custom") {
+                custom_colors <- data$colorings$custom$colors
+                if (length(custom_colors) < 2) {
+                  custom_colors[1:2] <- c("#FF0000", "#0000FF")
+                }
+              }
+            }
+            else {
+              scheme <- data$meta$colorings[[input$coloring_source]]
+              var <- scheme$var
+              palette_selection <- scheme$palette
+              if (palette_selection == "Rainbow") {
+                s_value <- scheme$rainbow_s
+                v_value <- scheme$rainbow_v
+              }
+              if (palette_selection == "Custom") {
+                custom_colors <- scheme$custom_colors
+                if (length(custom_colors) < 2) {
+                  custom_colors[1:2] <- c("#FF0000", "#0000FF")
+                }
+              }
+            }
+
+            current$var <- var
+            variables_list <- names(table(droplevels(FilteredData()[[var]])))
+            keep_colored_variables_in_colored_list <- (
+              input$keep_coloring_while_filtering 
+              && current$name == data$colorings$current$name
+              && current$type == data$colorings$current$type
+              && current$var == data$colorings$current$var
+              && all(variables_list %in% isolate({ data$colorings$current$variables_list }))
+            )
+
+            if (keep_colored_variables_in_colored_list) {
+              variables_list <- data$colorings$current$variables_list
+            }
+
+            switch(palette_selection,
+                   "Rainbow"={cols <- rainbow(length(variables_list),
+                                              s_value,
+                                              v_value)},
+                   "Heat"={cols <- heat.colors(length(variables_list))},
+                   "Terrain"={cols <- terrain.colors(length(variables_list))},
+                   "Topo"={cols <- topo.colors(length(variables_list))},
+                   "Cm"={cols <- cm.colors(length(variables_list))},
+                   "Custom"={cols <- sapply(colorRampPalette(custom_colors)(length(variables_list)), function(color) { paste0(color, "FF") }, USE.NAMES=FALSE)})
+            
+            for(i in 1:length(variables_list)){
+              data_colored$color[(data_colored[[var]] == variables_list[i])] <- cols[i]
+            }
+            
+            current$colors <- cols
+            current$variables_list <- variables_list
+            current$palette_selection <- palette_selection
+            if (palette_selection == "Rainbow") {
+              current$s_value <- s_value
+              current$v_value <- v_value
+            }
+            if (palette_selection == "Custom") {
+              current$custom_colors <- custom_colors
+            }
+            
+            if (!keep_colored_variables_in_colored_list) {
+              isolate({
+                  data$colorings$current <- current
+              })
+            } else {
+              isolate({
+                data$colorings$current <- data$colorings$current
+                data$colorings$current$palette_selection <- current$palette_selection
+                data$colorings$current$colors <- current$colors
+                
+                if (palette_selection == "Rainbow") {
+                  data$colorings$current$s_value <- current$s_value
+                  data$colorings$current$v_value <- current$v_value
+                }
+                if (palette_selection == "Custom") {
+                  data$colorings$current$custom_colors <- current$custom_colors
+                }
+              })
+            }
+          }
+        )
+      }
+      else {
+        isolate({
+          data$colorings$current <- NULL
+        })
+      }
+    }
+    
+    # cat("Data Colored.\n")
+    # TODO(tthomas): Move adding units code out into the Explore.R tab.
+    # names(data_colored) <- lapply(names(data_colored), AddUnits)
+    data_colored
+  })
+  
+  # Coloring -----------------------------------------------------------------
+  
+  if(is.null(visualizer_config$coloring)) {
+    colorings <- list()
+  } else {
+    colorings <- visualizer_config$coloring
+  }
+  
+  output$coloring_table <- renderTable({
+    names <- unlist(lapply(data$meta$colorings,
+                           function(current) {current$name}))
+    descriptions <- unlist(lapply(data$meta$colorings, function(current) {
+      switch(current$type,
+        "Max/Min"={paste0(current$goal, " ", current$var)},
+        "Discrete"={paste0(current$var, " with ",
+                           current$palette, " palette.")}
+      )
+    }))
+    table <- data.frame(Names=names, Descriptions=descriptions)
+  })
+  
+  overwrite <- FALSE
+  observeEvent(input$overwrite_live_coloring_add_classification, {
+    req(input$overwrite_live_coloring_add_classification)
+    overwrite <<- TRUE
+  })
+  observeEvent(c(input$live_coloring_add_classification, input$overwrite_live_coloring_add_classification), {
+    isolate({
+      req(!is.null(input$live_coloring_add_classification))
+      req(is.null(input$overwrite_live_coloring_add_classification) || input$overwrite_live_coloring_add_classification)
+      if (input$live_coloring_add_classification) {
+        name <- input$live_coloring_name
+        if ((!(name %in% names(data$meta$colorings)) || overwrite) && !(name %in% c("", "current"))) {
+          removeModal()
+          switch(input$live_coloring_type,
+            "Max/Min"={
+              data$meta$colorings[[name]] <- list()
+              data$meta$colorings[[name]]$name <- name
+              data$meta$colorings[[name]]$type <- "Max/Min"
+              data$meta$colorings[[name]]$var <- input$live_coloring_variable_numeric
+              data$meta$colorings[[name]]$goal <- input$live_coloring_max_min
+              data$meta$colorings[[name]]$slider <- input$col_slider
+            },
+            "Discrete"={
+              data$meta$colorings[[name]] <- list()
+              data$meta$colorings[[name]]$name <- name
+              data$meta$colorings[[name]]$type <- "Discrete"
+              data$meta$colorings[[name]]$var <- input$live_color_variable_factor
+              data$meta$colorings[[name]]$palette <- input$live_color_palette
+              data$meta$colorings[[name]]$rainbow_s <- input$live_color_rainbow_s
+              data$meta$colorings[[name]]$rainbow_v <- input$live_color_rainbow_v
+              data$meta$colorings[[name]]$custom_colors <- data$colorings$custom$colors
+            }
+          )
+          updateTextInput(session, "live_coloring_name", value = "")
+        } else if (name %in% names(data$meta$colorings)) {
+          # print("create modal")
+          showModal(modalDialog(
+            title = "Overwrite Coloring Scheme",
+            paste0("Do you wish to overwrite the coloring scheme: ", name),
+            footer = tagList(
+              modalButton("No"),
+              actionButton("overwrite_live_coloring_add_classification", "Yes")
+            )
+          ))
+        }
+        # print("Set overwrite to false")
+        overwrite <<- FALSE
+      }
+    })
+  })
+
+  observeEvent(input$remove_coloring_classification, {
+    req(input$remove_coloring_classification)
+    req(input$live_coloring_name)
+
+    if (input$live_coloring_name %in% names(data$meta$colorings)) {
+      updateSelectInput(session, "coloring_source", selected="None")
+      data$meta$colorings[[input$live_coloring_name]] <- NULL
+    }
+  })
+
+  convertHTMLBackgroundRGBColorToHex <- function(color) {
+    isrgb <- grepl("^rgb\\(.*\\)$", color, perl=TRUE)
+    if (isrgb) {
+      color <- gsub("(^rgb\\(|\\)$|\\s)", "", color, perl=TRUE)
+      color <- unlist(strsplit(color, ","))
+      color <- paste0(as.hexmode(as.integer(color)))
+      color <- paste0("#", paste0(sapply(color, function(col) { if (nchar(col) == 2) { col } else { paste0("0", col) } }, USE.NAMES=FALSE), collapse=""))
+    }
+    color
+  }
+
+  determineTextColorFromBackgroundColor <- function(color) {
+    rgbc <- col2rgb(color)
+    luminance <- ((0.299 * rgbc[1]) + (0.587 * rgbc[2]) + (0.114*rgbc[3])) / 255
+    if (luminance > 0.5) {
+      "#000000"
+    } 
+    else {
+      "#FFFFFF"
+    }
+  }
+
+  output$live_color_custom_colorings <- renderUI({
+    if (!"selected" %in% names(data$colorings$custom)) { 
+      data$colorings$custom$selected <- 1
+    }
+    if (!"colors" %in% names(data$colorings$custom) || length(data$colorings$custom$colors) < 2) {
+      default_colors <- default_inputs$Footer$Coloring$`Custom Colors`
+      data$colorings$custom$colors[1:length(default_colors)] <- default_colors
+    }
+
+    raw_html <- tags$style(paste0(
+      ".list-group-item:first-child { border-radius: 0em; }",
+      ".list-group-item:last-child { border-radius: 0em; }",
+      ".list-group-item, button.list-group-item { width: 2em; height: 2em; border-radius: 0em; text-align: center; line-height: 2em; font-size: 1.5em; font-weight: bolder; padding: 0em; margin-bottom: 0em; }",
+      ".list-group-item.active { position: relative; border-width: 4px; line-height: calc(2em - 5px); }",
+      ".list-group-item.active::before { position: absolute; content: ' '; top: -1px; left: -1px; right: -1px; bottom: -1px; border: 1px solid white }"
+    ))
+    raw_html <- paste0(
+      raw_html,
+      tags$button(HTML("&#43;"), title="Insert Before Seclected", class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_add', (new Date()).getTime()); this.blur()"),
+      tags$button(HTML("&#128465;"), title="Remove Selected", class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_trash', (new Date()).getTime()); this.blur()")
+    )
+    for (index in 1:length(data$colorings$custom$colors)) {
+      classlist <- paste0("list-group-item", if(data$colorings$custom$selected == index) { " active" } else { "" })
+      style <- paste0(
+        "background-color: ", data$colorings$custom$colors[index], 
+        "; color: ", determineTextColorFromBackgroundColor(data$colorings$custom$colors[index])
+      )
+      onclick <- "Shiny.onInputChange('live_color_custom_colorings_clicked', {id: parseInt(this.innerHTML), color: this.style.backgroundColor});"
+      raw_html <- paste0(
+        raw_html,
+        tags$li(paste0(index),class=classlist, style=style, onclick=onclick)
+      )
+    }
+
+    raw_html <- paste0(
+      raw_html,
+      tags$button(HTML("&#43;"), title="Insert at End", class="list-group-item", style="display: inline-block;", onclick="Shiny.onInputChange('live_color_custom_colorings_add_end', (new Date()).getTime()); this.blur()")
+    )
+
+    updateColourInput(session=session, inputId="live_color_custom_color_picker", value=data$colorings$custom$colors[data$colorings$custom$selected])
+    HTML(raw_html)
+  })
+
+  observeEvent(input$live_color_custom_colorings_clicked, {
+    updateColourInput(session=session, inputId="live_color_custom_color_picker", value=convertHTMLBackgroundRGBColorToHex(input$live_color_custom_colorings_clicked$color))
+    isolate({
+      data$colorings$custom$selected <- input$live_color_custom_colorings_clicked$id
+      data$colorings$custom$colors[input$live_color_custom_colorings_clicked$id] <- convertHTMLBackgroundRGBColorToHex(input$live_color_custom_colorings_clicked$color)
+    })
+  })
+
+  observeEvent(input$live_color_custom_color_picker, {
+    isolate({
+      data$colorings$custom$colors[data$colorings$custom$selected] <- input$live_color_custom_color_picker
+    })
+  })
+
+  observeEvent(input$live_color_custom_colorings_add, {
+    data$colorings$custom$colors <- c(
+      data$colorings$custom$colors[0:(data$colorings$custom$selected-1)], data$colorings$custom$colors[data$colorings$custom$selected],
+      data$colorings$custom$colors[data$colorings$custom$selected:length(data$colorings$custom$colors)]
+    )
+  })
+
+  observeEvent(input$live_color_custom_colorings_add_end, {
+    data$colorings$custom$colors[length(data$colorings$custom$colors)+1] <- data$colorings$custom$colors[length(data$colorings$custom$colors)]
+  })
+
+  observeEvent(input$live_color_custom_colorings_trash, {
+    if (length(data$colorings$custom$colors) != 2) {
+      data$colorings$custom$colors <- data$colorings$custom$colors[-data$colorings$custom$selected]
+      if (data$colorings$custom$selected > length(data$colorings$custom$colors)) { 
+        data$colorings$custom$selected <- length(data$colorings$custom$colors) 
+      }
+    }
+  })
+  
+  output$coloring_legend <- renderUI({
+    req(data$colorings$current$type)
+    req(data$colorings$current$var)
+    req(data$raw$df)
+    truncDigits <- function(number) {
+      substr(paste0(number), 0, 10)
+    }
+
+    switch(data$colorings$current$type,
+      "Discrete"={
+        all_variables_list <- names(table(data$raw$df[data$colorings$current$var]))
+        visible_variables_list <- names(table(droplevels(FilteredData()[[data$colorings$current$var]])))
+
+        shinyjs::show("keep_coloring_while_filtering")
+        raw_label <- "<label style=\"display: block;\">Visible Values</label>visible-values"
+        if (length(all_variables_list) != length(visible_variables_list)) {
+          raw_label <- paste0(raw_label, "<label style=\"display: block;\">Filtered Out Variabels</label>filtered-out")
+        }
+
+        current_color_index <- 1
+        for(i in 1:length(all_variables_list)){
+          variable <- all_variables_list[i]
+          visible <- variable %in% visible_variables_list
+          add_color <- variable %in% data$colorings$current$variables_list
+          replace_string <- if (visible) { "visible-values" } else { "filtered-out" }
+          replace_value <- paste("<label style=\"display: block; color: ",
+                              sub("FF$", "", if (add_color) { data$colorings$current$colors[current_color_index] } else { "black" }, perl=TRUE),
+                              "\">", "&#9632", " ",
+                              variable, '</label>', replace_string)
+          current_color_index <- if (add_color) { current_color_index + 1 } else { current_color_index }
+          raw_label <- sub(replace_string, replace_value, raw_label, perl=TRUE)
+        }
+
+        raw_label <- gsub("(visible-values|filtered-out)", "", raw_label, perl=TRUE)
+      },
+      "Max/Min"={
+        shinyjs::hide("keep_coloring_while_filtering")
+        raw_label <- ""
+        switch(data$colorings$current$goal, 
+          "Maximize"={
+            raw_label <- paste0(
+              raw_label, 
+              "<label>", truncDigits(data$colorings$current$min), "</label>",
+              "replace-with-gradient",
+              "<label>", truncDigits(data$colorings$current$max), "</label>"
+            )
+          },
+          "Minimize"={
+            raw_label <- paste0(
+              raw_label, 
+              "<label>", truncDigits(data$colorings$current$max), "</label>",
+              "replace-with-gradient",
+              "<label>", truncDigits(data$colorings$current$min), "</label>"
+            )
+          }
+        )
+
+        raw_label <- sub(
+          "replace-with-gradient",
+          paste0(
+            "&nbsp;</div><div style=\"height: 10em; width: 5.5em; background-image: linear-gradient(to bottom, ",
+            gsub("[\\\"\\[\\]]", "", toJSON(data$colorings$current$colors), perl=TRUE),
+            ");\"></div>"
+          ),
+          raw_label
+        )
+      }
+    )
+    HTML(raw_label)
+  })
+  
+  observe({
+    isolate({
+      selected <- input$coloring_source
+    })
+    new_choices <- c("None", "Live", names(data$meta$colorings))
+    if (!is.null(si_read("coloring_source")) &&
+        si_read("coloring_source") %in% new_choices) {
+      selected <- si("coloring_source", NULL)
+    }
+    if (!(selected %in% new_choices)) {
+      selected <- "None"
+    }
+    updateSelectInput(session,
+                      "coloring_source",
+                      choices = new_choices,
+                      selected = selected)
+  })
+  
+  observe({
+    selected <- isolate(input$live_color_variable_factor)
+    if(is.null(selected) || selected == "") {
+      selected <- data$pre$var_range_facs()[1]
+    }
+    saved <- si_read("live_color_variable_factor")
+    if (is.empty(saved)) {
+      si("live_color_variable_factor", NULL)
+    } else if (saved %in% c(data$pre$var_range_facs(), "")) {
+      selected <- si("live_color_variable_factor", NULL)
+    }
+    updateSelectInput(session, "live_color_variable_factor",
+                      choices = data$pre$var_range_facs_list(),
+                      selected = selected)
+  })
+  
+  observe({
+    selected <- isolate(input$live_coloring_variable_numeric)
+    if(is.null(selected) || selected == "") {
+      selected <- data$pre$var_range_nums_and_ints()[1]
+    }
+    saved <- si_read("live_coloring_variable_numeric")
+    if (is.empty(saved)) {
+      si("live_coloring_variable_numeric", NULL)
+    } else if (saved %in% c(data$pre$var_range_nums_and_ints(), "")) {
+      selected <- si("live_coloring_variable_numeric", NULL)
+    }
+    updateSelectInput(session, "live_coloring_variable_numeric",
+                      choices = data$pre$var_range_nums_and_ints_list(),
+                      selected = selected)
+  })
+  
+  # Sets ---------------------------------------------------------------------
+  
+  # Blank or saved data
+  if(is.null(visualizer_config$sets)) {
+    sets <- list()
+  } else {
+    sets <- visualizer_config$sets
+  }
+  
+  # Classifications table
+  output$no_classifications <- renderText(NoClassifications())
+  NoClassifications <- reactive({
+    if (!any(sapply(data$meta$variables,
+                    function(var) var$type == "Classification"))) {
+      "No Classifications Available."
+    }
+  })
+  
+  output$classification_table_output <- renderTable(ClassificationsTable())
+  
+  ClassificationsTable <- reactive({
+    new_table <- do.call(rbind, classifications())
+    if (!is.null(new_table)) {
+      new_table <- cbind(name=names(classifications()), new_table)
+    }
+  })
+  
+  classifications <- reactive({
+    data$meta$variables[sapply(data$meta$variables,
+                        function(x) x$type == "Classification")]
+  })
+  
+  # Final Processing ---------------------------------------------------------
+  
+  # Build the 'data' list that is shared between all tabs.
+  data <- list()
+  data$raw <- reactiveValues(df = raw)
+  data$Filtered <- FilteredData
+  data$Colored <- ColoredData
+  data$Filters <- Filters
+  
+  # Build the 'meta' list.
+  data$colorings <- reactiveValues()
+  data$meta <- reactiveValues(variables=variables,
+                              colorings=colorings,
+                              pet=pet,
+                              sets=sets)
+  data$pre <- pre
+  
+  # Call each tab's server() function ----------------------------------------
+  
+  mapply(function(tab_env, id) {
+      # do.call(tab_env$server,
+      #         list(input, output, session, data))
+      callModule(tab_env$server, paste(id), data)
+    },
+    tab_env=tab_environments,
+    id=tab_ids,
+    SIMPLIFY = FALSE
+  )
+  
+  # Session Save/Restore -----------------------------------------------------
+
+  # The save/restore functionality relies upon three main mechanisms: 
+  #  1. It saves the values of all the inputs to the visualizer config file
+  #     on close by supplying the necessary callback function to
+  #     session$onSessionEnded().
+  #  2. It provides a function, si(id, default) to the tabs that allows
+  #     them to check for a saved value for a input when creating inputs
+  #     in their 'ui'.
+  #  3. Lastly, there are a number of inputs that can't be restored using the
+  #     standard si() function. These special inputs are restored using 
+  #     observe(), isolate(), si_read(), and si() functions and can be found
+  #     throughout the rest of the body of the 'app.R' file.
+  
+  # Dispose of this server when the UI is closed
+  session$onSessionEnded(function() {
+
+    # Save the updated raw data
+    if(is.null(visualizer_config$augmented_data)) {
+      visualizer_config$augmented_data <- sub(".json", "_data.csv",
+                                              basename(config_filename))
+    }
+    write.csv(isolate(data$raw$df),
+              file=file.path(launch_dir, visualizer_config$augmented_data),
+              row.names = FALSE,
+              quote = FALSE,
+              fileEncoding = "UTF-8")
+
+    # Prepare metadata for saving to visualizer config file
+    meta <- isolate(reactiveValuesToList(data$meta))
+    visualizer_config$variables <- meta$variables
+    meta$colorings$current <- NULL
+    visualizer_config$colorings <- meta$colorings
+    # visualizer_config$pet <- meta$pet
+    visualizer_config$sets <- meta$sets
+    # visualizer_config$comments <- meta$comments
+    visualizer_config$config_tree <- isolate(input$filter_design_config_tree)
+
+    # Prepare inputs for saving to visualizer config file
+    current_inputs <- isolate(reactiveValuesToList(input))
+    current_inputs[["window_width"]] <- NULL
+    current_inputs[unlist(lapply(names(current_inputs), function (name) {
+      "shinyActionButtonValue" %in% class(current_inputs[[name]]) ||
+      # grepl("click", name) ||
+      grepl("^tooltip_", name)
+    }))] <- NULL
+    combined_inputs <- c(saved_inputs,
+                         current_inputs[setdiff(names(current_inputs),
+                                                names(saved_inputs))])
+    combined_inputs <- combined_inputs[order(names(combined_inputs))]
+    visualizer_config$inputs <- combined_inputs
+    
+    # Retrive tab data to save
+    tab_data <- lapply(tab_environments, function(tab_env) {
+      if(!is.null(tab_env$TabData)) {
+        tab_env$TabData()
+      }
+    })
+    names(tab_data) <- tab_ids
+    visualizer_config$tab_data <- tab_data
+
+    # Save visualizer config file
+    if(SAVE_DIG_INPUT_CSV || dig_input_csv == "") {
+      config_file_connection <- file(config_filename, encoding="UTF-8")
+      write(toJSON(visualizer_config, pretty = TRUE, auto_unbox = TRUE),
+            file=config_file_connection)
+      close(config_file_connection)
+      cat("Session saved.\n")
+    }
+
+    # Clear environment variables (necessary only for development)
+    Sys.setenv(DIG_INPUT_CSV="")
+    Sys.setenv(DIG_DATASET_CONFIG="")
+    stopApp()
+  })
+
+  # testing hook
+  observe({
+    session$sendCustomMessage("server-test-progress", input$test_progress)
+  })
+}
+
+# UI -------------------------------------------------------------------------
+
+# Setup UI with requested tabs.
+base_tabs <- NULL
+
+added_tabs <- mapply(function(tab_env, id) {
+    tabPanel(tab_env$title, tab_env$ui(paste(id)))
+  },
+  tab_env=tab_environments,
+  id=tab_ids,
+  SIMPLIFY = FALSE
+)
+
+tabset_arguments <- c(unname(base_tabs),
+                      unname(added_tabs),
+                      id = "master_tabset",
+                      selected = si("master_tabset", NULL))
+
+# Defines the UI of the Visualizer.
+ui <- fluidPage(
+  useShinyjs(),
+  tags$script(src = "main.js"),
+  
+  tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "DesignConfig.css")),
+  tags$script(src = "d3.v3.min.js"),
+  tags$script(src = "design_config_selector.js"),
+  
+  titlePanel(
+    title=div(
+              div("Visualizer"), 
+              div(a(href="https://www.metamorphsoftware.com/", target="_blank", img(src="metamorph_logo.png", height="64px", width="210px", align="right", style="padding: 10px")))
+          ),
+	  windowTitle="Visualizer"
+  ),
+  
+  # Generates the master tabset from the user-defined tabs provided.
+  do.call(tabsetPanel, tabset_arguments),
+  
+  # Optional Footer.
+  conditionalPanel("output.display_footer",
+    hr(),
+    bsCollapse(id = "footer_collapse", open = "Filters",  # COMMENT(tthomas): Filters need to open to initialize properly, observe() in server covers saved input.
+      bsCollapsePanel("Filters", 
+        # tags$div(title = "Activate to show filters for all dataset variables.",
+        #          checkboxInput("viewAllFilters", "View All Filters", value = TRUE)),
+        tags$div(title = "Return visible sliders to default state.",
+                 style="display: inline-block", 
+                 actionButton("reset_sliders", "Reset Visible Filters")),
+        tags$div(style="display: inline-block; padding: 7px 30px 7px 30px", textOutput("filters_stats")),
+        hr(),
+        
+        if(design_tree_present) {
+          fluidRow(
+            column(3, tags$label("Design Configuration Tree"), tags$div(id="design_configurations")),
+            column(9, tags$div(id="filters_div"))
+          )
+        } else {
+          fluidRow(
+            column(12, tags$div(id="filters_div"))
+          )
+        },
+        conditionalPanel("output.constants_present",
+          h3("Constants:"),
+          uiOutput("constants")
+        ),
+        style = "default"
+      ),
+      bsCollapsePanel("Coloring",
+        column(3,
+          h4("Coloring Source"),
+          selectInput("coloring_source", "Source", choices = c("None", "Live"), selected={
+            print(default_inputs$Footer$Coloring$Source)
+            default_inputs$Footer$Coloring$Source
+          }),  #, selected = si("coloring_source", "None")),
+          checkboxInput("keep_coloring_while_filtering", label="Keep Coloring While Filtering"),
+          htmlOutput("coloring_legend")
+        ),
+        column(3,
+          h4("Live"),
+          selectInput("live_coloring_type", "Type:", choices = c("Max/Min", "Discrete"), selected = si("live_coloring_type", default_inputs$Footer$Coloring$Type)),  #, "Highlighted", "Ranked"), selected = "None")
+          conditionalPanel(
+            condition = "input.live_coloring_type == 'Max/Min'",
+            selectInput("live_coloring_variable_numeric", "Colored Variable:", c()),
+            radioButtons(inputId = "live_coloring_max_min",
+                         label = NULL,
+                         choices = c("Maximize" = "Maximize", "Minimize" = "Minimize"),
+                         selected = si("live_coloring_max_min", default_inputs$Footer$Coloring$`Max/Min Mode`))
+          ),
+          conditionalPanel(
+            condition = "input.live_coloring_type == 'Discrete'",
+            selectInput("live_color_variable_factor",
+                        "Colored Variable:",
+                        c()),
+            selectInput("live_color_palette",
+                        "Color Palette:",
+                        c("Rainbow", "Heat", "Terrain", "Topo", "Cm", "Custom"),
+                        si("live_color_palette", default_inputs$Footer$Coloring$`Color Palette`)),
+            conditionalPanel(
+              condition = "input.live_color_palette == 'Rainbow'",
+              sliderInput("live_color_rainbow_s", "Saturation:",
+                          min=0, max=1,
+                          value=si("live_color_rainbow_s", default_inputs$Footer$Coloring$Saturation),
+                          step=0.025),
+              sliderInput("live_color_rainbow_v", "Value/Brightness:",
+                          min=0, max=1,
+                          value=si("live_color_rainbow_v", default_inputs$Footer$Coloring$`Value/Brightness`),
+                          step=0.025)
+            ),
+            conditionalPanel(
+              condition = "input.live_color_palette == 'Custom'",
+              htmlOutput("live_color_custom_colorings", container=tags$ul, label="Color Gradient Input", class="list-group list-inline form-group shiny-input-container", style="margin-left: 0em;"),
+              colourInput("live_color_custom_color_picker", label=NULL, showColour="background") # set palette="limited" for a simpler color picker. #set allowedCols=c("blue", "#FF0000", ...) for allowing only specific colors. To allow all named colors set allowedCols=colors()
+            )
+          )
+        ),
+        column(6,
+          h4("Saved"),
+          textInput("live_coloring_name", "Name", si("live_coloring_name", "")),
+          actionButton("live_coloring_add_classification", "Add Current 'Live' Coloring"),
+          actionButton("remove_coloring_classification", "Remove Specified Coloring Scheme"),
+          br(), tableOutput("coloring_table")
+        ),
+        style = "default"
+      ),
+      bsCollapsePanel("Classifications",
+        fluidRow(
+          column(12,
+            textOutput('no_classifications'),
+            tableOutput('classification_table_output')
+          )
+        ),
+        style = "default"
+      ),
+      bsCollapsePanel("Configuration",
+        fluidRow(
+          column(3,
+            h4("Data Processing"),
+            checkboxInput("remove_missing", "Remove Missing",
+                          si("remove_missing", default_inputs$Footer$Configuration$`Remove Missing`)),
+            checkboxInput("remove_outliers", "Remove Outlier",
+                          si("remove_outliers", default_inputs$Footer$Configuration$`Remove Outlier`)),
+            sliderInput("num_sd", HTML("&sigma;:"), min = 1, max = 11, step = 0.1,
+                        value = si("num_sd", default_inputs$Footer$Configuration$sigma))
+          ),
+          column(3,
+            h4("About"),
+            p(strong("Version:"), "v2.5.0"),
+            p(strong("Date:"), "7/23/2020"),
+            p(strong("Developer:"), "Metamorph Inc."),
+			p(strong("Website:"), "https://www.metamorphsoftware.com/"),
+            p(strong("Support:"), "jcoombe@metamorphsoftware.com")
+          )
+        ),
+        style = "default"
+      )
+    )
+  )
+)
+
+# Start the Shiny app.
+# shinyApp(ui = ui, server = Server)
