@@ -1557,10 +1557,10 @@ ui <- fluidPage(
   
   titlePanel(
     title=div(
-              div("Visualizer"), 
-              div(a(href="https://www.metamorphsoftware.com/", target="_blank", img(src="metamorph_logo.png", height="64px", width="210px", align="right", style="padding: 10px")))
+              div("OpenMETA Visualizer",
+              a(href="https://www.metamorphsoftware.com/", target="_blank", img(src="metamorph_logo.png", height="64px", width="236px", align="right", style="margin: 5px")))
           ),
-	  windowTitle="Visualizer"
+	  windowTitle="OpenMETA Visualizer"
   ),
   
   # Generates the master tabset from the user-defined tabs provided.
