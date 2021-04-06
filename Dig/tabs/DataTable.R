@@ -565,9 +565,10 @@ server <- function(input, output, session, data) {
       name <- input$datatable_select_set
       if (!(name %in% c(""))) {
         rows_selected <- input$dataTable_rows_selected
-        guids_selected <- as.vector(t(data$Filtered()[rows_selected,2]))
+        guids_selected <- as.vector(t(data$Filtered()[rows_selected,"GUID"]))
         guids_selected_duplicates_removed <- guids_selected[guids_selected %notin% data$meta$sets[[name]]]
         data$meta$sets[[name]] <- c(data$meta$sets[[name]], guids_selected_duplicates_removed)
+        showNotification(paste0("Point(s) added to set: ", name))
       }
     })
   })
@@ -577,8 +578,9 @@ server <- function(input, output, session, data) {
       name <- input$datatable_select_set
       if (!(name %in% c(""))) {
         rows_selected <- input$dataTable_rows_selected
-        guids_selected <- as.vector(t(data$Filtered()[rows_selected,2]))
+        guids_selected <- as.vector(t(data$Filtered()[rows_selected,"GUID"]))
         data$meta$sets[[name]] <- data$meta$sets[[name]][data$meta$sets[[name]] %notin% guids_selected]
+        showNotification(paste0("Point(s) removed from set: ", name))
       }
     })
   })
