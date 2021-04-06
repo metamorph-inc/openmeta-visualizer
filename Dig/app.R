@@ -1335,6 +1335,7 @@ Server <- function(input, output, session) {
       selected <- input$choose_set_to_display
     })
     new_choices <- names(data$meta$sets)
+    if (!(selected %in% new_choices)) { selected <- "Favorites" }
     updateSelectInput(session,
                       "choose_set_to_display",
                       choices = new_choices,
@@ -1351,6 +1352,11 @@ Server <- function(input, output, session) {
         } else {
           data$meta$sets[[name]] <- vector()
         }
+
+        updateTextInput(session, "create_set_new_name", value="")
+        showNotification(paste0("New Set Create: ", name), duration=10, type="default")
+      } else {
+        showNotification("Set Name Already Exists", duration=10, type="warning")
       }
     })
   })
@@ -1358,8 +1364,16 @@ Server <- function(input, output, session) {
   observeEvent(input$delete_set, {
     isolate({
       selected_set_name <- input$choose_set_to_display
-      if (!(selected_set_name %in% c("", "Favorites"))) {  # Don't let user delete Favorites set
-        data$meta$sets <- data$meta$sets[names(data$meta$sets) != selected_set_name]
+
+      if(selected_set_name %in% names(data$meta$sets)) {
+        if (selected_set_name != "Favorites") {  # Don't let user delete Favorites set
+          data$meta$sets <- data$meta$sets[names(data$meta$sets) != selected_set_name]
+          showNotification(paste0("Deleted Set: ", selected_set_name), duration=10, type="default")
+        } else {
+          showNotification("Cannot Delete Set: Favorites", duration=10, type="warning")
+        }
+      } else {
+        showNotification(paste0("Cannot Delete Set (Set Does Not Exist): ", selected_set_name), duration=10, type="warning")
       }
     })
   })
