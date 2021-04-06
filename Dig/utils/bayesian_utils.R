@@ -16,6 +16,7 @@
 #'   resampled distribution). 'resampledData': a data frame containing the
 #'   actual resampled data.
 resampleData = function(data, dataDirection, distributionTypes, distributionParams) {
+  # print("In resampleData()")
   numberOfVariables = ncol(data)
   
   # Compute weights of samples of input variables
@@ -38,7 +39,7 @@ resampleData = function(data, dataDirection, distributionTypes, distributionPara
   
   # Get resampled data
   resampleIndices = genDist(weight, numberOfSamples)
-  data_new = data[resampleIndices, ]
+  data_new = data[resampleIndices, drop=FALSE, ]
   
   distList = list()
   
@@ -79,6 +80,7 @@ resampleData = function(data, dataDirection, distributionTypes, distributionPara
   outputList$dist = distList
   outputList$resampledData = data_new
   
+  # print("Done in resampleData")
   return(outputList)
 }
 
