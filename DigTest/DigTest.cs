@@ -22,7 +22,6 @@ namespace DigTest
 
         static void Main(string[] args)
         {
-
             int ret = Xunit.ConsoleClient.Program.Main(new string[] {
                 System.Reflection.Assembly.GetAssembly(typeof(DigTest)).CodeBase.Substring("file:///".Length),
                 //"/noshadow",
@@ -360,9 +359,8 @@ namespace DigTest
 
             //Test Single Point Details
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Point Details");
-            ShinyUtilities.ShinyWait(driver);
-            Assert.Equal(new ShinySelectInput(driver, "Explore-details_guid").GetCurrentSelection(), "51f002f8-7a1e-4ad4-a908-e9d3e33bac62");
-            var expected_details = "                                               \r\nCfgID                                \"32-20\"   \r\nIN_E11                               \"29818.92\"\r\nIN_E22                               \"39034.45\"\r\nIN_ElemCount                         \"39\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"80.96063\"\r\nIN_Tip_AvgCapMaterialThickness (mm)  \"22.50856\"\r\nOUT_Blade_Cost_Total (USD)           \"148154.8\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2526.65\" ";
+            Assert.Equal(new ShinySelectInput(driver, "Explore-details_guid").GetCurrentSelection(), "39a915ac-7c32-469f-a5e5-05bb21e83297");
+            var expected_details = "                                               \r\nCfgID                                \"32-16\"   \r\nIN_E11                               \"29825.53\"\r\nIN_E22                               \"22207.16\"\r\nIN_ElemCount                         \"48\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"80.2254\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"20.98778\"\r\nOUT_Blade_Cost_Total (USD)           \"146684.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2506.835\"";
             Assert.Equal(expected_details, ShinyUtilities.ReadVerbatimText(driver, "Explore-point_details"));
 
             // Return to Pairs Plot
