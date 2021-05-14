@@ -836,16 +836,19 @@ server <- function(input, output, session, data) {
   
   observe({
     selected <- isolate(input$details_guid)
-    choices <- as.character(data$Filtered()$GUID)
-    if(is.null(selected) || selected == "") {
-      selected <- choices[1]
-    }
     saved <- si_read(ns("details_guid"))
-    if (is.empty(saved)) {
+    choices <- as.character(data$Filtered()$GUID)
+    default <- choices[1]
+    
+    if (is.empty(saved) || selected == saved) {
       si_clear(ns("details_guid"))
-    } else if (saved %in% c(choices, "")) {
-      selected <- si(ns("details_guid"), NULL)
     }
+
+    selected <- 
+      if (!is.null(selected) && selected != "") { selected }
+      else if (!is.empty(saved) && (saved %in% choices)) { saved }
+      else { default }
+
     updateSelectInput(session,
                       "details_guid",
                       choices = choices,
@@ -853,10 +856,11 @@ server <- function(input, output, session, data) {
   })
   
   observe({
-    pts <- nearPoints(data$Filtered(),
+    req(input$plot_dblclick)
+    pts <- nearPoints(isolate(data$Filtered()),
                       input$plot_dblclick,
-                      xvar = input$x_input,
-                      yvar = input$y_input,
+                      xvar = isolate(input$x_input),
+                      yvar = isolate(input$y_input),
                       maxpoints = 1)
     if(nrow(pts) != 0) {
       guid <- as.character(unlist(pts[["GUID"]]))

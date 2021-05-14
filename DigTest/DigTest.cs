@@ -296,8 +296,8 @@ namespace DigTest
             ShinyUtilities.ShinyWait(driver);
             Assert.Equal("39a915ac-7c32-469f-a5e5-05bb21e83297", guid.GetCurrentSelection());
             //wait.Until(d => "39a915ac-7c32-469f-a5e5-05bb21e83297" == guid.GetCurrentSelection());
-            guid.SetCurrentSelectionTyped("0f700");
-            var expected_details = "                                               \r\nCfgID                                \"32-20\"   \r\nIN_E11                               \"27684.36\"\r\nIN_E22                               \"72611.63\"\r\nIN_ElemCount                         \"44\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"81.6862\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"22.29602\"\r\nOUT_Blade_Cost_Total (USD)           \"148647.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2639.237\"";
+            guid.SetCurrentSelectionTyped("28d20");
+            var expected_details = "                                               \r\nCfgID                                \"32-16\"   \r\nIN_E11                               \"27949.29\"\r\nIN_E22                               \"23791.53\"\r\nIN_ElemCount                         \"44\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"81.52364\"\r\nIN_Tip_AvgCapMaterialThickness (mm)  \"24.98326\"\r\nOUT_Blade_Cost_Total (USD)           \"148617.7\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2446.314\"";
             wait.Until(d => expected_details == ShinyUtilities.ReadVerbatimText(driver, "Explore-point_details"));
 
             // Return to Pairs Plot
@@ -359,8 +359,9 @@ namespace DigTest
 
             //Test Single Point Details
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Point Details");
-            Assert.Equal(new ShinySelectInput(driver, "Explore-details_guid").GetCurrentSelection(), "39a915ac-7c32-469f-a5e5-05bb21e83297");
-            var expected_details = "                                               \r\nCfgID                                \"32-16\"   \r\nIN_E11                               \"29825.53\"\r\nIN_E22                               \"22207.16\"\r\nIN_ElemCount                         \"48\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"80.2254\" \r\nIN_Tip_AvgCapMaterialThickness (mm)  \"20.98778\"\r\nOUT_Blade_Cost_Total (USD)           \"146684.5\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2506.835\"";
+            ShinyUtilities.ShinyWait(driver);
+            Assert.Equal("28d20c1a-3037-4bbb-acc5-d85cb6ed33a5", new ShinySelectInput(driver, "Explore-details_guid").GetCurrentSelection());
+            var expected_details = "                                               \r\nCfgID                                \"32-16\"   \r\nIN_E11                               \"27949.29\"\r\nIN_E22                               \"23791.53\"\r\nIN_ElemCount                         \"44\"      \r\nIN_MatériauDeMoyeu                   \"Aluminum\"\r\nIN_Root_AvgCapMaterialThickness (mm) \"81.52364\"\r\nIN_Tip_AvgCapMaterialThickness (mm)  \"24.98326\"\r\nOUT_Blade_Cost_Total (USD)           \"148617.7\"\r\nOUT_Blade_Tip_Deflection (mm)        \"2446.314\"";
             Assert.Equal(expected_details, ShinyUtilities.ReadVerbatimText(driver, "Explore-point_details"));
 
             // Return to Pairs Plot
