@@ -78,7 +78,7 @@ ui <- function(id) {
             ),
             hr(),
             h4("Info"),
-            verbatimTextOutput(ns("pairs_stats"))#,
+            verbatimTextOutput(ns("pairs_stats"))
           ),
           column(9,
               htmlOutput(ns("pairs_display_error")),   
@@ -130,6 +130,15 @@ ui <- function(id) {
           ),
           column(12,
             verbatimTextOutput(ns("single_info"))
+          ),
+          conditionalPanel(
+            condition = paste0('output["', ns('single_plot_pts_selected'), '"] == true'),
+            column(12, h4("Sets")),
+            column(3, selectInput(ns("single_plot_select_set"), label=NULL, choices=c(), NULL)),
+            column(3, 
+              actionButton(ns("single_plot_add_pt_to_set"), "Add Point to Set"),
+              actionButton(ns("single_plot_remove_pt_from_set"), "Remove Point from Set")
+            )
           )
         )
       ),
@@ -139,10 +148,19 @@ ui <- function(id) {
           condition = paste0('output["', ns('guids_present'), '"] == true'),
           fluidRow(
             column(12,
-              br(),
               selectInput(ns("details_guid"), label = "GUID", choices = c(), NULL),
               verbatimTextOutput(ns("point_details"))
             )
+          )
+        ),
+        h4("Sets"),
+        fluidRow(
+          column(3,
+            selectInput(ns("pt_details_select_set"), label=NULL, choices=c(), NULL)
+          ),
+          column(3,
+            actionButton(ns("pt_details_add_pt_to_set"), "Add Point to Set"),
+            actionButton(ns("pt_details_remove_pt_from_set"), "Remove Point from Set")
           )
         ),
         conditionalPanel(
@@ -471,7 +489,88 @@ server <- function(input, output, session, data) {
   )
   
   # Single Plot Tab ----------------------------------------------------------
+  
+  observe({
+    selected <- isolate(input$single_plot_select_set)
+    choices <- names(data$meta$sets)
+    if(is.null(selected) || selected == "") {
+      selected <- choices[1]
+    }
+    saved <- si_read(ns("single_plot_select_set"))
+    if (is.empty(saved)) {
+      si_clear(ns("single_plot_select_set"))
+    } else if (saved %in% c(choices, "")) {
+      selected <- si(ns("single_plot_select_set"), NULL)
+    }
+    updateSelectInput(session,
+                      "single_plot_select_set",
+                      choices = choices,
+                      selected = selected)
+  })
 
+  observe({  # consider replacing with shinyjs::toggle(...)
+    shinyjs::show("single_plot_add_pt_to_set")
+    shinyjs::hide("single_plot_remove_pt_from_set")
+    
+    if(single_plot_pt_in_selected_set()) {
+      shinyjs::hide("single_plot_add_pt_to_set")
+      shinyjs::show("single_plot_remove_pt_from_set")
+    }
+  })
+  
+  # reactive vs observe vs observeEvent: https://stackoverflow.com/a/53016939
+  single_plot_pt_in_selected_set <- reactive({
+    name <- input$single_plot_select_set
+    if (!(name %in% c(""))) {
+      near_pts <- single_plot_near_pts()
+      number_of_near_pts <- dim(near_pts)[1]
+      if (number_of_near_pts > 0) {
+        selected_guid <- as.character(near_pts[[1, "GUID"]])
+        if (selected_guid %in% data$meta$sets[[name]]) {
+          TRUE
+        } else {
+          FALSE
+        }
+      } else {
+        FALSE
+      }
+    } else {
+      FALSE
+    }
+  })
+  
+  observeEvent(input$single_plot_add_pt_to_set, {
+    isolate({
+      name <- input$single_plot_select_set
+      if (!(name %in% c(""))) {
+        near_pts <- single_plot_near_pts()
+        number_of_near_pts <- dim(near_pts)[1]
+        if (number_of_near_pts > 0) {
+          selected_guid <- as.character(near_pts[[1, "GUID"]])
+          if (!(selected_guid %in% data$meta$sets[[name]])) {
+            data$meta$sets[[name]] = c(data$meta$sets[[name]], selected_guid)
+          }
+        }
+      }
+    })
+  })
+  
+  observeEvent(input$single_plot_remove_pt_from_set, {
+    isolate({
+      name <- input$single_plot_select_set
+      if (!(name %in% c(""))) {
+        near_pts <- single_plot_near_pts()
+        number_of_near_pts <- dim(near_pts)[1]
+        if (number_of_near_pts > 0) {
+          selected_guid <- as.character(near_pts[[1, "GUID"]])
+          if (selected_guid %in% data$meta$sets[[name]]) {
+            data$meta$sets[[name]] <- data$meta$sets[[name]][data$meta$sets[[name]] != selected_guid]
+          }
+        }
+      }
+    })
+  })
+  
   observe({
     selected <- isolate(input$x_input)
     if(is.null(selected) || selected == "") {
@@ -625,6 +724,15 @@ server <- function(input, output, session, data) {
     }
   })
   
+  single_plot_near_pts <- reactive({
+    near_points <- nearPoints(data$Filtered(),
+                              input$plot_click,
+                              xvar = input$x_input,
+                              yvar = input$y_input,
+                              maxpoints = 8)
+    near_points
+  })
+  
   output$single_info <- renderPrint({
     near_points <- nearPoints(data$Filtered(),
                               input$plot_click,
@@ -647,20 +755,100 @@ server <- function(input, output, session, data) {
     t(near_points)
   })
   
+  output$single_plot_pts_selected <- reactive({
+    near_points <- single_plot_near_pts()
+    if (dim(near_points)[1] > 0) {
+      TRUE
+    } else {
+      FALSE
+    }
+  })
+  outputOptions(output, "single_plot_pts_selected", suspendWhenHidden=FALSE)
+  
+  
   # Point Details -----------------------------------------------------
 
   observe({
-    selected <- isolate(input$details_guid)
-    choices <- as.character(data$raw$df$GUID)
+    selected <- isolate(input$pt_details_select_set)
+    choices <- names(data$meta$sets)
     if(is.null(selected) || selected == "") {
       selected <- choices[1]
     }
-    saved <- si_read(ns("details_guid"))
+    saved <- si_read(ns("pt_details_select_set"))
     if (is.empty(saved)) {
-      si_clear(ns("details_guid"))
+      si_clear(ns("pt_details_select_set"))
     } else if (saved %in% c(choices, "")) {
-      selected <- si(ns("details_guid"), NULL)
+      selected <- si(ns("pt_details_select_set"), NULL)
     }
+    updateSelectInput(session,
+                      "pt_details_select_set",
+                      choices = choices,
+                      selected = selected)
+  })
+  
+  observe({  # consider replacing with shinyjs::toggle(...)
+    shinyjs::show("pt_details_add_pt_to_set")
+    shinyjs::hide("pt_details_remove_pt_from_set")
+    
+    if(pt_details_pt_in_selected_set()) {
+      shinyjs::hide("pt_details_add_pt_to_set")
+      shinyjs::show("pt_details_remove_pt_from_set")
+    }
+  })
+  
+  pt_details_pt_in_selected_set <- reactive({
+    name <- input$pt_details_select_set
+    if (!(name %in% c(""))) {
+      selected_guid <- input$details_guid
+      if (selected_guid %in% data$meta$sets[[name]]) {
+        TRUE
+      } else {
+        FALSE
+      }
+    } else {
+      FALSE
+    }
+  })
+  
+  observeEvent(input$pt_details_add_pt_to_set, {
+    isolate({
+      name <- input$pt_details_select_set
+      if (!(name %in% c(""))) {
+        selected_guid <- input$details_guid
+        if (!(selected_guid %in% data$meta$sets[[name]])) {
+          data$meta$sets[[name]] <- c(data$meta$sets[[name]], input$details_guid)
+        }
+      }
+    })
+  })
+  
+  observeEvent(input$pt_details_remove_pt_from_set, {
+    isolate({
+      name <- input$pt_details_select_set
+      if (!(name %in% c(""))) {
+        selected_guid <- input$details_guid
+        if (selected_guid %in% data$meta$sets[[name]]) { # is it cheaper to NOT check for existence of value, and just try to remove
+          data$meta$sets[[name]] <- data$meta$sets[[name]][data$meta$sets[[name]] != selected_guid]
+        }
+      }
+    })
+  })
+  
+  observe({
+    selected <- isolate(input$details_guid)
+    saved <- si_read(ns("details_guid"))
+    choices <- as.character(data$Filtered()$GUID)
+    default <- choices[1]
+    
+    if (is.empty(saved) || selected == saved) {
+      si_clear(ns("details_guid"))
+    }
+
+    selected <- 
+      if (!is.null(selected) && selected != "") { selected }
+      else if (!is.empty(saved) && (saved %in% choices)) { saved }
+      else { default }
+
     updateSelectInput(session,
                       "details_guid",
                       choices = choices,
@@ -668,10 +856,11 @@ server <- function(input, output, session, data) {
   })
   
   observe({
-    pts <- nearPoints(data$Filtered(),
+    req(input$plot_dblclick)
+    pts <- nearPoints(isolate(data$Filtered()),
                       input$plot_dblclick,
-                      xvar = input$x_input,
-                      yvar = input$y_input,
+                      xvar = isolate(input$x_input),
+                      yvar = isolate(input$y_input),
                       maxpoints = 1)
     if(nrow(pts) != 0) {
       guid <- as.character(unlist(pts[["GUID"]]))

@@ -34,7 +34,7 @@ test:
       - DigTest\bin\Release\DigTest.exe
 
 artifacts:
-  - path: "*.log"
+  - path: '**\*.log'
 
 deploy:
   provider: GitHub
@@ -46,3 +46,4 @@ deploy:
   prerelease: false
   on:
     appveyor_repo_tag: true        # deploy on tag push only
+    

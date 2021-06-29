@@ -16,8 +16,8 @@ Server <- function(input, output, session) {
         "main_server.R" 
     }
 
-    if (TRUE) {
-    # if (is.null(serverApps[[server_file]])) {
+    # if (TRUE) {
+    if (is.null(serverApps[[server_file]])) {
         print(paste0("Sourcing Server File: ", server_file))
         serverApps[[server_file]] <<- new.env()
         source(server_file, local=serverApps[[server_file]])

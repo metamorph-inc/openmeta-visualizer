@@ -61,6 +61,17 @@ ui <- function(id) {
       # downloadButton(ns("exportPoints"), "Export Selected Points"), 
       # actionButton(ns("colorRanked"), "Color by Selected Rows")
       #checkboxInput(ns("transpose"), "Transpose Table", value = FALSE)
+    ),
+    wellPanel(
+      conditionalPanel(
+        condition = paste0('output["', ns('datatable_rows_selected'), '"] == true'),
+        fluidRow(
+          column(12, h4("Sets")),
+          column(3, selectInput(ns("datatable_select_set"), label=NULL, choices=c(), NULL)),
+          column(3, actionButton(ns("datatable_add_pts_to_set"), "Add Point(s) to Set"),
+            actionButton(ns("datatable_remove_pts_from_set"), "Remove Point(s) from Set"))
+        )
+      )
     )
   )
 }
@@ -525,5 +536,53 @@ server <- function(input, output, session, data) {
                          all=TRUE)[,c(names(data$raw$df),name)]
     print(paste0("Saved Ranking: ", name))
   })
+
+  # Sets ---------------------------------------------------------------------
+  output$datatable_rows_selected <- reactive({
+    rows_selected <- input$dataTable_rows_selected
+    if (length(rows_selected) > 0) {
+      TRUE
+    } else {
+      FALSE
+    }
+  })
+  outputOptions(output, "datatable_rows_selected", suspendWhenHidden=FALSE)
   
+  
+  observe({
+    isolate({
+      selected <- input$datatable_select_set
+    })
+    new_choices <- names(data$meta$sets)
+    updateSelectInput(session,
+                      "datatable_select_set",
+                      choices = new_choices,
+                      selected = selected)
+  })
+  
+  observeEvent(input$datatable_add_pts_to_set, {
+    isolate({
+      name <- input$datatable_select_set
+      if (!(name %in% c(""))) {
+        rows_selected <- input$dataTable_rows_selected
+        guids_selected <- as.vector(t(data$Filtered()[rows_selected,"GUID"]))
+        guids_selected_duplicates_removed <- guids_selected[guids_selected %notin% data$meta$sets[[name]]]
+        data$meta$sets[[name]] <- c(data$meta$sets[[name]], guids_selected_duplicates_removed)
+        showNotification(paste0("Point(s) added to set: ", name))
+      }
+    })
+  })
+  
+  observeEvent(input$datatable_remove_pts_from_set, {
+    isolate({
+      name <- input$datatable_select_set
+      if (!(name %in% c(""))) {
+        rows_selected <- input$dataTable_rows_selected
+        guids_selected <- as.vector(t(data$Filtered()[rows_selected,"GUID"]))
+        data$meta$sets[[name]] <- data$meta$sets[[name]][data$meta$sets[[name]] %notin% guids_selected]
+        showNotification(paste0("Point(s) removed from set: ", name))
+      }
+    })
+  })
+    
 }
