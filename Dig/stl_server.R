@@ -6,9 +6,9 @@ library(shinyBS)
 ui <- fluidPage(
     tags$head(
         tags$meta(name="viewport", content="width=device-width, initial-scale=1.0"),
-        tags$link(rel="stylesheet", href="/stl_viewer/view_cad.css"),
-        tags$script(src="/stl_viewer/stl_viewer.min.js"),
-        tags$script(src="/stl_viewer/view_cad.js")
+        tags$link(rel="stylesheet", href="stl_viewer/view_cad.css"),
+        tags$script(src="stl_viewer/stl_viewer.min.js"),
+        tags$script(src="stl_viewer/view_cad.js")
     ),
     uiOutput("title_panel", FALSE, tags$div, titlePanel(title="STL Viewer", windowTitle="STL Viewer")),
     useShinyjs(),

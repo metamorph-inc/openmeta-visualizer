@@ -646,6 +646,7 @@ namespace DigTest
 
             // Return to Filters
             ShinyUtilities.OpenCollapsePanel(driver, "footer_collapse", "Filters");
+            ShinyUtilities.ShinyWait(driver);
             Assert.True(stats.GetCurrentPoints() < prev_points);
         }
 

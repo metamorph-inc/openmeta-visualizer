@@ -181,7 +181,7 @@ ui <- function(id) {
 
                   console.log(params);
                   console.log("Open a new Window for the CAD Viewer");
-                  window.open(String.prototype.concat("/?server=stl&cad_file=", encodeURIComponent(params.filename), "&point_details=", encodeURIComponent(JSON.stringify(params.point_details))));
+                  window.open(String.prototype.concat(location.href.replace("app_direct", "app"), "?server=stl&cad_file=", encodeURIComponent(params.filename), "&point_details=", encodeURIComponent(JSON.stringify(params.point_details))));
                 }
                 '
               ),
@@ -208,7 +208,7 @@ ui <- function(id) {
 
                   console.log(params);
                   console.log("Open a new Window for the CSV Viewer");
-                  window.open(String.prototype.concat("/?server=csv_artifact&csv_file=", encodeURIComponent(params.filename)));
+                  window.open(String.prototype.concat(location.href.replace("app_direct", "app"), "?server=csv_artifact&csv_file=", encodeURIComponent(params.filename)));
                 }
                 '
               ),

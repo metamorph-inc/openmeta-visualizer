@@ -1,5 +1,5 @@
-source('utils/bayesian_utils.r')
-source('utils/uq.r')
+source('utils/bayesian_utils.R')
+source('utils/uq.R')
 
 uiInitialized <- FALSE
 directions <- list()

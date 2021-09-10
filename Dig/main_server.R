@@ -68,7 +68,7 @@ if (dig_dataset_config == "") {
     config_filename=file.path('datasets',
                               'WindTurbineForOptimization',
                               'visualizer_config.json',
-                              fsep = "\\\\")
+                              fsep = "/")
     # config_filename=file.path('datasets',
     #                           'boxpacking',
     #                           'visualizer_config.json',
@@ -80,7 +80,7 @@ if (dig_dataset_config == "") {
                                  sub("\\.csv$",
                                      "_viz_config.json",
                                      basename(dig_input_csv)),
-                                 fsep = "\\\\")
+                                 fsep = "/")
   }
 } else {
   config_filename <- gsub("\\\\", "/", dig_dataset_config)

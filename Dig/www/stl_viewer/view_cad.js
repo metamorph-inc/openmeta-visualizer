@@ -2,7 +2,7 @@ var stl_viewer
 var stl_model_id = 0
 function Initialize_STL_VIEW() {
     window.loaded = true;
-    stl_viewer = new StlViewer(document.getElementById("stl_cont"), { load_three_files: "/stl_viewer/" });
+    stl_viewer = new StlViewer(document.getElementById("stl_cont"), { load_three_files: "stl_viewer/" });
     stl_viewer.ready_callback = AddModel;
 }
 
