@@ -38,6 +38,22 @@ ui <- fluidPage(
   useShinyjs(),
   tabsetPanel(
     tabPanel("Plots",
+      tags$br(),
+      fluidRow(
+        column(12, 
+          bsCollapse(
+            bsCollapsePanel("Plot Interactions",
+              tags$ul(
+                tagList(
+                  tags$li("Select an area of a plot by clicking and draging over the desired area"),
+                  tags$li("Double click the selected area to zoom the plot to the selection"),
+                  tags$li("Double click without a selection to reset the zoom")
+                )
+              )
+            )
+          )
+        )
+      ),
       fluidRow(
         column(3,
           br(),
@@ -53,7 +69,9 @@ ui <- fluidPage(
   overflow: visible;
 }*/"),
           uiOutput("plot_controls"),
-          actionButton("add_plot", "Add Plot")
+          actionButton("add_plot", "Add Plot"),
+          tags$br(),
+          tags$br()
         ),
         column(9,
           br(),
@@ -97,12 +115,18 @@ server <- function(input, output, session) {
           seq(from=50, to=100, by=25))))
   )
 
+  plot_information <- reactiveValues(data=list())
+  plot_information$data[["1"]] <- list(index=1)
+  plot_information_sequence <- reactiveVal(1)
+
   zoom_settings <- reactiveValues()
   dblclickObservers <- list()
+  removePlotObservers <- list()
   
-  number_of_plots <- reactiveVal(1)
   observeEvent(input$add_plot, {
-    number_of_plots(number_of_plots() + 1)
+    plot_information_sequence(plot_information_sequence() + 1)
+    i <- plot_information_sequence()
+    plot_information$data[[paste0(i)]] <- list(index=i)
   })
 
   valueChooser <- function(id, default, choices=NULL) {
@@ -340,8 +364,14 @@ server <- function(input, output, session) {
   )
 
   output$plot_controls <- renderUI({
+    sapply(removePlotObservers, FUN=function(observer) {
+        observer$destroy()
+    })
+    removePlotObservers <<- list()
     panels <- list()
-    for (i in 1:number_of_plots()) {
+    
+    for (plot_info in plot_information$data) {
+      i <- plot_info$index
       local({
         i <- i
         charttypes_id <- idGenerator(i, "charttype")
@@ -424,14 +454,20 @@ server <- function(input, output, session) {
           do.call("tagList", input_controls)
         })
 
+        removeplot_id <- idGenerator(i, "remove_plot")
+        observeEvent(input[[removeplot_id]], {
+          plot_information$data[[paste0(i)]] <- NULL
+        })
+
         panels <<- append(panels, list(bsCollapsePanel(paste0("Plot ", i),
           charttypes,
           uiOutput(plottypes_output_id),
-          uiOutput(plotsettings_output_id)
+          uiOutput(plotsettings_output_id),
+          actionButton(removeplot_id, "Remove Plot")
         )))
       })
     }
-    do.call("bsCollapse", append(list(id="plot_controls_list", open=paste0("Plot ", number_of_plots())), panels))
+    do.call("bsCollapse", append(list(id="plot_controls_list", open=paste0("Plot ", plot_information_sequence())), panels))
   })
 
   output$plots <- renderUI({
@@ -441,7 +477,8 @@ server <- function(input, output, session) {
     })
     dblclickObservers <<- list()
 
-    for (i in 1:number_of_plots()) {
+    for (plot_info in plot_information$data) {
+      i <- plot_info$index
       local({
         i <- i
         plotOutputs <<- append(plotOutputs, list(
@@ -476,7 +513,8 @@ server <- function(input, output, session) {
       })
     }
 
-    for (i in 1:number_of_plots()) {
+    for (plot_info in plot_information$data) {
+      i <- plot_info$index
       local({
         i <- i
         
@@ -511,7 +549,7 @@ server <- function(input, output, session) {
           plot_output <- plot_output + 
             do.call(coord_func, zoom_settings[[paste0(i)]])
 
-          if (!is.null(chart_type) && chart_type != ""&& 
+          if (!is.null(chart_type) && chart_type != "" && 
             !is.null(plot_type) && plot_type != "") {
               chart <- chart_types[[chart_type]]
               plot <- chart$plots[[plot_type]]
