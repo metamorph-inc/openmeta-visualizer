@@ -1768,8 +1768,8 @@ ui <- fluidPage(
           ),
           column(3,
             h4("About"),
-            p(strong("Version:"), "v2.6.0"),
-            p(strong("Date:"), "4/1/2021"),
+            p(strong("Version:"), "v2.7.0"),
+            p(strong("Date:"), "10/25/2021"),
             p(strong("Developer:"), "Metamorph Inc."),
 			      p(strong("Website:"), a(href="https://www.metamorphsoftware.com/", target="_blank", "https://www.metamorphsoftware.com/")),
             p(strong("Support:"), a(href="mailto:jcoombe@metamorphsoftware.com?subject=OpenMETA%20Visualizer%20Support", target="_blank","jcoombe@metamorphsoftware.com"))
