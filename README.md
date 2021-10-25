@@ -24,7 +24,7 @@ To create a new release of the Visualizer:
 
 NOTE: Put testing instructions here.
 
-1. Update the version and release date information in the "About" section of the Visualizer. This can be done by modifying the code at the bottom of the `Dig/main_server.R` file. Commit this change.
+1. Update the version and release date information in the "About" section of the Visualizer. This can be done by modifying the code at the bottom of the `Dig/main_server.R` file. Commit and push this change.
 
 1. Create an annotate tag with the new version number, add a meaningful tag message, and push the tag.
 
@@ -32,3 +32,4 @@ NOTE: Put testing instructions here.
    git tag -a vX.Y.Z
    git push origin vX.Y.Z
    ```
+quit
