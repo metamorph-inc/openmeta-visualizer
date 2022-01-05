@@ -22,9 +22,10 @@
 # Script: app.R
 #
 # Author: Timothy Thomas [aut, cre],
-#         Will Knight [aut]
+#         Will Knight [aut],
+#         Joseph Coombe [aut]
 #
-# Maintainer: Timothy Thomas <tthomas@metamorphsoftware.com>
+# Maintainer: Joseph Coombe <jcoombe@metamorphsoftware.com>
 #
 # Description: OpenMETA Visualizer
 #
@@ -34,7 +35,7 @@
 #   also manages the persistence of the design data generated during
 #   exploration.
 #
-# URL: www.metamorphsoftware.com/openmeta
+# URL: https://openmeta.metamorphsoftware.com/
 
 library(shiny)
 library(shinyjs)
