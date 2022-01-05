@@ -80,7 +80,7 @@ if (dig_dataset_config == "") {
     config_filename <- file.path(csv_dir,
                                  sub("\\.csv$",
                                      "_viz_config.json",
-                                     basename(dig_input_csv)),
+                                     tolower(basename(dig_input_csv))),
                                  fsep = "\\\\")
   }
 } else {
@@ -1769,8 +1769,8 @@ ui <- fluidPage(
           ),
           column(3,
             h4("About"),
-            p(strong("Version:"), "v2.7.0"),
-            p(strong("Date:"), "10/25/2021"),
+            p(strong("Version:"), "v2.7.1"),
+            p(strong("Date:"), "1/5/2022"),
             p(strong("Developer:"), "Metamorph Inc."),
 			      p(strong("Website:"), a(href="https://www.metamorphsoftware.com/", target="_blank", "https://www.metamorphsoftware.com/")),
             p(strong("Support:"), a(href="mailto:jcoombe@metamorphsoftware.com?subject=OpenMETA%20Visualizer%20Support", target="_blank","jcoombe@metamorphsoftware.com"))
