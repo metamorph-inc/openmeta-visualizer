@@ -15,8 +15,30 @@ ui <- function(id) {
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "surrogateModelingStyle.css")),
     tags$head(tags$script(src="third_party/iframeResizer.min.js")),
     tags$head(tags$style("iframe { width: 100%; }")),
-    tags$iframe(src="surrogateModeling/index.html"),
-    tags$script("iFrameResize({log:false, heightCalculationMethod: 'lowestElement'});")
+    tags$iframe(src="surrogateModeling/index.html", id="surrogate-modeling-iframe"),
+    tags$script("iFrameResize({log:false, heightCalculationMethod: 'lowestElement'}, '#surrogate-modeling-iframe');"),
+    tags$script(HTML("
+      const targetNode = document.querySelector(\"div.tab-pane[data-value='Surrogate Modeling']\");
+
+      const callback = function(mutationsList, observer) {
+        mutationsList.forEach(function(mutation) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            console.log('Surrogate tab class changed; notifying resizer');
+            const surrogateFrame = document.querySelector('iframe#surrogate-modeling-iframe');
+            if(surrogateFrame && surrogateFrame.iFrameResizer) {
+              surrogateFrame.iFrameResizer.resize();
+            }
+          }
+        });
+      }
+
+      const observer = new MutationObserver(callback);
+
+      observer.observe(targetNode, {
+        attributes: true,
+        attributeList: ['class']
+      });
+    "))
   )
 }
 
