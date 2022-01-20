@@ -474,7 +474,6 @@ server <- function(input, output, session) {
       subset(var_names(), !(var_names() %in% var_range()))
     }
   })
-  
   pre <- list(var_names=var_names,
               var_class=var_class,
               var_facs=var_facs,
@@ -1533,7 +1532,21 @@ server <- function(input, output, session) {
       visualizer_config$augmented_data <- sub(".json", "_data.csv",
                                               basename(config_filename))
     }
-    write.csv(isolate(data$raw$df),
+    
+    # If a column contains any elements containing commas,
+    # then enclose each column element in double-quotes
+    # e.g. [[1,2,3],[4,5,6]] -> "[[1,2,3],[4,5,6]]"
+    raw_df <- isolate(data$raw$df)
+    raw_df <- lapply(raw_df, function(col) {
+      if (any(grepl(",", col, fixed = TRUE))) {
+        col = paste0('"', col, '"')
+      }
+      else {
+        col = col
+      }
+    })
+    
+    write.csv(raw_df,
               file=file.path(launch_dir, visualizer_config$augmented_data),
               row.names = FALSE,
               quote = FALSE,
