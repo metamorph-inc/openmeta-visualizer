@@ -29,14 +29,12 @@ ui <- function(id) {
 }
 
 server <- function(input, output, session, data) {
-  
-  ### ALL Comments by Will Knight
 
   # Prepare the data frame for input into d3 javascript file
   d3df <- reactive({
-    data_raw <- data$raw$df
-    row.names(data_raw) <- NULL
-    apply(data_raw, 1, function(row) as.list(row[!is.na(row)]))
+    data_numeric <- data$Filtered()[data$pre$var_nums_and_ints()]
+    row.names(data_numeric) <- NULL
+    apply(data_numeric, 1, function(row) as.list(row[!is.na(row)]))
   })
   
   # Main rendering of d3 plot

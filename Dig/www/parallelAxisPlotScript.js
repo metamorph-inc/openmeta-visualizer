@@ -14,8 +14,8 @@ Shiny.addCustomMessageHandler("slider_update",
         sliders.push(Object.keys(message)[i]);
       }
     }
-    console.log("sliders");
-    console.log(sliders);
+    //console.log("sliders");
+    //console.log(sliders);
   }
 );
 
@@ -47,7 +47,7 @@ Shiny.addCustomMessageHandler("dataframe",
 		    .attr("id", "singleParallelPlotID")
 		    .attr("width", width + margin.left + margin.right)
 		    .attr("height", height + margin.top + margin.bottom)
-		  .append("g")
+		    .append("g")
 		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 		// Extract the list of dimensions and create a scale for each.
