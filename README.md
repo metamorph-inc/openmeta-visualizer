@@ -74,3 +74,8 @@ To create a new release of the Visualizer:
  - [Getting Started with Shiny](https://ourcodingclub.github.io/tutorials/shiny/)
  - [Beginner's Guide to Creating an R Shiny App](https://towardsdatascience.com/beginners-guide-to-creating-an-r-shiny-app-1664387d95b3)
  - [Mastering Shiny](https://mastering-shiny.org/index.html)
+ 
+ ### D3
+ - [D3.js](https://d3js.org/)
+ - [A Visual Reference for D3](https://www.freecodecamp.org/news/a-visual-reference-for-d3/)
+ 
