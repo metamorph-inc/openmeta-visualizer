@@ -76,6 +76,10 @@ To create a new release of the Visualizer:
  - [Mastering Shiny](https://mastering-shiny.org/index.html)
  
  ### D3
+ - [D3 Gallery](https://observablehq.com/@d3/gallery)
  - [D3.js](https://d3js.org/)
  - [A Visual Reference for D3](https://www.freecodecamp.org/news/a-visual-reference-for-d3/)
+ - [D3 Wiki](https://github.com/d3/d3/wiki/)
+ - [Selections](https://www.d3indepth.com/selections/)
+ - [Arrow function expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions)
  

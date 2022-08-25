@@ -9,7 +9,6 @@ ui <- function(id) {
     
     wellPanel(
       
-      h3("Parallel Coordinates Plot"),
       actionButton(ns("refresh"), "Refresh"),
       br(),
       
@@ -17,7 +16,7 @@ ui <- function(id) {
       #to style to d3 output pull in css
       tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "parallelAxisPlotStyle.css")),
       #load D3JS library
-      tags$script(src="https://d3js.org/d3.v3.min.js"),
+      tags$script(src="https://d3js.org/d3.v7.min.js"),
       #load javascript
       tags$script(src="parallelAxisPlotScript.js"),
       #create div referring to div in the d3script
@@ -32,6 +31,7 @@ server <- function(input, output, session, data) {
 
   # Prepare the data frame for input into d3 javascript file
   d3df <- reactive({
+    # Remove non-numeric data columns (GUID, AnalysisError, Strings/Factors)
     data_numeric <- data$Filtered()[data$pre$var_nums_and_ints()]
     row.names(data_numeric) <- NULL
     apply(data_numeric, 1, function(row) as.list(row[!is.na(row)]))
@@ -52,12 +52,12 @@ server <- function(input, output, session, data) {
     isolate(session$sendCustomMessage(type="dataframe", d3df()))
   })
   
-  # Separate handler for adjust sliders
+  # Separate handler for adjust sliders  # FIXME: Doesn't do anything right now
   observeEvent(data$Filters(), {
     session$sendCustomMessage(type="slider_update", data$Filters())
   })
   
-  # Separate handler for resizing window
+  # Separate handler for resizing window  # FIXME: Doesn't do anything right now
   observeEvent(input$dimension, {
     session$sendCustomMessage(type="resize", data$Filters())       
   })
