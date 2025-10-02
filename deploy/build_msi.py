@@ -23,9 +23,9 @@ def generate_license_rtf():
         txt = txt.replace('\r', '')
         txt = re.sub('([^\\n])\\n(?!\\n)', '\\1 ', txt)
         txt = re.sub(r'([\\{}])', r'\\\1', txt)
-        rtf.write('{\\rtf1\n')
-        rtf.write(txt.replace('\n\n', '\\par\n'))
-        rtf.write('\n}')
+        rtf.write(b'{\\rtf1\n')
+        rtf.write(txt.replace('\n\n', '\\par\n').encode('utf8'))
+        rtf.write(b'\n}')
 
 
 def build_msi():
@@ -48,16 +48,16 @@ def build_msi():
     def get_vcsversion():
         p = subprocess.Popen("git rev-list HEAD --count".split(), stdout=subprocess.PIPE)
         out, err = p.communicate()
-        return out.strip() or '2'
+        return out.strip().decode('utf8') or '2'
     vcsversion = get_vcsversion()
 
-    print "VCS version: " + str(vcsversion)
+    print("VCS version: " + str(vcsversion))
     sourcedir = os.path.relpath(this_dir) + '/'
 
     def get_githash():
         p = subprocess.Popen("git rev-parse --short HEAD".split(), stdout=subprocess.PIPE)
         out, err = p.communicate()
-        return out.strip() or 'unknown'
+        return out.strip().decode('utf8') or 'unknown'
 
     vcshash = get_githash()
 
@@ -73,7 +73,7 @@ def build_msi():
     # For each each ComponentGroupRef in "source_wxs",
     # add its corresponding file to "include_wxis"
     for wxs in glob.glob(sourcedir + source_wxs):
-        print 'Processing WXS: ' + wxs
+        print('Processing WXS: ' + wxs)
         tree = ET.parse(wxs)
         root = tree.getroot()
         # print root
@@ -83,7 +83,7 @@ def build_msi():
                 include_wxis.append(node.attrib['Id'] + '.wxi')
                 include_wxis.append(node.attrib['Id'] + '_x64.wxi')
                 if 'Proe' in node.attrib['Id'] + '_x64.wxi':
-                    print node.attrib['Id'] + '_x64.wxi'
+                    print(node.attrib['Id'] + '_x64.wxi')
             if node.tag == '{http://schemas.microsoft.com/wix/2006/wi}ComponentRef':
                 include_wxis.append(node.attrib['Id'].rsplit(".", 1)[0] + '.wxi')
                 include_wxis.append(node.attrib['Id'].rsplit(".", 1)[0] + '_x64.wxi')
@@ -125,7 +125,7 @@ def build_msi():
     if os.environ.get('DIG_VERSION') is not None:
         vcsverion = os.environ['DIG_VERSION'] or '0.1.1'
         version = os.environ['DIG_VERSION'] or '0.1.1'
-    print 'Installer version: ' + version
+    print('Installer version: ' + version)
     defines.append(('VERSIONSTR', version))
     defines.append(('VCSVERSION', vcsversion))
     defines.append(('VCSHASH', vcshash))
@@ -158,13 +158,18 @@ def build_msi():
         # udm.pyd depends on UdmDll_VC10
         '-o', os.path.splitext(source_wxs)[0] + ".msi"] + [get_wixobj(file) for file in sources])
 
-    print "elapsed time: %d seconds" % (datetime.datetime.now() - starttime).seconds
+    print("elapsed time: %d seconds" % (datetime.datetime.now() - starttime).seconds)
 
 
 def dig_mods():
     output_filename = 'Dig.wxi'
     ElementTree.register_namespace("", "http://schemas.microsoft.com/wix/2006/wi")
-    tree = ElementTree.parse(output_filename, parser=CommentedTreeBuilder()).getroot()
+
+    parser = ElementTree.XMLParser(encoding='UTF-8', target=ElementTree.TreeBuilder(insert_comments=True))
+    xml_contents = open(output_filename, 'rt', encoding='utf-8-sig').read()
+    parser.feed(xml_contents)
+    tree = parser.close()
+
     dig_dir = tree.findall(".//{http://schemas.microsoft.com/wix/2006/wi}ComponentGroup[@Id='Dig']")[0]
     dig_dir.insert(0, ElementTree.fromstring("""<Component Id="dir_Dig_perms" Guid="d89d2032-5658-4f31-8d61-cfdd3a6934b5" Directory="Dig">
   <Condition>ALLUSERS=1</Condition>

@@ -27,9 +27,9 @@ def system(args, dirname=None):
 
 
 # http://bugs.python.org/issue8277
-class CommentedTreeBuilder(ElementTree.XMLTreeBuilder):
-    def __init__(self, html=0, target=None):
-        ElementTree.XMLTreeBuilder.__init__(self, html, target)
+class CommentedTreeBuilder(ElementTree.TreeBuilder):
+    def __init__(self, *args):
+        ElementTree.TreeBuilder.__init__(self, *args)
         self._parser.CommentHandler = self.handle_comment
 
     def handle_comment(self, data):
@@ -89,7 +89,7 @@ def gen_dir_from_vc(src, output_filename=None, id=None, diskId=None):
             dir_.set('Id', 'dir_' + re.sub('[^A-Za-z0-9_]', '_', os.path.relpath(dirname, '..').replace('\\', '_').replace('.', '_').replace('-', '_')))
             # "Standard identifiers are 72 characters long or less."
             if len(dir_.attrib['Id']) > 72:
-                dir_.set('Id', 'dir_' + hashlib.md5(dirname).hexdigest())
+                dir_.set('Id', 'dir_' + hashlib.md5(dirname.encode('utf8')).hexdigest())
             dirs[dirname] = dir_
         return dir_
 
@@ -97,6 +97,8 @@ def gen_dir_from_vc(src, output_filename=None, id=None, diskId=None):
     # git ls-files should show files to-be-added too
     svn_status = subprocess.Popen('git ls-files'.split() + [src], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = svn_status.communicate()
+    out = out.decode('utf8')
+    err = err.decode('utf8')
     exit_code = svn_status.poll()
     if exit_code != 0:
         raise Exception('svn status failed: ' + err)
@@ -108,10 +110,10 @@ def gen_dir_from_vc(src, output_filename=None, id=None, diskId=None):
 
         component = SubElement(component_group, 'Component')
         component.set('Directory', dir_.attrib['Id'])
-        component.set('Id', 'cmp_' + hashlib.md5(filename).hexdigest())
+        component.set('Id', 'cmp_' + hashlib.md5(filename.encode('utf8')).hexdigest())
         file_ = SubElement(component, 'File')
         file_.set('Source', filename)
-        file_.set('Id', 'fil_' + hashlib.md5(filename).hexdigest())
+        file_.set('Id', 'fil_' + hashlib.md5(filename.encode('utf8')).hexdigest())
         if diskId:
             component.attrib['DiskId'] = diskId
 
@@ -159,7 +161,7 @@ def main(src, output_filename=None, id=None, diskId=None):
     import subprocess
 
     def check_call(args):
-        print " ".join(args)
+        print(" ".join(args))
         subprocess.check_call(args)
     # subprocess.check_call('set path'.split(), shell=True)
     # subprocess.check_call('where heat'.split(), shell=True)
@@ -168,10 +170,15 @@ def main(src, output_filename=None, id=None, diskId=None):
       '-o', output_filename, '-ag', '-cg', id, '-srd', '-var', 'var.' + id, '-dr', id, '-nologo'])
 
     ElementTree.register_namespace("", "http://schemas.microsoft.com/wix/2006/wi")
-    tree = ElementTree.parse(output_filename, parser=CommentedTreeBuilder()).getroot()
+    parser = ElementTree.XMLParser(encoding='UTF-8', target=ElementTree.TreeBuilder(insert_comments=True))
+    xml_contents = open(output_filename, 'rt', encoding='utf-8-sig').read()
+    parser.feed(xml_contents)
+    tree = parser.close()
+
     tree.insert(0, ElementTree.Comment('generated with gen_dir_wxi.py %s\n' % src))
     tree.insert(0, ElementTree.ProcessingInstruction('define', '%s=%s' % (id, os.path.normpath(src))))
-    parent_map = dict((c, p) for p in tree.getiterator() for c in p)
+    # import pdb; pdb.set_trace()
+    parent_map = dict((c, p) for p in tree.iter() for c in p)
     for file in tree.findall(".//{http://schemas.microsoft.com/wix/2006/wi}Component/{http://schemas.microsoft.com/wix/2006/wi}File"):
         file_Source = file.get('Source', '')
         if file_Source.find('.svn') != -1 or os.path.basename(file_Source) in ('Thumbs.db', 'desktop.ini', '.DS_Store') or file_Source.endswith('.pyc'):

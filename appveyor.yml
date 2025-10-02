@@ -1,4 +1,5 @@
 version: 1.0.{build}
+image: Visual Studio 2022
 
 init:
   # Set "build version number" to "short-commit-hash" or when tagged to "tag name" (Travis style)
@@ -15,8 +16,8 @@ init:
 build_script:
   - pushd DigTest & nuget restore & popd
   - choco install googlechrome --ignore-checksums
-  - '"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" DigTest\DigTest.sln /p:Configuration=Release /fl /t:Rebuild /m'
-  - python -m pip install requests==2.18.4
+  - '"c:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" DigTest\DigTest.sln /p:Configuration=Release /fl /t:Rebuild /m'
+  - python -m pip install requests==2.32.5
   - python Dig\tab-src\surrogate-modeling\build.py
   - nuget install -Version 3.11.0 WiX
   - set PATH=%PATH%;%CD%\WiX.3.11.0\tools
