@@ -40,7 +40,7 @@ def decompress(filename, dirname):
     if os.path.isfile(os.path.join(dirname, 'npm')):
        return
     print('Extracting ' + filename)
-    for path in (unicode(dirname), u'tmp'):
+    for path in (dirname, 'tmp'):
         if os.path.isdir(path):
             # n.b. \\?\ is for MAXPATH workaround
             # n.b. unicode strings are required for os.listdir
@@ -54,7 +54,7 @@ def decompress(filename, dirname):
 def build(dirname):
     env = dict(os.environ)
     env['PATH'] = os.path.abspath(dirname) + ';' + env['PATH']
-    print("PATH=", env['PATH'])
+    print("PATH=" + env['PATH'])
     npm = os.path.join(dirname, 'npm.cmd')
     node = os.path.join(dirname, 'node.exe')
     print('`npm install`')
