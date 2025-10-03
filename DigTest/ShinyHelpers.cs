@@ -9,6 +9,7 @@ using System.Threading;
 using System.Drawing;
 using System.IO;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace DigTest
 {
@@ -83,10 +84,11 @@ namespace DigTest
             Actions builder = new Actions(this.driver);
             var grid = driver.FindElement(By.XPath(this.grid_path));
             var width = grid.Size.Width;
-            var old_x = width * (current - low) / (high - low);
-            var new_x = width * (target - low) / (high - low);
-            builder.MoveToElement(grid, (int)old_x, 0).ClickAndHold();
-            builder.MoveByOffset((int)(new_x - old_x), 0).Release().Build().Perform();
+            var old_x = width * (current - low) / (high - low) - width / 2;
+            var new_x = width * (target - low) / (high - low) - width / 2;
+            var height = grid.Size.Height;
+            builder.MoveToElement(grid, (int)old_x, -height / 2).ClickAndHold();
+            builder.MoveByOffset((int)(new_x - old_x), -height / 2).Release().Build().Perform();
             ShinyUtilities.ShinyWait(driver);
             this.current = Double.Parse(driver.FindElement(By.XPath(current_path)).GetAttribute("textContent"));
             return this.current;
@@ -825,6 +827,53 @@ namespace DigTest
         public static string ReadVerbatimText(IWebDriver driver, string id)
         {
             return driver.FindElement(By.Id(id)).GetAttribute("textContent");
+        }
+    }
+
+    internal class ExpectedConditions
+    {
+        internal static Func<IWebDriver, IWebElement> ElementExists(By by)
+        {
+            return driver =>
+            {
+                try
+                {
+                    return driver.FindElement(by);
+                }
+                catch (NoSuchElementException)
+                {
+                    return null;
+                }
+            };
+        }
+
+        internal static Func<IWebDriver, IWebElement> ElementIsVisible(By by)
+        {
+            return driver =>
+            {
+                IWebElement element;
+                try
+                {
+                    element = driver.FindElement(by);
+                }
+                catch (NoSuchElementException)
+                {
+                    return null;
+                }
+                if (!element.Displayed)
+                {
+                    return null;
+                }
+                return element;
+            };
+        }
+
+        internal static Func<IWebDriver, bool> TextToBePresentInElement(IWebElement webElement, string unique_string)
+        {
+            return driver =>
+            {
+                return webElement.Text.Contains(unique_string);
+            };
         }
     }
 }

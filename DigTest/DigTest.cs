@@ -13,40 +13,34 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Xunit;
 using System.Drawing;
+using WebDriverManager;
+using WebDriverManager.DriverConfigs.Impl;
+using WebDriverManager.Helpers;
 
 namespace DigTest
 {
     public class DigTest
     {
-        public static readonly string RootPath = "../../../";
-
-        static void Main(string[] args)
-        {
-
-            int ret = Xunit.ConsoleClient.Program.Main(new string[] {
-                System.Reflection.Assembly.GetAssembly(typeof(DigTest)).CodeBase.Substring("file:///".Length),
-                //"/noshadow",
-                //"/trait", "Category=ResultsBrowser",
-                //"/trait", "Debug=True",
-                //[Trait("Debug", "True")]
-            });
-            Console.In.ReadLine();
-        }
+        public static readonly string RootPath = "..\\..\\..\\..\\";
 
         public static class KnownFolder
         {
             public static readonly Guid Downloads = new Guid("374DE290-123F-4565-9164-39C4925E467B");
         }
 
+
         [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
         static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint dwFlags, IntPtr hToken, out string pszPath);
-        
+
         [Fact()]
         void GenericCSVLaunch()
         {
+            new DriverManager().SetUpDriver(new ChromeConfig(), VersionResolveStrategy.MatchingBrowser);
+
             var options = new OpenQA.Selenium.Chrome.ChromeOptions { };
             options.AddUserProfilePreference("auto-open-devtools-for-tabs", "true");
             options.AddArgument("--start-maximized");
+
             using (IWebDriver driver = new OpenQA.Selenium.Chrome.ChromeDriver(options))
             using (DigWrapper wrapper = new DigWrapper())
             {
@@ -66,6 +60,8 @@ namespace DigTest
         [Fact()]
         void OpenmetaCSVLaunch()
         {
+            new DriverManager().SetUpDriver(new ChromeConfig(), VersionResolveStrategy.MatchingBrowser);
+
             var options = new OpenQA.Selenium.Chrome.ChromeOptions { };
             options.AddUserProfilePreference("auto-open-devtools-for-tabs", "true");
             options.AddArgument("--start-maximized");
@@ -88,11 +84,13 @@ namespace DigTest
         [Trait("Category","ResultsBrowser")]
         void ResultsBrowserJSONLaunch()
         {
+            new DriverManager().SetUpDriver(new ChromeConfig(), VersionResolveStrategy.MatchingBrowser);
+
             // TODO(tthomas): Add testing of additional UI elements
             var session = new ShinySession(Path.Combine("dig", "datasets", "WindTurbineForOptimization", "visualizer_config.json"));
             File.Copy(session.original_config, session.copied_config, overwrite: true);
             File.Delete(session.log_file);
-            
+
             var options = new OpenQA.Selenium.Chrome.ChromeOptions { };
             options.AddUserProfilePreference("auto-open-devtools-for-tabs", "true");
             // n.b. viewport size scales plots. the width of plots determines where clicks go
@@ -179,7 +177,7 @@ namespace DigTest
             display.AppendSelection("OUT");
             display.AppendSelection("OUT");
             pairs_plot.WaitUntilImageRefreshes();
-            
+
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-pairs_plot_collapse", "Plot Options");
             var start = pairs_plot.ImageStats();
             var auto_render = new ShinyCheckboxInput(driver, "Explore-auto_render");
@@ -225,6 +223,12 @@ namespace DigTest
             pairs_plot.WaitUntilImageRefreshes();
             var second_count = pairs_plot.ImageStats();
             Assert.True(second_count[Color.FromArgb(255, 0, 0, 0)] > initial_count[Color.FromArgb(255, 0, 0, 0)]);
+
+            for (var i = 0; i < 6; i++)
+            {
+                var ssi = new ShinySliderInput(driver, "Explore-pairs_plot_marker_size");
+                ssi.MoveSliderToValue(1.7);
+            }
             Assert.Equal(1.7, new ShinySliderInput(driver, "Explore-pairs_plot_marker_size").MoveSliderToValue(1.7));
             pairs_plot.WaitUntilImageRefreshes();
             var third_count = pairs_plot.ImageStats();
@@ -241,8 +245,14 @@ namespace DigTest
             Assert.Equal("IN_MatériauDeMoyeu", y_input.GetCurrentSelection());
 
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Pairs Plot");
-            var plot_size = driver.FindElement(By.Id("Explore-pairs_plot")).Size;
-            IAction dbl_click_pairs_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-pairs_plot")), 200 * plot_size.Width / 694, 400 * plot_size.Height / 700).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
+            var plot = driver.FindElement(By.Id("Explore-pairs_plot"));
+            var plot_size = plot.Size;
+            var width = (Int64)((IJavaScriptExecutor)driver).ExecuteScript("return window.innerWidth");
+            var height = (int)(Int64)((IJavaScriptExecutor)driver).ExecuteScript("return window.innerHeight");
+            var plot_onscreen_y = Math.Min(plot.Location.Y + plot.Size.Height, height) - plot.Location.Y;
+            IAction dbl_click_pairs_plot = builder.MoveToElement(plot,
+                200 * plot_size.Width / 694 - plot_size.Width / 2,
+                400 * plot_size.Height / 700 - plot_onscreen_y / 2).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
 
             dbl_click_pairs_plot.Perform();
             wait.Until(d => driver.FindElement(By.Id("Explore-single_plot")).Displayed);
@@ -286,7 +296,9 @@ namespace DigTest
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
             var single_plotSize = driver.FindElement(By.Id("Explore-single_plot")).Size;
             // FIXME does not work with non-1024x768 resolution
-            IAction dbl_click_single_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-single_plot")), 137 * single_plotSize.Width / 694, 266 * single_plotSize.Height / 700).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
+            IAction dbl_click_single_plot = builder.MoveToElement(driver.FindElement(By.Id("Explore-single_plot")),
+                137 * single_plotSize.Width / 694 - single_plotSize.Width / 2,
+                266 * single_plotSize.Height / 700 - plot_onscreen_y / 2).Click().Click().Build(); // FIXME: replace '.Click().Click()' with 'DoubleClick()'
             dbl_click_single_plot.Perform();
             ShinyUtilities.ShinyWait(driver);
             Assert.Equal("39a915ac-7c32-469f-a5e5-05bb21e83297", guid.GetCurrentSelection());
@@ -340,7 +352,7 @@ namespace DigTest
             ShinyUtilities.OpenTabPanel(driver, "Explore-tabset", "Single Plot");
             Assert.Equal("IN_Tip_AvgCapMaterialThickness", new ShinySelectInput(driver, "Explore-x_input").GetCurrentSelection());
             Assert.Equal("IN_E11", new ShinySelectInput(driver, "Explore-y_input").GetCurrentSelection());
-            
+
             ShinyUtilities.OpenCollapsePanel(driver, "Explore-single_plot_collapse", "Markers");
             Assert.Equal("1", new ShinySelectInput(driver, "Explore-single_plot_marker").GetCurrentSelection()); // "Empty Circle"
             Assert.Equal(1.7, new ShinySliderInput(driver, "Explore-single_plot_marker_size").GetValue());
@@ -508,7 +520,7 @@ namespace DigTest
         private void UQSet(IWebDriver driver)
         {
             IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
-            
+
             //// Test "UncertaintyQuantification.R"
             //IWait<IWebDriver> wait30 = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(30.0));
 
@@ -716,7 +728,7 @@ namespace DigTest
                 {
                     proc.StartInfo.EnvironmentVariables["DIG_DATASET_CONFIG"] = input_filename;
                 }
-                
+
                 ManualResetEvent task = new ManualResetEvent(false);
                 using (task)
                 {
