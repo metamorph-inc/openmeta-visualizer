@@ -24,15 +24,15 @@ build_script:
   - python deploy\build_msi.py
   - cd deploy
   - appveyor PushArtifact openmeta-visualizer_x64.msi
+  - cd ..
 
 cache:
  - 'Dig\tab-src\surrogate-modeling\node_modules -> Dig\tab-src\surrogate-modeling\package.json, Dig\tab-src\surrogate-modeling\build.py'
  - 'DigTest\nuget -> DigTest\packages.config'
 
-test:
-  assemblies:
-    only:
-      - DigTest\bin\Release\DigTest.exe
+
+test_script:
+  - cd DigTest & dotnet test --configuration Release --test-adapter-path:. --logger:Appveyor
 
 artifacts:
   - path: "*.log"
