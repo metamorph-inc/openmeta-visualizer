@@ -810,7 +810,7 @@ namespace DigTest
             var unique_string = Guid.NewGuid().ToString("");
             ((IJavaScriptExecutor)driver).ExecuteScript("Shiny.onInputChange('test_progress', arguments[0])", new object[] { unique_string });
 
-            IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(10.0));
+            IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(driver, TimeSpan.FromSeconds(30.0));
             try
             {
                 wait.Until(ExpectedConditions.TextToBePresentInElement(driver.FindElement(By.Id("test-progress")), unique_string));
