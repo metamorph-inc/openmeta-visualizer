@@ -1782,11 +1782,11 @@ ui <- fluidPage(
           ),
           column(3,
             h4("About"),
-            p(strong("Version:"), "v2.7.2"),
-            p(strong("Date:"), "1/21/2022"),
+            p(strong("Version:"), "v2.7.3"),
+            p(strong("Date:"), "10/6/2025"),
             p(strong("Developer:"), "Metamorph Inc."),
 			      p(strong("Website:"), a(href="https://www.metamorphsoftware.com/", target="_blank", "https://www.metamorphsoftware.com/")),
-            p(strong("Support:"), a(href="mailto:jcoombe@metamorphsoftware.com?subject=OpenMETA%20Visualizer%20Support", target="_blank","jcoombe@metamorphsoftware.com"))
+            p(strong("Support:"), a(href="mailto:info@metamorphsoftware.com?subject=OpenMETA%20Visualizer%20Support", target="_blank","info@metamorphsoftware.com"))
           )
         ),
         style = "default"
