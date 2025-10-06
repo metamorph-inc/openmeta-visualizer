@@ -63,6 +63,10 @@
           <Directory Id='R' Name='R' />
         </Directory>
       </Directory>
+      <Directory Id='ProgramFiles64Folder'>
+        <Directory Id='APPLICATIONFOLDER64' Name='OpenMETA-Visualizer'>
+        </Directory>
+      </Directory>
     </Directory>
 
     <!-- =========================================================== -->
@@ -95,6 +99,11 @@
           <RegistryValue Name='ShowConsoleWindow' Type='integer' Value='0'/>
         </RegistryKey>
       </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="dir_Dig_www">
+        <Directory Id="SurrogateModeling" Name="SurrogateModeling" />
+    </DirectoryRef>
+    <DirectoryRef Id='APPLICATIONFOLDER64'>
       <Component Id='reg_PETBROWSER_64' Guid='{44e945de-df2c-4478-9154-5cb85db511e3}' Win64='yes'>
         <RegistryKey Root='HKMU' Key='Software\META\PETBrowser\PETTools\OpenMetaVisualizer'>
           <RegistryValue Type='string' Value='OpenMETA Visualizer'/>
@@ -105,9 +114,6 @@
           <RegistryValue Name='ShowConsoleWindow' Type='integer' Value='0'/>
         </RegistryKey>
       </Component>
-    </DirectoryRef>
-    <DirectoryRef Id="dir_Dig_www">
-        <Directory Id="SurrogateModeling" Name="SurrogateModeling" />
     </DirectoryRef>
 
     <!-- =========================================================== -->
@@ -122,6 +128,7 @@
       <ComponentRef Id='reg_VERSIONSTR' />
       <ComponentRef Id='reg_VCSHASH' />
       <ComponentRef Id='reg_PETBROWSER' />
+      <ComponentRef Id='reg_PETBROWSER_64' />
     </Feature>
 
     <!-- =========================================================== -->
