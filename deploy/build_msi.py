@@ -119,7 +119,7 @@ def build_msi():
     defines = []
 
     try:
-        version = subprocess.check_output('git describe --tags --exact-match --dirty').strip().lstrip('v')
+        version = subprocess.check_output('git describe --tags --exact-match --dirty', encoding="utf-8").strip().lstrip('v')
     except subprocess.CalledProcessError:
         version = '0.1.0'
     if os.environ.get('DIG_VERSION') is not None:
