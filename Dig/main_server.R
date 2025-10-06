@@ -1782,7 +1782,7 @@ ui <- fluidPage(
           ),
           column(3,
             h4("About"),
-            p(strong("Version:"), "v2.7.3"),
+            p(strong("Version:"), "v2.7.4"),
             p(strong("Date:"), "10/6/2025"),
             p(strong("Developer:"), "Metamorph Inc."),
 			      p(strong("Website:"), a(href="https://www.metamorphsoftware.com/", target="_blank", "https://www.metamorphsoftware.com/")),
