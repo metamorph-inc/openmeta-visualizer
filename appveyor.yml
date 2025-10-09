@@ -41,7 +41,10 @@ deploy:
   provider: GitHub
   description: Build $(appveyor_build_version)
   auth_token:
-    secure: RZ7rFvDwiOYn5ibdFtiuii2OonM+K7HPHFilWv2s3Upu/dBaGAQDftrbIS8Jsu0K
+# Expires on Fri, Oct 9 2026
+# https://github.com/settings/personal-access-tokens/new  metamorph-jenkins  include Workflow
+# https://ci.appveyor.com/tools/encrypt  cloud@metamorphsoftware.com
+    secure: IQfCv01bSfZYnpKWtA8IP/MfzWzpD4cgmY/HRz0GafE6OHlg39CAbhlXURGk9t2tSjFhS9RXRVk/bwuXZg3MDihUZlxcgHZH7OJMDsUPiQ2WQw494wnn0HIdnFn4jx/p
   artifact: openmeta-visualizer_x64.msi
   draft: false
   prerelease: false
